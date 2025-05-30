@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import Domain, DomainOwner
 from models.dataset import Dataset
 from models.Transcription import Transcription
-from models.domain import DomainFeature
+from models.Features import Feature
 from extensions import db
 import json
 import csv
@@ -41,7 +41,7 @@ def export_dataset(domain_id):
 
     # Get feature names from domain schema
     try:
-        domain_features = DomainFeature.query.filter_by(domain_id=domain_id).all()
+        domain_features = Feature.query.filter_by(domain_id=domain_id).all()
         feature_names = [f.name for f in domain_features]
     except Exception as e:
         print(f"Error loading domain features: {e}")
@@ -134,7 +134,7 @@ def preview_dataset(domain_id):
 
     # Get feature schema
     try:
-        domain_features = DomainFeature.query.filter_by(domain_id=domain_id).all()
+        domain_features = Feature.query.filter_by(domain_id=domain_id).all()
         feature_schema = [f.name for f in domain_features]
     except Exception as e:
         print(f"Error loading feature schema: {e}")
@@ -199,7 +199,7 @@ def get_export_stats(domain_id):
 
     # Get feature count
     try:
-        feature_count = DomainFeature.query.filter_by(domain_id=domain_id).count()
+        feature_count = Feature.query.filter_by(domain_id=domain_id).count()
     except:
         feature_count = 0
 
