@@ -26,7 +26,7 @@ class QualityFlag(db.Model):
 
     id          = db.Column(db.Integer, primary_key=True)
     reporter_id = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)
-    domain_id   = db.Column(db.Integer, db.ForeignKey('domains.id'), nullable=True)
+    domain_id   = db.Column(db.Integer, db.ForeignKey('domain.id'), nullable=True)
     description = db.Column(db.Text, nullable=False)
     status      = db.Column(db.String(20), default='open')  # open | reviewed | resolved
     created_at  = db.Column(db.DateTime, default=datetime.utcnow)
