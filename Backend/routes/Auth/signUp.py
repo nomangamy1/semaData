@@ -1,24 +1,31 @@
-from flask import Flask ,flask_login,flash
+from flask import Flask ,Blueprint,request,jsonify
+from werkzeug.security import generate_password_hash
 from semaData import semaData
-from Backend.models import User
+from Backend.models import User ,Domain
 from forms import UserRegistrationForm
 from extensions import db
 from email import send_email
-@semaData.route('/signUp',methods = ['GET','POST'])
-#in this case we have the user and the domainowner
- 
-def signUp():
-    form = UserRegistrationForm()
-    if form.validate_on_submit():
-        user = User(
-            email=form.email.data,
-            username = form.username.data,
-            referenceNumber = form.referenceNumber.data,
-            password = form.password.data,
 
+
+register_bp = Blueprint("register",__name__)
+
+@register_bp.route(url_prefix = '/signUp',methods = ['GET','POST'])
+#in this case we have the user and the domainowner
+def signUp():
+    data =request.json()
+    role =data['role']
+    if role == User:
+        domain = Domain.query.filter_by(reference_number=data['reference_number']).first()
+        if not domain:
+            return {"error ": 'Invalid reference Number'},400
+        
+        user = User(
+            username = data['username'],
+            password =generate_password_hash(data['password']),
+            role =role,
+            reference_number = data.get('reference_number')
         )
         db.session.add(user)
         db.session.commit()
-        token = user.generate_confirmation_token()
-        send_email =(user.email,'confirm your account',token =token ,user=user)
-        flash("an confirmation message has been sent to your email account")
+        return {'message':"User Registered"},201
+    
