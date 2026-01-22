@@ -15,6 +15,7 @@ def semaData_app():
 
     semaData.register_blueprint("register_bp",url_prefix='/api/signUp')
     semaData.register_blueprint('domain_bp',url_prefix ='/api/domain')
+    semaData.register_blueprint('login_bp', url_prefix='/api/login')
 
 
     return semaData
