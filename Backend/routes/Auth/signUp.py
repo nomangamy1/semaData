@@ -1,14 +1,15 @@
 from flask import Flask ,Blueprint,request,jsonify
 from werkzeug.security import generate_password_hash
 from semaData import semaData
-from Backend.models import User ,Domain
+from Backend.models import User ,Domain,DomainOwner
 from forms import UserRegistrationForm
 from extensions import db
 from email import send_email
 from utils.tokens import generate_verification_token,confirm_token_verification
 from utils.email import send_email
-from flask import url_for,
-
+from forms import UserRegistrationForm
+from flask import url_for
+from semaData import role 
 register_bp = Blueprint("register",__name__)
 
 @register_bp.route('/signUp',methods = ['GET','POST'])
@@ -16,7 +17,6 @@ register_bp = Blueprint("register",__name__)
 def signUp():
     try:
         data =request.json()
-        role =data['role']
         if role == User:
             domain = Domain.query.filter_by(reference_number=data['reference_number']).first()
             if not domain:
@@ -30,8 +30,24 @@ def signUp():
             db.session.add(user)
             db.session.commit()
             return {'message':"User Registered"},201
+        else:
+            user = DomainOwner(
+                username =data['username'],
+                email = data['email'],
+                DomainField = data["domainField"]
+
+                
+            )
+            db.session.add(user)
+            db.session.commit()
+            return {"Message":'You are now a domainOwner!'}
+    
     except Exception as e:
-        return e
+        return e 
+
+
+
+
     @register_bp.route('/confirm/<token>',methods =['GET'])
     def email_verification(token):
         try:

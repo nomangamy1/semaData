@@ -2,7 +2,7 @@ import os
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY')
-    MAIL_DEFAULT_SENDER = 'kiplimochege@gmail.com'
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_SENDER')
     MAIL_SERVER ='SMTP'
     MAIL_PORT = ''
     MAIL_USERNAME = 'kiplimochege@gmail.com'
@@ -25,6 +25,8 @@ class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI')
     SECRET_KEY = "mysecret"
     SECURITY_PASSWORD_SALT = '2026/17/1'
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_SENDER')
+
 class TestConfig(Config):
     SECRET_KEY = "mysecret"
     SECURITY_PASSWORD_SALT = '2026/17/1'

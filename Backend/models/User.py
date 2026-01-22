@@ -5,7 +5,7 @@ class User(db.model,UserMixin):
     __tablename = 'Users'
     id = db.Column(db.Integer,primary_key = True)
     first_name = db.Column(db.String(64),unique =False,index =True)
-    second_name = db.Column(db.String(64),unique =False,index =True)
+    secondName = db.Column(db.String(64),unique =False,index =True)
     email = db.Column(db.String(120),unique =True,index =True),nullable=False
     isVerified = db.Column(db.Boolean,nullable = False,default = False)
     fieldName =db.Column(db.String(64))
