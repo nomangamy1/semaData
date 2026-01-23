@@ -1,6 +1,7 @@
 from models.User import User
-from flask import Form
 from wtforms import StringField,PasswordField,BooleanField,SubmitField
 
-class UserRegistrationForm(Form):
-    
+class UserRegistrationForm():
+    #i will add more fields later
+    username = StringField('Username')
+    email = StringField('Email')

@@ -10,6 +10,10 @@ class Config:
     MAIL_USE_TLS = False 
     MAIL_USe_SSL = True 
     
+    # Google OAuth settings
+    GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
+    GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
+    GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', 'http://localhost:5000/auth/google/callback')  # Default for development
 
 
 
@@ -19,6 +23,7 @@ class Config:
 class DevelopmentConfig(Config):
     DEBUG = True
     SECRET_KEY = "mysecret"
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///semaData.db'
     SECURITY_PASSWORD_SALT = '2026/17/1'
 
 class ProductionConfig(Config):
@@ -29,6 +34,7 @@ class ProductionConfig(Config):
 
 class TestConfig(Config):
     SECRET_KEY = "mysecret"
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///test.db'
     SECURITY_PASSWORD_SALT = '2026/17/1'
 
 

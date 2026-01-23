@@ -1,3 +1,6 @@
 venv
 tokens
 env
+/venv/
+.env
+.env.local

@@ -2,8 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_login import login_user
 from werkzeug.security import check_password_hash
 
-from semaData import semaData
-from Backend.models import User, Domain, DomainOwner
+from models import User, Domain, DomainOwner
 
 login_bp = Blueprint("login",__name__)
 

@@ -1,11 +1,9 @@
-from flask import Flask 
+import os
+from semaData import semaData_app
 
-semaData = Flask(__name__)
-@semaData.route('/')
-def semaData():
-    return "SemaData platform"
-
+app = semaData_app()
 
 if __name__ == '__main__':
-    semaData.run(debug=True)
+    port = int(os.environ.get('PORT', 8000))
+    app.run(host='0.0.0.0', port=port, debug=app.config.get('DEBUG', True))
     

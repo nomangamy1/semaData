@@ -1,21 +1,25 @@
 from flask import Flask 
 from extensions import db,login_manager
-from models import User,Domain ,DomainOwner
+from models import User,Domain,DomainOwner
 from flask_jwt_extended import JWTManager 
 from routes.Auth.signUp import register_bp
-from routes.Auth.login import register_bp
+from routes.Auth.domain import domain_bp
+from routes.Auth.login import login_bp
 from utils.email import mail 
+from Config import config
+import os
+
 def semaData_app():
     semaData = Flask(__name__)
-    semaData.config.from_object("config.Config")
+    config_name = os.environ.get('FLASK_ENV') or 'default'
+    semaData.config.from_object(config[config_name])
 
-    role = [DomainOwner,User]
     db.init_app(semaData)
     jwt = JWTManager(semaData)
     mail.init_app(semaData)
-    semaData.regist
-    semaData.register_blueprint("register_bp",url_prefix='/api/signUp')
-    semaData.register_blueprint('domain_bp',url_prefix ='/api/domain')
-    semaData.register_blueprint('login_bp', url_prefix='/api/login')
+    login_manager.init_app(semaData)
+    semaData.register_blueprint(register_bp, url_prefix='/api/Auth')
+    semaData.register_blueprint(domain_bp, url_prefix='/api/Auth')
+    semaData.register_blueprint(login_bp, url_prefix='/api/Auth')
 
     return semaData
