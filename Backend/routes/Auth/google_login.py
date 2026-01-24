@@ -18,7 +18,6 @@ def google_login():
         if not token or not role_type:
             return {"error": "Token and role are required"}, 400
 
-        # Verify Google ID token
         idinfo = id_token.verify_oauth2_token(token, google_requests.Request(), config['default'].GOOGLE_CLIENT_ID)
         email = idinfo['email']
 
