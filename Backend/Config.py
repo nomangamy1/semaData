@@ -23,7 +23,6 @@ class Config:
 class DevelopmentConfig(Config):
     DEBUG = True
     SECRET_KEY = "mysecret"
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///semaData.db'
     SECURITY_PASSWORD_SALT = '2026/17/1'
 
 class ProductionConfig(Config):
@@ -34,7 +33,6 @@ class ProductionConfig(Config):
 
 class TestConfig(Config):
     SECRET_KEY = "mysecret"
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///test.db'
     SECURITY_PASSWORD_SALT = '2026/17/1'
 
 
@@ -43,6 +41,7 @@ class TestConfig(Config):
 config = {
     'development':DevelopmentConfig,
     'Production' :ProductionConfig,
+    'testing':TestConfig,
     'default':DevelopmentConfig
 
 }
