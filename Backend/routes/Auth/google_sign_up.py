@@ -2,7 +2,10 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from flask_jwt_extended import create_access_token 
 from flask_jwt_extended import create_access_token
-
+from flask import Blueprint, jsonify, request
+from models import User, DomainOwner, Domain
+from extensions import db
+from Config import config
 
 auth_bp = Blueprint("auth",__name__)
 
