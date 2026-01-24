@@ -35,7 +35,7 @@ def login():
 
         domain_owner = DomainOwner.query.filter_by(
             email=email,
-            referenceNumber=reference_number
+            reference_number=reference_number
         ).first()
 
         if domain_owner and check_password_hash(
@@ -52,7 +52,7 @@ def login():
         # user to login
         user = User.query.filter_by(
             email=email,
-            ReferenceNumber=reference_number
+            reference_number=reference_number
         ).first()
 
         if not user:
