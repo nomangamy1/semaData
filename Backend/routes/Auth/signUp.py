@@ -1,11 +1,9 @@
 from flask import Flask ,Blueprint,request,jsonify
 from werkzeug.security import generate_password_hash
 from models import User ,Domain,DomainOwner
-from forms import UserRegistrationForm
 from extensions import db
 from utils.tokens import generate_verification_token,confirm_token_verification
 from utils.email import send_email
-from forms import UserRegistrationForm
 from flask import url_for
 role = 'user'  # Default role for users 
 register_bp = Blueprint("register",__name__)
