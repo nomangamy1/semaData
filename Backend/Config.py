@@ -8,13 +8,18 @@ class Config:
     MAIL_USERNAME = 'kiplimochege@gmail.com'
     MAIL_PASSWORD = ''
     MAIL_USE_TLS = False 
-    MAIL_USe_SSL = True 
+    MAIL_USE_SSL = True
+    FLASK_ENV = os.environ.get('FLASK_ENV', 'development')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+
     
     # Google OAuth settings
     GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
     GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
     GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', 'http://localhost:5000/auth/google/callback')  # Default for development
 
+    WTF_CSRF_ENABLED = True
+    
 
 
     def init_app(semaData):
@@ -22,19 +27,34 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SECRET_KEY = "mysecret"
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev_secret_key')
     SECURITY_PASSWORD_SALT = '2026/17/1'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI', 'postgresql://semadata_user:secure_password_2026@localhost:5432/semadata_db')
+    OAUTHLIB_INSECURE_TRANSPORT = True  # Enable insecure transport for development
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ECHO = True
+    SESSION_PERMANENT = False
+    REMEMBER_COOKIE_DURATION = 3600
+    WHISPER_MODEL = os.environ.get('MODEL_NAME', 'base')  # Default to 'base' in development
+
+
 
 class ProductionConfig(Config):
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI')
-    SECRET_KEY = "mysecret"
+    DEBUG = False
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI', 'postgresql://semadata_user:secure_password_2026@localhost:5432/semadata_db')
+    SECRET_KEY = os.environ.get('SECRET_KEY')
     SECURITY_PASSWORD_SALT = '2026/17/1'
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_SENDER')
+    WHISPER_MODEL = os.environ.get('MODEL_NAME', 'base')  # Default to 'large' in production
 
 class TestConfig(Config):
-    SECRET_KEY = "mysecret"
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'test_secret_key')
     SECURITY_PASSWORD_SALT = '2026/17/1'
-
+    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URI', 'sqlite:///:memory:')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ECHO = True
+    TESTING = True
+    MAIL_SUPPRESS_SEND = True
 
 
 

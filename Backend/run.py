@@ -1,7 +1,11 @@
 import os
+import sys 
+
+sys.path.append(os.getcwd())
 from semaData import semaData_app
 
 app = semaData_app()
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))
