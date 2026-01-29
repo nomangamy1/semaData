@@ -1,94 +1,76 @@
-import os
-import requests
-from flask import Blueprint, request, jsonify
-import tempfile
+import os 
+import datetime 
+#import whisper 
+from flask import Flask ,request ,jsonify, Blueprint
+from flask_ngrok import run_with_ngrok
+from werkzeug.utils import secure_filename 
+from extensions import db
+from models.dataset import Dataset
+#should install whisper,flask_ngrok
 
-semaDataEngine_bp = Blueprint("semaDataEngine", __name__)
 
-# OpenAI Whisper API Configuration
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions"
+MODEL_NAME = os.environ.get('MODEL_NAME', 'base')  # Default to 'base' in development
 
-def transcribe_audio_openai(audio_path):
-    """
-    Transcribe audio using OpenAI Whisper API
-    Supports automatic language detection for Swahili and English
-    """
-    if not OPENAI_API_KEY:
-        # Fallback to mock response for development
-        return "This is a mock transcription for development purposes. Configure OPENAI_API_KEY for real transcription."
+semaData_model = whisper.load_model(MODEL_NAME,"cpu",computer_type="int8") 
+#is there a way to set the model to use base in development then 
+#switch to medium or large in production automatically?
+semaData_app = Flask(__name__)
+run_with_ngrok(semaData_app)
 
-    headers = {
-        "Authorization": f"Bearer {OPENAI_API_KEY}"
-    }
+UPLOAD_FOLDER =  "temp_audio"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+semaData_engine_bp = Blueprint('semaData_engine', __name__)
 
-    with open(audio_path, 'rb') as audio_file:
-        files = {
-            "file": audio_file,
-            "model": (None, "whisper-1"),
-        }
-        # Let OpenAI auto-detect language (supports Swahili and English)
-        data = {
-            "response_format": "json"
-        }
+@semaData_engine_bp.route('/transcribe', methods=['POST'])
+def semaData_transcribe():
+    #session aggregation pattern 
+    #data collection grouped by a referenceNumber 
+    ref_number = request.form.get('referenceNumber')
+    domain_id = request.form.get("id")
+    file = request.files['file']
 
-        try:
-            response = requests.post(WHISPER_API_URL, headers=headers, files=files, data=data, timeout=30)
+    audio_path = save_temp_file(file)
+    result = semaData_model.transcribe(audio_path,task='translate')
+    new_text = result['text']
 
-            if response.status_code == 200:
-                return response.json().get('text', '')
-            else:
-                return f"API Error: {response.status_code} - {response.text}"
-        except requests.exceptions.RequestException as e:
-            return f"Request failed: {str(e)}"
+    existing_entry = Dataset.query.filter_by(ref_number =ref_number,domain_id=domain_id).first()
+    if existing_entry:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+        existing_entry.combined_text += f"\n\n--- Entry: {timestamp} ---\n{new_text}"
+        existing_entry.status = "Growing"
+    
+    else: 
+        new_dataset = Dataset(
+            ref_number = ref_number,
+            domain_id = domain_id,
+            combined_text = new_text,
+            status = "Initial"
 
-@semaDataEngine_bp.route('/transcribe', methods=['POST'])
-def transcribe():
-    """
-    Endpoint for audio transcription
-    Accepts audio files and returns transcribed text
-    """
-    try:
-        if 'file' not in request.files:
-            return jsonify({"error": "No audio file provided"}), 400
+        )
+        db.session.add(new_dataset)
+        db.session.commit()
+        return jsonify({"message":f"Data added to reference{ref_number}"})
 
-        audio_file = request.files['file']
-        if audio_file.filename == '':
-            return jsonify({"error": "No file selected"}), 400
 
-        # Validate file type
-        allowed_extensions = {'mp3', 'mp4', 'wav', 'flac', 'm4a', 'ogg'}
-        if not any(audio_file.filename.lower().endswith(ext) for ext in allowed_extensions):
-            return jsonify({"error": "Unsupported file format. Use: mp3, mp4, wav, flac, m4a, ogg"}), 400
 
-        # Save uploaded file temporarily
-        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(audio_file.filename)[1]) as temp_file:
-            audio_file.save(temp_file.name)
-            temp_path = temp_file.name
+    
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part in the request'}), 400
 
-        try:
-            # Transcribe audio
-            transcription = transcribe_audio_openai(temp_path)
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    
 
-            return jsonify({
-                "transcription": transcription,
-                "language": "auto-detected (Swahili/English)",
-                "success": True
-            })
+    if file:
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(file_path)
 
-        finally:
-            # Clean up temp file
-            if os.path.exists(temp_path):
-                os.unlink(temp_path)
+        result = semaData_model.transcribe(file_path,task="transcribe")
+        os.remove(file_path)  # Remove the temporary file after transcription
 
-    except Exception as e:
-        return jsonify({"error": f"Transcription failed: {str(e)}"}), 500
-
-@semaDataEngine_bp.route('/health', methods=['GET'])
-def health_check():
-    """Health check endpoint"""
-    return jsonify({
-        "status": "healthy",
-        "service": "semaData transcription engine",
-        "api_configured": bool(OPENAI_API_KEY)
-    })
+        return jsonify({'text': result['text']})
+    else:
+        return jsonify({'error': 'File not allowed'}), 400
+    
