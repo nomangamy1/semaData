@@ -1,0 +1,47 @@
+/* src/pages/Register.css */
+.register-page {
+  background-color: #489c8c;
+  /* Your signature green */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: white;
+  font-family: sans-serif;
+}
+
+.form-container {
+  background-color: white;
+  color: #333;
+  padding: 40px;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+}
+
+.toggle-container {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  border-radius: 50px;
+  display: flex;
+  margin-bottom: 30px;
+  width: 300px;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: white;
+  font-weight: bold;
+}
+
+.toggle-btn.active {
+  background: white;
+  color: #489c8c;
+}
