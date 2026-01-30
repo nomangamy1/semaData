@@ -8,6 +8,9 @@ class Dataset(db.Model):
     domain_id = db.Column(db.Integer, db.ForeignKey('Domain.id'), nullable=False)
     ref_number = db.Column(db.Integer, db.ForeignKey('DomainOwner.reference_number'), nullable=False)
     description = db.Column(db.Text, nullable=True)
+    combined_text = db.Column(db.Text, nullable=True)
+    segmented_text = db.Column(db.JSON, nullable=True)
+    status = db.Column(db.String(50), nullable=False, default='Initial')
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
