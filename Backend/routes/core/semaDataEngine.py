@@ -8,14 +8,14 @@ from extensions import db
 from models.dataset import Dataset
 from models.Domain import Domain
 
-from nlp_matcher import segment_data
+from .nlp_matcher import segment_data
 #should install whisper,flask_ngrok
 
 
 MODEL_NAME = os.environ.get('MODEL_NAME', 'base') 
  # Default to 'base' in development
- device = "cpu"  # or "cuda" if GPU is available
-semaData_model = whisper.load_model(MODEL_NAME,device=device)
+device = "cpu"  # or "cuda" if GPU is available
+#semaData_model = whisper.load_model(MODEL_NAME,device=device)
 
 semaData_engine_bp = Blueprint('semaData_engine', __name__)
 
