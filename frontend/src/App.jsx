@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import Register from './pages/Register';
+import Signup from './pages/SignUp';
 import logo from './assets/logo.png';
 
 function SemaData_App() {
@@ -14,7 +15,7 @@ function SemaData_App() {
       <main>
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/signup" element={<Register />} />
+          <Route path="/signup" element={<Signup />} />
         </Routes>
       </main>
     </Router>

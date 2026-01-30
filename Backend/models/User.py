@@ -9,7 +9,7 @@ class User(db.Model,UserMixin):
     second_name = db.Column(db.String(64), unique=False, index=True)
     email = db.Column(db.String(120), unique=True, index=True, nullable=False)
     is_verified = db.Column(db.Boolean, nullable=False, default=False)
-    field_name = db.Column(db.String(64))
+    domain_name = db.Column(db.String(64))
     role = db.Column(db.String(80))
     reference_number = db.Column(db.String(64), db.ForeignKey('Domain.reference_number'))
     password_hash = db.Column(db.String(128))
