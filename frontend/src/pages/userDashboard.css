@@ -1,0 +1,169 @@
+/* UserDashboard.css */
+
+:root {
+  --primary-green: #10b981; /* Emerald Green */
+  --dark-green: #065f46;    /* Forest Green */
+  --light-green: #ecfdf5;   /* Very light mint */
+  --pure-white: #ffffff;
+  --soft-gray: #f9fafb;
+  --border-color: #e5e7eb;
+}
+
+.dashboard-wrapper {
+  background-color: var(--soft-gray);
+  min-height: 100vh;
+  padding: 2rem;
+  font-family: 'Inter', sans-serif;
+  color: #1f2937;
+}
+
+/* Header Section */
+header.dashboard-header {
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profile-id-shield {
+  background: var(--dark-green);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: 2px solid var(--primary-green);
+  text-align: center;
+}
+
+.id-label {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  opacity: 0.8;
+}
+
+.id-number {
+  font-family: 'Mono', monospace;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.status-badge {
+  color: var(--primary-green);
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 5px;
+}
+
+header h1 {
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: var(--dark-green);
+  letter-spacing: -0.025em;
+}
+
+header mark {
+  background-color: var(--light-green);
+  color: var(--dark-green);
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+/* Main Grid Layout */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+}
+
+/* Cards */
+.task-card, .stats-card, .instructions-aside {
+  background: var(--pure-white);
+  padding: 2rem;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease;
+}
+
+.task-card:hover {
+  transform: translateY(-5px);
+}
+
+/* Active Assignment Styling */
+.active-assignment-box {
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  background-color: var(--light-green);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-left: 5px solid var(--primary-green);
+  borderRadius: 12px;
+}
+
+.active-assignment-box h3 {
+  color: var(--dark-green);
+  margin-bottom: 0.5rem;
+}
+
+/* Progress Bar */
+.progress-container {
+  background: #d1fae5;
+  height: 12px;
+  border-radius: 999px;
+  margin: 1.5rem 0 0.5rem 0;
+  overflow: hidden;
+}
+
+.progress-fill {
+  background: linear-gradient(90deg, var(--primary-green), var(--dark-green));
+  height: 100%;
+  border-radius: 999px;
+  transition: width 1s ease-in-out;
+}
+
+/* Action Button */
+.start-session-btn {
+  width: 100%;
+  padding: 1rem;
+  background-color: var(--primary-green);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+}
+
+.start-session-btn:hover {
+  background-color: var(--dark-green);
+  transform: scale(1.02);
+}
+
+/* Sidebar Styling */
+.instructions-aside {
+  background-color: var(--dark-green);
+  color: var(--light-green);
+}
+
+.instructions-aside h4 {
+  color: var(--pure-white);
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.5rem;
+}
+
+.instructions-aside ul li {
+  margin-bottom: 0.8rem;
+  opacity: 0.9;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}

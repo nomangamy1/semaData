@@ -1,0 +1,94 @@
+/* Login.css */
+
+:root {
+  --primary-green: #10b981;
+  --dark-green: #065f46;
+  --bg-gradient: linear-gradient(135deg, #f9fafb 0%, #ecfdf5 100%);
+  --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--bg-gradient);
+  font-family: 'Inter', sans-serif;
+  padding: 20px;
+}
+
+.login-container h2 {
+  color: var(--dark-green);
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.05em;
+}
+
+/* Form Card */
+form {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow);
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  border: 1px solid rgba(16, 185, 129, 0.1);
+}
+
+/* Input Fields */
+input {
+  padding: 0.8rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+input:focus {
+  border-color: var(--primary-green);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+}
+
+/* Button Styling */
+button {
+  background-color: var(--primary-green);
+  color: white;
+  padding: 0.9rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 0.5rem;
+}
+
+button:hover {
+  background-color: var(--dark-green);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* Error Message */
+.error-message {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid #fecaca;
+  margin-bottom: 1rem;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
