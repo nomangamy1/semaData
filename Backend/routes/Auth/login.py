@@ -39,7 +39,7 @@ def login():
         ).first()
 
         if domain_owner and check_password_hash(
-            domain_owner.hash_password, password
+            domain_owner.password_hash, password
         ):
             login_user(domain_owner)
 
@@ -60,7 +60,7 @@ def login():
                 "error": "Invalid credentials"
             }, 401
 
-        if not user.isVerified:
+        if not user.is_verified:
             return {
                 "error": "Email not verified"
             }, 403

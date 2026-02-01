@@ -6,6 +6,8 @@ import Login from './pages/Login';
 import DefineFeatures from './components/DomainDefinition';
 import Signup from './pages/SignUp';
 import SuccessPage from './components/Success'; 
+import UserDashboard from './pages/userDashboard';
+import CollectorHome from './pages/collectorHome';
 
 import logo from './assets/logo.png';
 
@@ -25,6 +27,8 @@ function SemaData_App() {
           <Route path="/DomainDefinition" element={<DefineFeatures />} /> 
           <Route path="/Success" element={<SuccessPage/>}/>
           <Route path="/Dashboard" element={<Dashboard />} />
+          <Route path="/userDashboard" element={<UserDashboard />} /> 
+          <Route path="/collectorHome" element={<CollectorHome />} />
         </Routes>
       </main>
     </Router>
