@@ -28,7 +28,6 @@ def semaData_app():
 
     db.init_app(semaData)
     jwt = JWTManager(semaData)
-    mail.init_app(semaData)
     login_manager.init_app(semaData)
     semaData.register_blueprint(register_bp, url_prefix='/api/Auth')
     semaData.register_blueprint(domain_bp, url_prefix='/api/Auth')

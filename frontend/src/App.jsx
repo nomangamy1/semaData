@@ -1,7 +1,12 @@
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
+import DefineFeatures from './components/DomainDefinition';
 import Signup from './pages/SignUp';
+import SuccessPage from './components/Success'; 
+
 import logo from './assets/logo.png';
 
 function SemaData_App() {
@@ -16,6 +21,10 @@ function SemaData_App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/DomainDefinition" element={<DefineFeatures />} /> 
+          <Route path="/Success" element={<SuccessPage/>}/>
+          <Route path="/Dashboard" element={<Dashboard />} />
         </Routes>
       </main>
     </Router>

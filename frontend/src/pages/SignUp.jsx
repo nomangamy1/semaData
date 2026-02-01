@@ -27,11 +27,11 @@ const Signup = () => {
     role: role, // 'User' or 'DomainOwner'
     first_name: formData.first_name,
     // Match backend: Owner uses last_name, Collector uses second_name
-    [role === 'DomainOwner' ? 'last_name' : 'second_name']: formData.last_name,
+    [role === 'domainowner' ? 'last_name' : 'second_name']: formData.last_name,
     email: formData.email,
     password: formData.password,
     // Role-specific fields
-    ...(role === 'DomainOwner' 
+    ...(role === 'domainowner' 
         ? { username: formData.username, domain_field: formData.field_name } 
         : { reference_number: formData.reference_number, domain_name: formData.domain_name }
     )
@@ -47,8 +47,21 @@ const Signup = () => {
     const data = await response.json();
 
     if (response.ok) {
+      if(data.owner_id){
+        localStorage.setItem('owner_id', data.owner_id);
+      }
       alert("Registration Successful! Please check your email for verification.");
-      navigate('/login'); // Take them to login
+    //  navigate('/login'); // Take them to login
+
+      if (data.next_step ==="define_features"){
+        navigate('/DomainDefinition',{state:{owner_id: data.owner_id}});
+
+        console.log("Owner indetified proceed to define features");
+      }
+      else{
+        navigate('/login');
+      }
+
     } else {
       alert(`Error: ${data.error}`);
     }
@@ -83,9 +96,9 @@ const Signup = () => {
               <User size={18} /> Data Collector
             </button>
             <button
-              onClick={() => setRole('DomainOwner')}
+              onClick={() => setRole('domainowner')}
               className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${
-                role === 'DomainOwner' ? 'bg-[#489c8c] text-white shadow-md' : 'text-gray-500 hover:text-gray-700'
+                role === 'domainowner' ? 'bg-[#489c8c] text-white shadow-md' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               <Briefcase size={18} /> Domain Owner
@@ -106,7 +119,7 @@ const Signup = () => {
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">
-                  {role === 'DomainOwner' ? 'Last Name' : 'Second Name'}
+                  {role === 'domainowner' ? 'Last Name' : 'Second Name'}
                 </label>
                 <input
                   name="last_name"
@@ -118,7 +131,7 @@ const Signup = () => {
               </div>
             </div>
 
-            {role === 'DomainOwner' && (
+            {role === 'domainowner' && (
               <div className="animate-in fade-in duration-500">
                 <label className="block text-sm font-bold text-gray-700 mb-1">Username</label>
                 <input
@@ -195,7 +208,7 @@ const Signup = () => {
               type="submit"
               className="w-full flex justify-center items-center gap-2 py-4 px-4 border border-transparent rounded-2xl shadow-lg text-lg font-bold text-white bg-[#489c8c] hover:bg-[#367a6d] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#489c8c] transition-all transform hover:scale-[1.02]"
             >
-              Create {role === 'DomainOwner' ? 'Admin' : 'Collector'} Account <ArrowRight size={20} />
+              Create {role === 'domainowner' ? 'Admin' : 'Collector'} Account <ArrowRight size={20} />
             </button>
           </form>
 

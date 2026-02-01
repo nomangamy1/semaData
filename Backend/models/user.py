@@ -11,8 +11,8 @@ class User(db.Model,UserMixin):
     is_verified = db.Column(db.Boolean, nullable=False, default=False)
     domain_name = db.Column(db.String(64))
     role = db.Column(db.String(80))
-    reference_number = db.Column(db.String(64), db.ForeignKey('Domain.reference_number'))
-    password_hash = db.Column(db.String(128))
+    reference_number = db.Column(db.String(64), db.ForeignKey('domain.reference_number'))
+    password_hash = db.Column(db.String(256), nullable=False)
 
     def create(self):
         db.session.add(self)

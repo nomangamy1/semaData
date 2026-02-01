@@ -33,7 +33,7 @@ class DevelopmentConfig(Config):
     DEBUG = True
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev_secret_key')
     SECURITY_PASSWORD_SALT = '2026/17/1'
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI', 'postgresql://semadata_user:secure_password_2026@localhost:5432/semadata_db')
+    SQLALCHEMY_DATABASE_URI= os.environ.get('DATABASE_URI',"postgresql+psycopg2://nomangamy1:4upm6Z?!@localhost:5432/semadata")
     OAUTHLIB_INSECURE_TRANSPORT = True  # Enable insecure transport for development
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = True

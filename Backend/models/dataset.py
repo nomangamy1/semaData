@@ -5,8 +5,8 @@ class Dataset(db.Model):
     __tablename__ = 'datasets'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    domain_id = db.Column(db.Integer, db.ForeignKey('Domain.id'), nullable=False)
-    ref_number = db.Column(db.Integer, db.ForeignKey('DomainOwner.reference_number'), nullable=False)
+    domain_id = db.Column(db.Integer, db.ForeignKey('domain.id'), nullable=False)
+    ref_number = db.Column(db.String(64), db.ForeignKey('DomainOwner.reference_number'), nullable=False)
     description = db.Column(db.Text, nullable=True)
     combined_text = db.Column(db.Text, nullable=True)
     segmented_text = db.Column(db.JSON, nullable=True)
