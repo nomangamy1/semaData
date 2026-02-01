@@ -21,7 +21,7 @@ def signUp():
         if role =='user':
             domain = Domain.query.filter_by(reference_number=data['reference_number']).first()
             if not domain:
-                return {"error ": 'Invalid domain reference Number'},400
+                return {"error ":'Invalid domain reference Number'},400
             user = User(
             first_name = data.get('first_name'),
             second_name =data.get('second_name'),
