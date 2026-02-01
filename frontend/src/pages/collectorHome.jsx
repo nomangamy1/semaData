@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './collectorHome.css';
 
@@ -6,94 +6,134 @@ const CollectorHome = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Destructure task and ref sent from UserDashboard
+  // Retrieve session context passed from UserDashboard
   const { task, ref } = location.state || { 
-    task: "General Session", 
-    ref: localStorage.getItem('refNum') || "Unknown" 
+    task: "General Ingestion", 
+    ref: localStorage.getItem('refNum') || "N/A" 
   };
 
   const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [transcription, setTranscription] = useState("");
 
-  const toggleRecording = () => {
-    setIsRecording(!isRecording);
-    // Logic for Whisper Engine / MediaRecorder API will go here
-    if (!isRecording) {
-      setTranscription("Listening and transcribing dialect in real-time...");
-    }
+  // Placeholder for MediaRecorder (Future integration)
+  const mediaRecorder = useRef(null);
+
+  const startRecording = () => {
+    setIsRecording(true);
+    setIsPaused(false);
+    setTranscription("System listening... Please speak clearly.");
+    // In next step: navigator.mediaDevices.getUserMedia(...)
   };
 
-  const handleSaveSession = () => {
-    alert(`Data saved for Ref: ${ref} under Task: ${task}`);
+  const pauseRecording = () => {
+    setIsPaused(true);
+    setTranscription(prev => prev + "\n[PAUSED] ");
+    // In next step: mediaRecorder.current.pause()
+  };
+
+  const resumeRecording = () => {
+    setIsPaused(false);
+    setTranscription(prev => prev.replace("\n[PAUSED] ", " "));
+    // In next step: mediaRecorder.current.resume()
+  };
+
+  const stopRecording = () => {
+    setIsRecording(false);
+    setIsPaused(false);
+    // In next step: mediaRecorder.current.stop()
+  };
+
+  const handleSave = () => {
+    // Logic to push transcription to your Flask Backend
+    alert(`Data successfully synced for Reference: ${ref}`);
     navigate('/userDashboard');
   };
 
   return (
     <div className="collector-focus-mode">
-      {/* Top Breadcrumb / Status */}
+      {/* Top Session Metadata */}
       <div className="status-bar">
-        <span>Target: <strong>{task}</strong></span>
-        <span>Operator: <strong>{localStorage.getItem('userName')}</strong></span>
-        <span>Ref ID: <code style={{color: '#34d399'}}>{ref}</code></span>
+        <div className="status-item">
+          <span>TASK:</span> <strong>{task}</strong>
+        </div>
+        <div className="status-item">
+          <span>REF ID:</span> <code className="ref-code">{ref}</code>
+        </div>
+        <div className="status-indicator">
+          <span className={`dot ${isRecording ? (isPaused ? 'yellow' : 'red') : 'green'}`}></span>
+          {isPaused ? "PAUSED" : isRecording ? "LIVE" : "READY"}
+        </div>
       </div>
 
       <div className="engine-container">
-        <header>
-          <h2 style={{color: '#065f46'}}>Voice Capture Engine</h2>
-          <p style={{color: '#6b7280'}}>Ensure your environment is quiet before recording.</p>
+        <header className="engine-header">
+          <h2>Whisper Dialect Engine</h2>
+          <p className="engine-subtitle">
+            {isPaused 
+              ? "Recording suspended. Tap Resume to continue." 
+              : isRecording 
+              ? "Capturing audio signal..." 
+              : "Calibrate your environment and tap REC to begin."}
+          </p>
         </header>
 
+        {/* --- CENTRAL CONTROLS --- */}
         <div className="mic-section">
-          <button 
-            className={`mic-button ${isRecording ? 'recording' : ''}`}
-            onClick={toggleRecording}
-          >
-            {isRecording ? (
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
-                <rect x="6" y="6" width="12" height="12" />
-              </svg>
-            ) : (
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8" />
-              </svg>
+          <div className="controls-row">
+            
+            {/* Conditional Pause/Resume Toggle */}
+            {isRecording && (
+              <button 
+                className={`secondary-btn ${isPaused ? 'resume-active' : 'pause-active'}`}
+                onClick={isPaused ? resumeRecording : pauseRecording}
+              >
+                {isPaused ? "▶ RESUME" : "⏸ PAUSE"}
+              </button>
             )}
-          </button>
-          <p style={{marginTop: '1rem', fontWeight: '600'}}>
-            {isRecording ? "RECORDING..." : "Tap to Start"}
-          </p>
+
+            {/* Main Action Button */}
+            <button 
+              className={`mic-button ${isRecording ? 'recording' : ''} ${isPaused ? 'paused-state' : ''}`}
+              onClick={isRecording ? stopRecording : startRecording}
+            >
+              <div className="mic-icon-container">
+                {isRecording ? (
+                  <div className="stop-square"></div>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="mic-svg">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" fill="currentColor"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                )}
+              </div>
+            </button>
+          </div>
         </div>
 
-        {/* Real-time Text Feedback */}
-        <div className="transcription-preview">
-          <label style={{fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase'}}>Live Transcription</label>
-          <p style={{marginTop: '0.5rem', fontStyle: transcription ? 'normal' : 'italic', color: transcription ? '#1f2937' : '#9ca3af'}}>
-            {transcription || "Transcription will appear here as you speak..."}
-          </p>
+        {/* --- TRANSCRIPTION PREVIEW --- */}
+        <div className={`transcription-preview ${isPaused ? 'preview-dimmed' : ''}`}>
+           <label>Live Output Preview</label>
+           <div className="text-display">
+             {transcription || "Awaiting audio input..."}
+           </div>
         </div>
 
-        <div style={{marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center'}}>
-          <button 
+        {/* --- FOOTER ACTIONS --- */}
+        <div className="action-footer">
+           <button 
+            className="cancel-btn" 
             onClick={() => navigate('/userDashboard')}
-            style={{padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer'}}
-          >
-            Cancel
-          </button>
-          <button 
-            onClick={handleSaveSession}
-            disabled={!transcription}
-            style={{
-              padding: '0.75rem 1.5rem', 
-              borderRadius: '8px', 
-              background: transcription ? '#10b981' : '#d1d5db', 
-              color: 'white', 
-              border: 'none', 
-              fontWeight: 'bold',
-              cursor: transcription ? 'pointer' : 'not-allowed'
-            }}
-          >
-            Save Transcription
-          </button>
+           >
+             Cancel Session
+           </button>
+           <button 
+            className="save-btn" 
+            disabled={!transcription || isRecording}
+            onClick={handleSave}
+           >
+             Save & Sync Data
+           </button>
         </div>
       </div>
     </div>

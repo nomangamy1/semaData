@@ -5,6 +5,38 @@
   font-family: 'Inter', sans-serif;
 }
 
+.controls-row {
+  margin: 2rem 0;
+}
+
+.control-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid #10b981;
+  background: white;
+  color: #10b981;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.control-btn:hover {
+  background: #ecfdf5;
+}
+
+.mic-button.paused-state {
+  animation: none;
+  background: #9ca3af;
+  /* Gray out when paused */
+  opacity: 0.7;
+}
+
+.pause {
+  font-size: 1.2rem;
+}
+
+
 .status-bar {
   display: flex;
   justify-content: space-between;
@@ -25,7 +57,7 @@
   border-radius: 24px;
   text-align: center;
   border: 1px solid #e5e7eb;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
 }
 
 .mic-section {
@@ -56,9 +88,17 @@
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-  70% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+
+  70% {
+    box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
 }
 
 .transcription-preview {
