@@ -6,7 +6,7 @@ from flask_ngrok import run_with_ngrok
 from werkzeug.utils import secure_filename 
 from extensions import db
 from models.dataset import Dataset
-from models.Domain import Domain
+from models.domain import Domain
 
 from .nlp_matcher import segment_data
 #should install whisper,flask_ngrok

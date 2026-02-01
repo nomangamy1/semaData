@@ -1,4 +1,5 @@
 from flask import Blueprint ,jsonify ,request 
+from models import Feature 
 from models import Domain,User, DomainOwner
 from extensions import db 
 import secrets
@@ -15,6 +16,7 @@ def domain_register():
     try:
         data = request.get_json()
         owner_id = data.get('id')
+        features_list = data.get("domain_features",[])
         if not owner_id:
             return jsonify({"error": "Owner ID is required"}), 400
         
@@ -30,21 +32,38 @@ def domain_register():
         
         reference_number = generate_ref_number()
 
+        owner.reference_number = reference_number 
         domain_features = data.get('domain_features', [])
+
         if not isinstance(domain_features, list):
             return jsonify({"error": "Domain features must be a list"}), 400
         domain = Domain(
-            owner_id = owner_id,
             domain_name=domain_name,
+            owner_id = data.get('id'),
             reference_number=reference_number,
-            domain_features=json.dumps(domain_features)
-
         )
         db.session.add(domain)
+        db.session.flush()
+
+
+        for feature_name in features_list: 
+            if feature_name.strip():
+                feat = Feature(
+                    name=feature_name.strip(),
+                    domain_id = domain.id,
+                )
+                db.session.add(feat)
+
+
         db.session.commit()
-        return jsonify({"message": "Domain registered successfully",
-        "reference_number": reference_number,
-        "domain_name": domain_name}), 201
+
+        return jsonify({
+            "message": "Domain and Features saved successfully",
+            "reference_number": reference_number,
+            "domain_name": domain_name
+        }), 201
+
+      
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

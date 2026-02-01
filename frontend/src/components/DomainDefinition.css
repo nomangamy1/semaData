@@ -1,0 +1,128 @@
+/* Container for the whole page */
+.definition-container {
+  min-height: 100vh;
+  background-color: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+/* The Card */
+.definition-card {
+  background: white;
+  width: 100%;
+  max-width: 600px;
+  padding: 3rem;
+  border-radius: 40px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f1f5f9;
+}
+
+.definition-header h2 {
+  font-size: 2.25rem;
+  font-weight: 900;
+  color: #111827;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.definition-header p {
+  color: #64748b;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+/* Input Styles */
+.input-group {
+  margin-bottom: 1.5rem;
+}
+
+.label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.text-input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.text-input:focus {
+  border-color: #489c8c;
+  box-shadow: 0 0 0 3px rgba(72, 156, 140, 0.2);
+}
+
+/* Dynamic Feature Rows */
+.feature-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  animation: slideIn 0.3s ease-out;
+}
+
+.remove-btn {
+  background: #fee2e2;
+  color: #ef4444;
+  border: none;
+  padding: 0.5rem 0.8rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.remove-btn:hover {
+  background: #fecaca;
+}
+
+/* Action Buttons */
+.add-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: white;
+  color: #489c8c;
+  border: 2px dashed #489c8c;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 2rem;
+  transition: all 0.2s;
+}
+
+.add-btn:hover {
+  background: #f0fdfa;
+}
+
+.finalize-btn {
+  width: 100%;
+  padding: 1rem;
+  background: #489c8c;
+  color: white;
+  border: none;
+  border-radius: 16px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 15px -3px rgba(72, 156, 140, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.finalize-btn:hover {
+  background: #3a7e71;
+  transform: translateY(-2px);
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
