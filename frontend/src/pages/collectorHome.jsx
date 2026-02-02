@@ -1,138 +1,241 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './collectorHome.css';
 
+// --- SUB-COMPONENT: REAL-TIME WAVEFORM ---
+const AudioVisualizer = ({ stream }) => {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    if (!stream) return;
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioContext.createMediaStreamSource(stream);
+    const analyzer = audioContext.createAnalyser();
+    analyzer.fftSize = 256;
+    source.connect(analyzer);
+
+    const bufferLength = analyzer.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+
+    const draw = () => {
+      const WIDTH = canvas.width;
+      const HEIGHT = canvas.height;
+      requestAnimationFrame(draw);
+      analyzer.getByteFrequencyData(dataArray);
+      ctx.clearRect(0, 0, WIDTH, HEIGHT);
+      
+      const barWidth = (WIDTH / bufferLength) * 2.5;
+      let x = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = dataArray[i] / 2;
+        ctx.fillStyle = '#489c8c'; // Brand Green
+        ctx.fillRect(x, HEIGHT - barHeight, barWidth, barHeight);
+        x += barWidth + 1;
+      }
+    };
+    draw();
+    return () => audioContext.close();
+  }, [stream]);
+
+  return <canvas ref={canvasRef} width="600" height="100" className="waveform-canvas" />;
+};
+
+// --- MAIN COMPONENT ---
 const CollectorHome = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Retrieve session context passed from UserDashboard
+  // Logic to handle state passed from previous route or default
   const { task, ref } = location.state || { 
     task: "General Ingestion", 
     ref: localStorage.getItem('refNum') || "N/A" 
   };
 
+  // State Management
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [stream, setStream] = useState(null);
   const [transcription, setTranscription] = useState("");
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [duration, setDuration] = useState(0);
 
-  // Placeholder for MediaRecorder (Future integration)
+  // Refs for logic
   const mediaRecorder = useRef(null);
+  const audioChunks = useRef([]);
+  const timerRef = useRef(null);
 
-  const startRecording = () => {
-    setIsRecording(true);
-    setIsPaused(false);
-    setTranscription("System listening... Please speak clearly.");
-    // In next step: navigator.mediaDevices.getUserMedia(...)
+  // Network Sensitivity Monitor
+  useEffect(() => {
+    const handleStatus = () => setIsOnline(navigator.onLine);
+    window.addEventListener('online', handleStatus);
+    window.addEventListener('offline', handleStatus);
+    return () => {
+      window.removeEventListener('online', handleStatus);
+      window.removeEventListener('offline', handleStatus);
+    };
+  }, []);
+
+  // Timer Logic
+  useEffect(() => {
+    if (isRecording && !isPaused) {
+      timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
+    } else {
+      clearInterval(timerRef.current);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [isRecording, isPaused]);
+
+  const formatTime = (s) => {
+    const mins = Math.floor(s / 60);
+    const secs = s % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Audio Control Methods
+  const startRecording = async () => {
+    try {
+      const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setStream(audioStream);
+      mediaRecorder.current = new MediaRecorder(audioStream);
+      audioChunks.current = [];
+
+      mediaRecorder.current.ondataavailable = (e) => audioChunks.current.push(e.data);
+      mediaRecorder.current.start();
+      
+      setIsRecording(true);
+      setIsPaused(false);
+      setDuration(0);
+      setTranscription("Listening to  Conversation signal...");
+    } catch (err) {
+      alert("Hardware Error: Microphone access denied.");
+    }
   };
 
   const pauseRecording = () => {
-    setIsPaused(true);
-    setTranscription(prev => prev + "\n[PAUSED] ");
-    // In next step: mediaRecorder.current.pause()
+    if (mediaRecorder.current?.state === "recording") {
+      mediaRecorder.current.pause();
+      setIsPaused(true);
+    }
   };
 
   const resumeRecording = () => {
-    setIsPaused(false);
-    setTranscription(prev => prev.replace("\n[PAUSED] ", " "));
-    // In next step: mediaRecorder.current.resume()
+    if (mediaRecorder.current?.state === "paused") {
+      mediaRecorder.current.resume();
+      setIsPaused(false);
+    }
   };
 
   const stopRecording = () => {
-    setIsRecording(false);
-    setIsPaused(false);
-    // In next step: mediaRecorder.current.stop()
+    if (mediaRecorder.current) {
+      mediaRecorder.current.stop();
+      stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
+      setIsPaused(false);
+      setTranscription("Acoustic buffer finalized. Ready for sync.");
+    }
   };
 
-  const handleSave = () => {
-    // Logic to push transcription to your Flask Backend
-    alert(`Data successfully synced for Reference: ${ref}`);
-    navigate('/userDashboard');
+  const handleSaveAndSync = async () => {
+    const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+
+    if (!isOnline) {
+      saveToDraft(audioBlob);
+      alert("NETWORK LOW: Session saved to local encrypted vault.");
+      navigate('/userDashboard');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", audioBlob, "recording.webm");
+    formData.append("reference_number", ref);
+    formData.append("id", localStorage.getItem('domainId'));
+
+    try {
+      setTranscription("Transmitting to SemaData Cloud...");
+      const response = await fetch('http://localhost:8000/api/core/transcribe', {
+        method: 'POST',
+        body: formData,
+      });
+      if (response.ok) {
+        alert("Sync Complete!");
+        navigate('/userDashboard');
+      } else {
+        throw new Error("Server Reject");
+      }
+    } catch (err) {
+      saveToDraft(audioBlob);
+      alert("Sync Failed: Moving to Drafts.");
+    }
+  };
+
+  const saveToDraft = (blob) => {
+    const drafts = JSON.parse(localStorage.getItem('sema_drafts') || "[]");
+    drafts.push({ 
+      ref, 
+      task, 
+      timestamp: new Date().toISOString(),
+      duration: formatTime(duration)
+    });
+    localStorage.setItem('sema_drafts', JSON.stringify(drafts));
   };
 
   return (
     <div className="collector-focus-mode">
-      {/* Top Session Metadata */}
-      <div className="status-bar">
-        <div className="status-item">
-          <span>TASK:</span> <strong>{task}</strong>
-        </div>
-        <div className="status-item">
-          <span>REF ID:</span> <code className="ref-code">{ref}</code>
-        </div>
+      <div className={`status-bar ${!isOnline ? 'offline' : ''}`}>
+        <div className="status-item">TASK: <strong>{task}</strong></div>
+        <div className="status-item">REF: <code className="ref-code">{ref}</code></div>
         <div className="status-indicator">
-          <span className={`dot ${isRecording ? (isPaused ? 'yellow' : 'red') : 'green'}`}></span>
-          {isPaused ? "PAUSED" : isRecording ? "LIVE" : "READY"}
+          <span className={`dot ${!isOnline ? 'yellow' : isRecording ? (isPaused ? 'yellow' : 'red') : 'green'}`}></span>
+          {!isOnline ? "OFFLINE" : isRecording ? (isPaused ? "PAUSED" : "LIVE") : "READY"}
         </div>
       </div>
 
       <div className="engine-container">
         <header className="engine-header">
-          <h2>Whisper Dialect Engine</h2>
-          <p className="engine-subtitle">
-            {isPaused 
-              ? "Recording suspended. Tap Resume to continue." 
-              : isRecording 
-              ? "Capturing audio signal..." 
-              : "Calibrate your environment and tap REC to begin."}
-          </p>
+          <h2>SemaData Dialect Conversation Engine</h2>
+          <p className="engine-subtitle">Acoustic Signal Telemetry</p>
         </header>
 
-        {/* --- CENTRAL CONTROLS --- */}
+        <div className="visualizer-box">
+          <div className="timer-display">{formatTime(duration)}</div>
+          {isRecording ? <AudioVisualizer stream={stream} /> : <div className="silent-wave"></div>}
+        </div>
+
         <div className="mic-section">
           <div className="controls-row">
-            
-            {/* Conditional Pause/Resume Toggle */}
             {isRecording && (
               <button 
-                className={`secondary-btn ${isPaused ? 'resume-active' : 'pause-active'}`}
+                className={`secondary-btn ${isPaused ? 'pause-active' : ''}`}
                 onClick={isPaused ? resumeRecording : pauseRecording}
               >
                 {isPaused ? "▶ RESUME" : "⏸ PAUSE"}
               </button>
             )}
 
-            {/* Main Action Button */}
             <button 
-              className={`mic-button ${isRecording ? 'recording' : ''} ${isPaused ? 'paused-state' : ''}`}
+              className={`mic-button ${isRecording ? 'recording' : ''}`}
               onClick={isRecording ? stopRecording : startRecording}
             >
-              <div className="mic-icon-container">
-                {isRecording ? (
-                  <div className="stop-square"></div>
-                ) : (
-                  <svg viewBox="0 0 24 24" className="mic-svg">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" fill="currentColor"/>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                )}
-              </div>
+              {isRecording ? <div className="stop-square"></div> : "REC"}
             </button>
           </div>
         </div>
 
-        {/* --- TRANSCRIPTION PREVIEW --- */}
-        <div className={`transcription-preview ${isPaused ? 'preview-dimmed' : ''}`}>
-           <label>Live Output Preview</label>
-           <div className="text-display">
-             {transcription || "Awaiting audio input..."}
-           </div>
+        <div className="transcription-preview">
+          <label>Engine Output</label>
+          <div className="text-display">{transcription}</div>
         </div>
 
-        {/* --- FOOTER ACTIONS --- */}
         <div className="action-footer">
+           <button className="cancel-btn" onClick={() => navigate('/userDashboard')}>Cancel Session</button>
            <button 
-            className="cancel-btn" 
-            onClick={() => navigate('/userDashboard')}
+            className={`save-btn ${!isOnline ? 'draft-mode' : ''}`} 
+            disabled={isRecording || duration === 0}
+            onClick={handleSaveAndSync}
            >
-             Cancel Session
-           </button>
-           <button 
-            className="save-btn" 
-            disabled={!transcription || isRecording}
-            onClick={handleSave}
-           >
-             Save & Sync Data
+             {isOnline ? "Finalize & Sync Cloud" : "Save to Local Vault"}
            </button>
         </div>
       </div>

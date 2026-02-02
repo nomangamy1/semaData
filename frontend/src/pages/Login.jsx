@@ -31,12 +31,15 @@ const Login = () => {
         // Store user info in localStorage for session persistence
         localStorage.setItem('userRole', data.role);
         localStorage.setItem('domain', data.domain);
+        localStorage.setItem('referenceNumber', formData.reference_number);
+        localStorage.setItem('username', data.username);
+
         
         // Innovation Tip: Redirect based on role
         if (data.role === 'domain_owner') {
-          navigate('/admin-dashboard');
+          navigate('/Dashboard');
         } else {
-          navigate('/collector-home');
+          navigate('/userDashboard');
         }
       } else {
         setError(data.error || 'Login failed');
