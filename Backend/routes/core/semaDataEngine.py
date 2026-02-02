@@ -20,22 +20,19 @@ device = "cpu"  # or "cuda" if GPU is available
 semaData_engine_bp = Blueprint('semaData_engine', __name__)
 
 UPLOAD_FOLDER = 'temp_audio'
-
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
 
 @semaData_engine_bp.route('/transcribe', methods=['POST'])
 def semaData_transcribe():
+    ref_number = request.form.get('referenceNumber')
+    domain_id = request.form.get("id")
+    file = request.files['file']
     if file not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
     #session aggregation pattern 
     #data collection grouped by a referenceNumber 
-    ref_number = request.form.get('referenceNumber')
-    domain_id = request.form.get("id")
-    file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'empty filename'}), 400
-    
 
     filename = secure_filename(file.filename)
     audio_path = os.path.join(UPLOAD_FOLDER, filename)
@@ -68,7 +65,7 @@ def semaData_transcribe():
 
                 combined_text=text,
                 segmented_text =segmented_text,
-                status="Initial"
+                status="Processed"
             )
             db.session.add(new_dataset)
         db.session.commit() 

@@ -3,9 +3,50 @@ import { LayoutDashboard, Database, Users, PlusCircle, Copy, ExternalLink, Activ
 import { useNavigate } from 'react-router-dom';
 import './Dashboard.css'; // Ensure you import the CSS file here
 
+ const InsightsTable = ({ datasets, features }) => {
+ if (!datasets || datasets.length === 0) return null;
+
+return (
+  <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden mt-6">
+    <table className="w-full text-left">
+      <thead className="bg-slate-50 border-b border-slate-100">
+        <tr>
+          <th className="p-4 text-xs font-black text-slate-400 uppercase">Ref Number</th>
+          {/* Dynamically create columns based on the NLP Features */}
+          {features.map(f => (
+            <th key={f} className="p-4 text-xs font-black text-slate-400 uppercase">{f}</th>
+          ))}
+          <th className="p-4 text-xs font-black text-slate-400 uppercase">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {datasets.map(d => (
+          <tr key={d.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
+            <td className="p-4 font-mono text-sm text-[#489c8c]">{d.ref_number}</td>
+            {features.map(f => (
+              <td key={f} className="p-4 text-sm text-slate-600">
+                {d.segmented_text[f] === "Not Mentioned" ? 
+                  <span className="text-slate-300">---</span> : 
+                  d.segmented_text[f]}
+              </td>
+            ))}
+            <td className="p-4">
+              <span className={`px-2 py-1 rounded-md text-[10px] font-bold ${d.status === 'Processed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                {d.status.toUpperCase()}
+              </span>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
+};
+
 const Dashboard = () => {
   const [domains, setDomains] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const navigate = useNavigate();
 
   const ownerId = localStorage.getItem('owner_id'); 
@@ -24,6 +65,8 @@ const Dashboard = () => {
     };
     if (ownerId) fetchDomains();
   }, [ownerId]);
+
+
 
   return (
     <div className="dashboard-wrapper">
@@ -91,7 +134,6 @@ const Dashboard = () => {
             <h4 className="text-2xl font-black text-slate-800">{domains.reduce((total, domain) => total + (domain.collector_count || 0), 0)}</h4>
           </div>
         </div>
-
         {/* --- PROJECT CARDS --- */}
         <div className="domain-grid">
           {domains.map((domain, index) => (
