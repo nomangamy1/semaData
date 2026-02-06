@@ -51,7 +51,7 @@ const Login = () => {
 
   return (
     <div className="login-container">
-      <h2>SemaData Login</h2>
+    <h2>SemaData Login</h2>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <form onSubmit={handleSubmit}>
         <input name="email" type="email" placeholder="Email" onChange={handleChange} required />

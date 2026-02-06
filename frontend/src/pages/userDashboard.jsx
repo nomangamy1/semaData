@@ -29,7 +29,7 @@ const UserDashboard = () => {
 
   const handleStartRecording = () => {
     // Navigate to Collector Home / Engine
-    navigate('/collectHome', { 
+    navigate('/collectorHome', { 
       state: { 
         task: activeTask.title, 
         ref: sessionData.refNum 

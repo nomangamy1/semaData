@@ -12,11 +12,11 @@ const LandingPage = () => {
       {/* --- NAVBAR --- */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-8 py-4 max-w-full mx-auto">
         <div className="text-3xl font-black text-[#489c8c] tracking-tighter">
-          Welcome to semaData
+          Karibu semaData
         </div>
         <div className="hidden md:flex space-x-8 font-medium">
           <a href="#features" className="hover:text-[#489c8c] transition">Features</a>
-          <a href="#about" className="hover:text-[#489c8c] transition">About</a>
+          <a href="#AboutUs" className="hover:text-[#489c8c] transition">About Us</a>
           <a href="#contact" className="hover:text-[#489c8c] transition">Contact Us</a>
 
         </div>
