@@ -48,10 +48,9 @@ const CollectorHome = () => {
   const navigate = useNavigate();
   
   // Logic to handle state passed from previous route or default
-  const { task, ref } = location.state || { 
-    task: "General Ingestion", 
-    ref: localStorage.getItem('refNum') || "N/A" 
-  };
+const locationState = location.state || {};
+const task = locationState.task || "General Ingestion";
+const ref = locationState.ref || localStorage.getItem('refNum') || "N/A";
 
   // State Management
   const [isRecording, setIsRecording] = useState(false);

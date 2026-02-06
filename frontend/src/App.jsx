@@ -8,6 +8,7 @@ import Signup from './pages/SignUp';
 import SuccessPage from './components/Success'; 
 import UserDashboard from './pages/userDashboard';
 import CollectorHome from './pages/collectorHome';
+import AboutUs from './pages/AboutUs';
 
 import logo from './assets/logo.png';
 
@@ -29,6 +30,8 @@ function SemaData_App() {
           <Route path="/Dashboard" element={<Dashboard />} />
           <Route path="/userDashboard" element={<UserDashboard />} /> 
           <Route path="/collectorHome" element={<CollectorHome />} />
+          <Route path="/AboutUs" element={<AboutUs />} />
+          <Route path="*" element={<div className="text-white">Route Not Found - Check URL</div>} />
         </Routes>
       </main>
     </Router>
