@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./Backend
+    container_name: sema_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./Backend:/app 
+      - whisper_cache:/root/.cache/huggingface
+    env_file: ./Backend/.env
+
+  frontend:
+    build: ./Frontend
+    container_name: sema_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./Frontend:/app
+      # This optimization prevents the container's node_modules 
+      # from being overwritten by your host machine
+      - /app/node_modules
+    environment:
+      - WDS_SOCKET_PORT=0 
+    stdin_open: true # Keeps the React server interactive
+    depends_on:
+      - backend
+
+volumes:
+  whisper_cache:

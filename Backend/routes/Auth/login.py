@@ -1,7 +1,10 @@
-from flask import Blueprint, request, jsonify
-from flask_login import login_user
+from flask import Blueprint, request, jsonify,url_for
 from werkzeug.security import check_password_hash
-
+from utils.tokens import generate_verification_token
+from utils.email import send_email
+from models import User, Domain, DomainOwner
+from flask_login import login_user
+from werkzeug.security import check_password_hash,generate_password_hash
 from models import User, Domain, DomainOwner
 
 login_bp = Blueprint("login",__name__)
@@ -35,7 +38,7 @@ def login():
 
         domain_owner = DomainOwner.query.filter_by(
             email=email,
-            reference_number=reference_number
+            reference_number=reference_number 
         ).first()
 
         if domain_owner and check_password_hash(
@@ -61,26 +64,27 @@ def login():
             }, 401
 
         if not user.is_verified:
-            return {
-                "error": "Email not verified"
-            }, 403
+            token = generate_verification_token(user.email)
+            confirm_url = url_for('register.email_verification', token=token, _external=True)
+            subject = "Please verify your account"
+            html = f"<p>It looks like you haven't verified your email yet. Please click here: <a href='{confirm_url}'>{confirm_url}</a></p>"
+            try:
+                send_email(user.email, subject, html)
+                return {
+                    "error": "Email not verified",
+                    "message": "A new verification link has been sent to your inbox."
+                }, 403
+            except Exception as mail_err:
+                return {
+                    "error": "Email not verified and mailer failed.",
+                    "details": str(mail_err)
+                }, 403
 
-        if check_password_hash(user.password_hash, password):
-            login_user(user)
-
-            return {
-                "message": "User login successful",
-                "role": user.role,
-                "domain": domain.domain_name
-            }, 200
-
-        # incase of invalid details
-        return {
-            "error": "Invalid credentials"
-        }, 401
+        # If verified, proceed with login_user(user)
+        login_user(user)
+        return {"message": "Login successful"}, 200
 
     except Exception as e:
-        return {
-            "error": "Login failed",
-            "details": str(e)
-        }, 500
+        return {"error": str(e)}, 500
+
+     
