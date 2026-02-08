@@ -1,7 +1,8 @@
 import React from 'react';
 import './AboutUs.css';
 import { Shield, Cpu, Globe, Users, Award } from 'lucide-react';
-
+ import  founderPhoto from '../assets/founderIan.png' ;
+ import  rvttilogo from '../assets/RVTTI-LOGO.gif';
 const AboutUs = () => {
   const features = [
     {
@@ -35,7 +36,7 @@ const AboutUs = () => {
             SemaData Platform
           </h1>
           <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-            The next generation of linguistic data ingestion, bridging the gap between spoken dialect and digital intelligence.
+            The next generation of linguistic data ingestion, bridging the gap between Innovative problem solving ideas and Local Data.
           </p>
         </div>
 
@@ -46,10 +47,10 @@ const AboutUs = () => {
                Our Mission
             </h2>
             <p className="text-slate-300 leading-relaxed">
-             Our mission is to end data scarcity in Africa by using AI-driven voice-to-text tools that empower local communities and fuel innovation through authentic data.
+             Our mission is to end data scarcity in Africa by developing Real-world applicative tools that empower local communities and fuel innovation through authentic data.
             </p>
             <div className="border-l-4 border-blue-500 pl-4 py-2 italic text-slate-400">
-              "Turning day to day conversation into problem solving datasets."
+              "Turning day to day conversations and activities into problem solving datasets."
             </div>
           </div>
 
@@ -79,7 +80,7 @@ const AboutUs = () => {
               <div className="relative w-64 h-64">
                 <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-emerald-500 rounded-2xl rotate-6 opacity-20"></div>
                 <img 
-                  src="/api/placeholder/400/400" // Replace with your actual photo path
+                  src={founderPhoto}
                   alt="Founder Profile" 
                   className="relative z-10 w-full h-full object-cover rounded-2xl border-2 border-slate-700"
                 />
@@ -91,16 +92,48 @@ const AboutUs = () => {
                 <Award size={16} />
                 <span>Meet the Founder</span>
               </div>
-              <h2 className="text-4xl font-bold">[Your Name]</h2>
+              <h2 className="text-4xl font-bold">Kiplimo Ian Chege</h2>
               <p className="text-xl text-blue-400 font-medium">Founder & Lead Developer</p>
               <p className="text-slate-300 text-lg leading-relaxed">
-                A tech innovator dedicated to solving Africa's data scarcity. I build AI solutions that empower local communities and bridge the digital healthcare divide through inclusive linguistic technology.
+                Hey ,Ian Chege is a tech innovator and Entreprenuer dedicated to solving Africa Challenges across various 
+                domains through
+                 building AI solutions that empower local communities and bridge the digital diversed fields 
+               through inclusive linguistic technology.
+               SemaData is one of the impactful platforms aiming to revolutionize data collection by speeding,
+               the process of  generating clean environmental-based datasets and actually making it a priority that systems 
+               developed are user-friendly ,as this actually eases the process.
               </p>
               <div className="pt-4">
                 <button className="bg-slate-800 hover:bg-slate-700 text-white px-6 py-2 rounded-lg border border-slate-600 transition-all">
                   Connect on LinkedIn
                 </button>
               </div>
+               {/* --- SECTION 3: INSTITUTIONAL PARTNERS (THE TRUST LAYER) --- */}
+<div className="mt-32 mb-16 text-center">
+  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-400 mb-10">
+    Strategic Technical Partners
+  </h3>
+  <div className="flex justify-center">
+    <div className="group relative bg-slate-800/30 border border-slate-700 p-8 rounded-3xl hover:border-emerald-500/50 transition-all duration-500">
+      {/* If it's a GIF, the motion will catch the eye here */}
+      <img 
+        src={rvttilogo} 
+        alt="RVTTI Logo" 
+        className="h-20 md:h-24 object-contain mx-auto mb-4 group-hover:scale-110 transition-transform"
+      />
+      <h4 className="text-xl font-bold text-white">Rift Valley Technical Training Institute</h4>
+      <p className="text-slate-400 text-sm mt-2">Academic & Research Validation Partner</p>
+      
+      {/* Decorative Glow */}
+      <div className="absolute -inset-1 bg-emerald-500 rounded-3xl blur opacity-0 group-hover:opacity-10 transition duration-500"></div>
+    </div>
+  </div>
+</div>
+
+{/* --- SECTION 4: THE FOUNDER (THE VISION LAYER) --- */}
+<div className="mt-32 p-1 border-t border-slate-800">
+   {/* Your Founder code follows here... */}
+</div>    
             </div>
           </div>
         </div>

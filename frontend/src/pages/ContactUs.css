@@ -1,0 +1,68 @@
+/* --- Brand Variables --- */
+:root {
+  --sema-primary: #489c8c;
+  --sema-dark: #111827;
+}
+
+/* --- Form Input Polishing --- */
+input:focus, 
+select:focus, 
+textarea:focus {
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 4px rgba(72, 156, 140, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Custom dropdown arrow for the Subject select */
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23489c8c' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1.25rem center;
+  background-size: 1.25rem;
+}
+
+/* --- HQ Card Effects --- */
+.hq-card-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.hq-card-glow::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(72, 156, 140, 0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.hq-card-glow:hover::after {
+  opacity: 1;
+}
+
+/* --- Animations --- */
+@keyframes float-subtle {
+  0% { transform: translateY(0px) rotate(12deg); }
+  50% { transform: translateY(-15px) rotate(15deg); }
+  100% { transform: translateY(0px) rotate(12deg); }
+}
+
+.floating-globe {
+  animation: float-subtle 6s ease-in-out infinite;
+}
+
+/* --- Form Card Shadow --- */
+.contact-form-shadow {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.03), 
+              0 0 40px rgba(72, 156, 140, 0.05);
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 640px) {
+  .max-w-7xl {
+    padding-top: 5rem;
+  }
+}
