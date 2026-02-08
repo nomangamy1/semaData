@@ -9,31 +9,34 @@ import SuccessPage from './components/Success';
 import UserDashboard from './pages/userDashboard';
 import CollectorHome from './pages/collectorHome';
 import AboutUs from './pages/AboutUs';
+import ContactUs from './pages/ContactUs';
+import  Footer from './components/Footer';
+
 
 import logo from './assets/logo.png';
+import Navbar from './components/NavBar';
 
 function SemaData_App() {
   return (
     <Router>
-      {/* Navbar: Clean White Background with Green Bottom Border */}
-      <nav style={{ backgroundColor: 'white', borderBottom: '2px solid green', padding: '1rem' }}>
-        <img src={logo} alt="semaData Logo" style={{ height: '40px' }} className="h-10 w-auto" />
-      </nav>
-      {/* Page Content */}
+      <Navbar />
       <main>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/login" element={<Login />} />
+          <Route path ="/login" element={<Login />} />
           <Route path="/DomainDefinition" element={<DefineFeatures />} /> 
           <Route path="/Success" element={<SuccessPage/>}/>
           <Route path="/Dashboard" element={<Dashboard />} />
           <Route path="/userDashboard" element={<UserDashboard />} /> 
           <Route path="/collectorHome" element={<CollectorHome />} />
           <Route path="/AboutUs" element={<AboutUs />} />
+          <Route path="/ContactUs" element={<ContactUs />} />
           <Route path="*" element={<div className="text-white">Route Not Found - Check URL</div>} />
+        
         </Routes>
       </main>
+      <Footer />
     </Router>
   );
 }

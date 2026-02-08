@@ -24,3 +24,12 @@
 body {
   font-family: 'Inter', sans-serif;
 }
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Offset for the sticky navbar so headers aren't covered when scrolling to them */
+#features, #contact {
+  scroll-margin-top: 100px;
+}
