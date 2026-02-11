@@ -74,7 +74,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDomains = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/my-domains/${ownerId}`);
+        const response = await fetch(`http://localhost:8000/my-domains/${ownerId}`);
         const data = await response.json();
         setDomains(data);
         setLoading(false);

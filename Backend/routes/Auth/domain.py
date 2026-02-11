@@ -1,6 +1,6 @@
 from flask import Blueprint ,jsonify ,request 
 from models import Feature 
-from models import Domain,User, DomainOwner
+from models import Domain,User, DomainOwner,Dataset
 from extensions import db 
 import secrets
 import json
@@ -67,3 +67,21 @@ def domain_register():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@domain_bp.route('/my-domains/<int:owner_id>', methods=['GET'])
+def get_owner_domains(owner_id):
+    domains = Domain.query.filter_by(owner_id=owner_id).all()
+    output = []
+    for d in domains:
+        feature_counts = len(d.domain_features) if hasattr(d,'domain_features') else 0  # Assuming a relationship 'domain_features' exists
+        submission_counts = Dataset.query.filter_by(domain_id=d.id).count()  # Assuming a relationship 'submissions' exists
+        collector_count = User.query.filter_by(reference_number=d.reference_number).count()
+         # Assuming a relationship 'collectors' exists
+        output.append({
+            "domain_name": d.domain_name,
+            "reference_number": d.reference_number,
+            "feature_count": feature_counts,
+            "collector_count": collector_count,
+            "submission_count": submission_counts
+        })
+    return jsonify(output), 200
