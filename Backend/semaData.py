@@ -23,31 +23,20 @@ def semaData_app():
     semaData.config.from_object(config[config_name])
     CORS(semaData)
     migrate.init_app(semaData,db)
-    semaData.config.from_object(config)
     mail.init_app(semaData)
 
     db.init_app(semaData)
     jwt = JWTManager(semaData)
     login_manager.init_app(semaData)
     semaData.register_blueprint(register_bp, url_prefix='/api/Auth')
-    semaData.register_blueprint(domain_bp, url_prefix='/api/Auth')
+    semaData.register_blueprint(domain_bp)
     semaData.register_blueprint(login_bp, url_prefix='/api/Auth')
     semaData.register_blueprint(google_login_bp, url_prefix='/api/Auth')
     semaData.register_blueprint(auth_bp, url_prefix='/api/Auth')
     semaData.register_blueprint(semaData_engine_bp, url_prefix='/api/core')
 
-
     return semaData
 
 @login_manager.user_loader
 def load_user(user_id):
-    user = User.query.get(int(user_id))
-    if user:
-        return user 
-
-    domain_owner = DomainOwner.query.get(int(user_id))
-    if domain_owner:
-        return domain_owner
-    
-
-    return None
+    return User.query.get(int(user_id)) or DomainOwner.query.get(int(user_id))

@@ -36,7 +36,7 @@ const DefineFeatures = () => {
         };
 
         try {
-            const response = await fetch('http://localhost:8000/api/Auth/domain', {
+            const response = await fetch('http://localhost:8000/domain', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),

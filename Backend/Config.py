@@ -40,6 +40,8 @@ class DevelopmentConfig(Config):
     SESSION_PERMANENT = False
     REMEMBER_COOKIE_DURATION = 3600
     WHISPER_MODEL = os.environ.get('MODEL_NAME', 'base')  # Default to 'base' in development
+    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
+    MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL', 'False').lower() == 'true'
 
 
 
