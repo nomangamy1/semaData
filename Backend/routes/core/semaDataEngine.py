@@ -2,7 +2,8 @@ import os
 import datetime 
 from faster_whisper import WhisperModel
 import faster_whisper
-
+import librosa
+import numpy as np
 from flask import Flask ,request ,jsonify, Blueprint
 from flask_ngrok import run_with_ngrok
 from werkzeug.utils import secure_filename 
@@ -13,6 +14,26 @@ from models.domain import Domain
 from .nlp_matcher import segment_data
 #should install whisper,flask_ngrok
 
+
+
+def is_audible_valid(file_path):
+    try:
+        y , sr =librosa.load(file_path,sr=None)
+        duration =librosa.get_duration(y=y,sr=sr)
+        if duration < 1.5: 
+            return False, "Audio too short. Minimum duration is 1.5 seconds."
+        
+        #silence and energy check
+        rms = librosa.feature.rms(y=y)
+        if np.mean(rms) < 0.005:
+            return False, "No detectable Speech (Silence)."
+        
+        return True , "Valid"
+    
+    except Exception as e :
+        return False, str(e)
+    
+    
 
 MODEL_NAME = os.environ.get('MODEL_NAME', 'base') 
 model_size = 'small'
@@ -29,9 +50,10 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @semaData_engine_bp.route('/transcribe', methods=['POST'])
 def semaData_transcribe():
+    
     ref_number = request.form.get('referenceNumber')
     domain_id = request.form.get("id")
-    if file not in request.files:
+    if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
     #session aggregation pattern 
 
@@ -44,6 +66,11 @@ def semaData_transcribe():
     filename = secure_filename(file.filename)
     audio_path = os.path.join(UPLOAD_FOLDER, filename)
     file.save(audio_path)
+    #semaData librosa gatekeeper
+    valid,message = is_audible_valid(audio_path)
+    if not valid: 
+        os.remove(audio_path)
+        return jsonify({'error': 'Quality  gate failed.','message':message})
 
     target_domain = Domain.query.filter_by(id=domain_id).first()
     if not target_domain:
@@ -54,11 +81,11 @@ def semaData_transcribe():
     
     try:
         segments,info = semaData_model.transcribe(audio_path,task='transcribe')
-        transcribed_text = " ".join([segments.transcribed_text for segment in segments ]).strip()
+        transcribed_text = " ".join([segment.text for segment in segments ]).strip()
 
 
 
-        target_domain =Domain.query(domain_id)
+        target_domain =Domain.query.get(domain_id)
         required_features = target_domain.domain_features if target_domain else []
         segmented_text = segment_data(transcribed_text,required_features)
 

@@ -17,9 +17,11 @@ def domain_register():
         data = request.get_json()
         owner_id = data.get('id')
         features_list = data.get("domain_features",[])
+        target_goal = data.get('target_goal')
+
+
         if not owner_id:
             return jsonify({"error": "Owner ID is required"}), 400
-        
         owner = DomainOwner.query.get(owner_id)
         if not owner:
             return jsonify({"error": "Invalid owner ID"}), 400
@@ -35,12 +37,15 @@ def domain_register():
         owner.reference_number = reference_number 
         domain_features = data.get('domain_features', [])
 
+        system_buffer_goal = int(target_goal * 2.10)  # 10% buffer
+
         if not isinstance(domain_features, list):
             return jsonify({"error": "Domain features must be a list"}), 400
         domain = Domain(
             domain_name=domain_name,
             owner_id = data.get('id'),
             reference_number=reference_number,
+            target_goal=system_buffer_goal,
         )
         db.session.add(domain)
         db.session.flush()
