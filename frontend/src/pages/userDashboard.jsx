@@ -1,35 +1,88 @@
-
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './userDashboard.css';
 
+
+
 const UserDashboard = () => {
   const navigate = useNavigate();
-
-  // 1. Initialize State from LocalStorage
+  const [isLoading, setIsLoading] = useState(true);
+  const getCollectorInitials = (name) => {
+  if (!name || name === 'Collector') return "??"; 
+  
+  const nameParts = name.trim().split(" ");
+  
+  if (nameParts.length >= 2) {
+    // Takes first letter of first name and first letter of last name
+    return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+  }
+  // If only one name is provided, take the first two letters
+  return name.substring(0, 2).toUpperCase();
+};
+  
+  // 1. Initial Empty State
   const [sessionData, setSessionData] = useState({
-    name: localStorage.getItem('userName') || 'Collector',
-    email: localStorage.getItem('userEmail') || 'Not Set',
-    domain: localStorage.getItem('domain') || 'General',
-    refNum: localStorage.getItem('refNum') || 'N/A'
+    name: '',
+    email: '',
+    domain: '',
+    refNum: ''
   });
-  //I thi
 
-  // 2. Active Task Simulation (This will later be an API call)
   const [activeTask, setActiveTask] = useState({
-    title: "Community Health Outreach",
-    language: "Swahili (Bariandi Dialect)",
-    targetCount: 50,
-    currentCount: 12,
-    description: "Collecting patient feedback on maternal health services in rural regions."
+    title: "",
+    language: "",
+    targetCount: 0,
+    currentCount: 0,
+    description: ""
   });
 
-  // Calculate progress percentage
-  const progressPercent = Math.round((activeTask.currentCount / activeTask.targetCount) * 100);
+  // 2. Fetch Data on Component Mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      // We assume the userID was saved to localStorage during login
+      const userId = localStorage.getItem('userId');
+      
+      if (!userId) {
+        navigate('/login');
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:8000/api/main/collector-stats/${userId}`);
+        if (!response.ok) throw new Error("Failed to fetch profile");
+        
+        const data = await response.json();
+        
+        // Sync state with API response
+        setSessionData(data.sessionData);
+        setActiveTask(data.activeTask);
+      } catch (error) {
+        console.error("API Sync Error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [navigate]);
+
+  // 3. Loading State Handler
+  if (isLoading) {
+    return (
+      <div className="dashboard-wrapper">
+        <div className="loader-container">
+          <p>Initializing Secure Connection to SemaData Engine...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate progress percentage dynamically
+  const progressPercent = activeTask.targetCount > 0 
+    ? Math.round((activeTask.currentCount / activeTask.targetCount) * 100) 
+    : 0;
 
   const handleStartRecording = () => {
-    // Navigate to Collector Home / Engine
     navigate('/collectorHome', { 
       state: { 
         task: activeTask.title, 
@@ -45,26 +98,28 @@ const UserDashboard = () => {
 
   return (
     <div className="dashboard-wrapper">
-      {/* --- HEADER SECTION --- */}
       <header className="dashboard-header">
         <div className="profile-intro">
-          <h1>Collector Profile</h1>
-          <p className="status-badge">● Active System Agent</p>
-        </div>
-        
-        <div className="profile-id-shield">
-          <div className="id-content">
-             <span className="id-label">OFFICIAL REF</span>
-             <span className="id-number">{sessionData.refNum}</span>
+         <div className="collector-avatar">
+      {getCollectorInitials(sessionData.name)}
+    </div>
+    
+    <div className="header-text-group">
+      <h1>Collector Profile</h1>
+      <p className="status-badge">● System Agent: Verified</p>
+    </div>
+  </div>
+  
+  <div className="profile-id-shield">
+    <div className="id-content">
+       <span className="id-label">Official Domain Reference</span>
+       <span className="id-number">{sessionData.refNum}</span>
           </div>
         </div>
       </header>
 
-      {/* --- MAIN CONTENT GRID --- */}
       <div className="dashboard-grid">
-        
         <div className="main-content-flow">
-          {/* TASK ALLOCATION CARD */}
           <section className="task-card">
             <h2>Work Allocation</h2>
             <div className="active-assignment-box">
@@ -91,7 +146,6 @@ const UserDashboard = () => {
             </button>
           </section>
 
-          {/* PROFILE DETAILS SECTION */}
           <section className="profile-details-card">
             <h3>Account Metadata</h3>
             <div className="info-grid">
@@ -116,7 +170,6 @@ const UserDashboard = () => {
           </section>
         </div>
 
-        {/* --- INSTRUCTIONS SIDEBAR --- */}
         <aside className="instructions-aside">
           <h4>Operational Guidelines</h4>
           <ul>
@@ -130,7 +183,6 @@ const UserDashboard = () => {
             <small>Contact your Domain Owner</small>
           </div>
         </aside>
-
       </div>
     </div>
   );

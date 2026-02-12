@@ -8,6 +8,8 @@ from routes.Auth.login import login_bp
 from routes.Auth.google_login import google_login_bp
 from routes.Auth.google_sign_up import auth_bp  
 from routes.core import semaData_engine_bp  
+from routes.main.Dashboard import dashboard_bp
+from routes.main.UserDashboard import UserDashboard_bp
 from utils.email import mail 
 from flask_cors import CORS
 from Config import config
@@ -30,10 +32,13 @@ def semaData_app():
     login_manager.init_app(semaData)
     semaData.register_blueprint(register_bp, url_prefix='/api/Auth')
     semaData.register_blueprint(domain_bp)
+
     semaData.register_blueprint(login_bp, url_prefix='/api/Auth')
     semaData.register_blueprint(google_login_bp, url_prefix='/api/Auth')
     semaData.register_blueprint(auth_bp, url_prefix='/api/Auth')
     semaData.register_blueprint(semaData_engine_bp, url_prefix='/api/core')
+    semaData.register_blueprint(dashboard_bp, url_prefix ='/api/main')
+    semaData.register_blueprint(UserDashboard_bp,url_prefix='/api/main')
 
     return semaData
 

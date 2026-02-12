@@ -40,3 +40,7 @@ def get_owner_dashboard_stats(owner_id):
         'status_breakdown': status_distribution,
         'active_token': owner_domains[0].reference_number if owner_domains else "None"
     })
+
+
+@dashboard_bp.route('')
+def get_DomainProfileName():
