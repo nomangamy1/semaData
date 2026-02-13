@@ -209,6 +209,12 @@
   box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.15);
 }
 
+.silent-wave {
+  height: 2px;
+  width: 100%;
+  background: rgba(72, 156, 140, 0.3); /* Faded Brand Green */
+  box-shadow: 0 0 10px rgba(72, 156, 140, 0.2);
+}
 .cancel-btn {
   color: #94a3b8;
   font-weight: 700;

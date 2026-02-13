@@ -8,6 +8,11 @@ UserDashboard_bp = Blueprint('User_Dashboard',__name__)
 
 @UserDashboard_bp.route('/UserDashboard',methods=['POST'])
 def UserDashboard():
+    return jsonify({"message":"This is the user dashboard endpoint"})
+
+
+
+
     #should display some components for the frontend 
     '''
     Docstring for UserDashboard
@@ -61,7 +66,7 @@ def get_collector_stats(user_id):
         "activeTask": {
             "title": assigned_domain.domain_name,
             "targetCount": calculated_goal, 
-            "myCount": individual_valid_contribution,
+            "currentCount": individual_valid_contribution,
             "description": f"You are one of {agent_count} agents assigned to this domain."
         }
 

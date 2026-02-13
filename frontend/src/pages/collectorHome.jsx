@@ -3,41 +3,63 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import './collectorHome.css';
 
 // --- SUB-COMPONENT: REAL-TIME WAVEFORM ---
-const AudioVisualizer = ({ stream }) => {
+const AudioVisualizer = ({ stream , isPaused}) => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
-    if (!stream) return;
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    if (!stream && isPaused) return;
+
+    // FIX: Initialize AudioContext
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioContext = new AudioContext();
+    
+    // EMPHASIS: Browsers suspend AudioContext until a user gesture. 
+    // Since this effect runs after the "Start" click, we resume it.
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+
     const source = audioContext.createMediaStreamSource(stream);
     const analyzer = audioContext.createAnalyser();
     analyzer.fftSize = 256;
+    analyzer.smoothingTimeConstant = 0.8; // Makes the bars less "jittery"
     source.connect(analyzer);
 
     const bufferLength = analyzer.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
+    let animationFrameId;
 
     const draw = () => {
+      animationFrameId = requestAnimationFrame(draw);
+      analyzer.getByteFrequencyData(dataArray);
+      
       const WIDTH = canvas.width;
       const HEIGHT = canvas.height;
-      requestAnimationFrame(draw);
-      analyzer.getByteFrequencyData(dataArray);
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
       
       const barWidth = (WIDTH / bufferLength) * 2.5;
       let x = 0;
+
       for (let i = 0; i < bufferLength; i++) {
         const barHeight = dataArray[i] / 2;
-        ctx.fillStyle = '#489c8c'; // Brand Green
+        ctx.fillStyle = '#489c8c'; // SemaData Brand Green
         ctx.fillRect(x, HEIGHT - barHeight, barWidth, barHeight);
         x += barWidth + 1;
       }
     };
+
     draw();
-    return () => audioContext.close();
-  }, [stream]);
+
+    // CLEANUP: Essential to prevent memory leaks and "too many contexts" errors
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      if (audioContext.state !== 'closed') {
+        audioContext.close();
+      }
+    };
+  }, [stream,isPaused]);
 
   return <canvas ref={canvasRef} width="600" height="100" className="waveform-canvas" />;
 };
@@ -47,12 +69,10 @@ const CollectorHome = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Logic to handle state passed from previous route or default
-const locationState = location.state || {};
-const task = locationState.task || "General Ingestion";
-const ref = locationState.ref || localStorage.getItem('refNum') || "N/A";
+  const locationState = location.state || {};
+  const task = locationState.task || "General Ingestion";
+  const ref = locationState.ref || localStorage.getItem('refNum') || "N/A";
 
-  // State Management
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [stream, setStream] = useState(null);
@@ -60,12 +80,10 @@ const ref = locationState.ref || localStorage.getItem('refNum') || "N/A";
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [duration, setDuration] = useState(0);
 
-  // Refs for logic
   const mediaRecorder = useRef(null);
   const audioChunks = useRef([]);
   const timerRef = useRef(null);
 
-  // Network Sensitivity Monitor
   useEffect(() => {
     const handleStatus = () => setIsOnline(navigator.onLine);
     window.addEventListener('online', handleStatus);
@@ -76,7 +94,6 @@ const ref = locationState.ref || localStorage.getItem('refNum') || "N/A";
     };
   }, []);
 
-  // Timer Logic
   useEffect(() => {
     if (isRecording && !isPaused) {
       timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
@@ -92,7 +109,6 @@ const ref = locationState.ref || localStorage.getItem('refNum') || "N/A";
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Audio Control Methods
   const startRecording = async () => {
     try {
       const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -106,7 +122,7 @@ const ref = locationState.ref || localStorage.getItem('refNum') || "N/A";
       setIsRecording(true);
       setIsPaused(false);
       setDuration(0);
-      setTranscription("Listening to  Conversation signal...");
+      setTranscription("Listening to Conversation signal...");
     } catch (err) {
       alert("Hardware Error: Microphone access denied.");
     }
@@ -129,7 +145,9 @@ const ref = locationState.ref || localStorage.getItem('refNum') || "N/A";
   const stopRecording = () => {
     if (mediaRecorder.current) {
       mediaRecorder.current.stop();
-      stream.getTracks().forEach(track => track.stop());
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
       setIsRecording(false);
       setIsPaused(false);
       setTranscription("Acoustic buffer finalized. Ready for sync.");
@@ -148,7 +166,9 @@ const ref = locationState.ref || localStorage.getItem('refNum') || "N/A";
 
     const formData = new FormData();
     formData.append("file", audioBlob, "recording.webm");
-    formData.append("reference_number", ref);
+    // Ensure these match the request.form.get keys in your Python code
+    formData.append("referenceNumber", ref); 
+    formData.append("user_id", localStorage.getItem('userId'));
     formData.append("id", localStorage.getItem('domainId'));
 
     try {
@@ -199,10 +219,14 @@ const ref = locationState.ref || localStorage.getItem('refNum') || "N/A";
 
         <div className="visualizer-box">
           <div className="timer-display">{formatTime(duration)}</div>
-          {isRecording ? <AudioVisualizer stream={stream} /> : <div className="silent-wave"></div>}
+          {isRecording && !isPaused ?(
+            <AudioVisualizer stream={stream} />
+
+          )
+           : <div className="silent-wave"></div>}
         </div>
 
-        <div className="mic-section">
+        <div className="mic-sect/ion">
           <div className="controls-row">
             {isRecording && (
               <button 
