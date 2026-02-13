@@ -49,7 +49,9 @@ def login():
             return {
                 "message": "Domain Owner login successful",
                 "role": "domain_owner",
-                "domain": domain.domain_name
+                "domain": domain.domain_name,
+                "domainOwnerId": domain_owner.id
+                
             }, 200
 
         # user to login
@@ -82,7 +84,15 @@ def login():
 
         # If verified, proceed with login_user(user)
         login_user(user)
-        return {"message": "Login successful"}, 200
+        return {"message": "Login successful",
+                "role" : user.role,
+                "userId": user.id,
+                "email" : user.email,
+                "domain": domain.domain_name,
+                "domainId": domain.id
+                
+                
+                }, 200
 
     except Exception as e:
         return {"error": str(e)}, 500

@@ -99,7 +99,7 @@ header mark {
   background-color: var(--light-green);
   border: 1px solid rgba(16, 185, 129, 0.2);
   border-left: 5px solid var(--primary-green);
-  borderRadius: 12px;
+  border-radius: 12px;
 }
 
 .active-assignment-box h3 {

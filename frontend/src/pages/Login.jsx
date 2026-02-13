@@ -30,11 +30,11 @@ const Login = () => {
       if (response.ok) {
         // Store user info in localStorage for session persistence
         localStorage.setItem('userRole', data.role);
+        localStorage.setItem('userId',data.userId);
         localStorage.setItem('domain', data.domain);
+        localStorage.setItem('domainId', data.domainId);
         localStorage.setItem('referenceNumber', formData.reference_number);
         localStorage.setItem('username', data.username);
-
-        
         // Innovation Tip: Redirect based on role
         if (data.role === 'domain_owner') {
           navigate('/Dashboard');

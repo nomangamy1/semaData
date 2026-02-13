@@ -44,3 +44,6 @@ def get_owner_dashboard_stats(owner_id):
 
 @dashboard_bp.route('')
 def get_DomainProfileName():
+    return jsonify({"domain_profile_name": "Example Domain Profile Name"})
+
+# This endpoint is for the frontend to fetch the domain profile name for display # For simplicity, we will return a static name here. In a real application, this would likely query the database. return jsonify({"domain_profile_name": "Example Domain Profile Name"})
