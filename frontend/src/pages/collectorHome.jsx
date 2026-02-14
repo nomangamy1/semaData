@@ -1,20 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import db from './db'; // FIXED: Default import (removed curly braces)
 import './collectorHome.css';
 
 // --- SUB-COMPONENT: REAL-TIME WAVEFORM ---
-const AudioVisualizer = ({ stream , isPaused}) => {
+const AudioVisualizer = ({ stream, isPaused }) => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
-    if (!stream && isPaused) return;
+    if (!stream || isPaused) return;
 
-    // FIX: Initialize AudioContext
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const audioContext = new AudioContext();
-    
-    // EMPHASIS: Browsers suspend AudioContext until a user gesture. 
-    // Since this effect runs after the "Start" click, we resume it.
+
     if (audioContext.state === 'suspended') {
       audioContext.resume();
     }
@@ -22,7 +20,7 @@ const AudioVisualizer = ({ stream , isPaused}) => {
     const source = audioContext.createMediaStreamSource(stream);
     const analyzer = audioContext.createAnalyser();
     analyzer.fftSize = 256;
-    analyzer.smoothingTimeConstant = 0.8; // Makes the bars less "jittery"
+    analyzer.smoothingTimeConstant = 0.8;
     source.connect(analyzer);
 
     const bufferLength = analyzer.frequencyBinCount;
@@ -34,17 +32,17 @@ const AudioVisualizer = ({ stream , isPaused}) => {
     const draw = () => {
       animationFrameId = requestAnimationFrame(draw);
       analyzer.getByteFrequencyData(dataArray);
-      
+
       const WIDTH = canvas.width;
       const HEIGHT = canvas.height;
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
-      
+
       const barWidth = (WIDTH / bufferLength) * 2.5;
       let x = 0;
 
       for (let i = 0; i < bufferLength; i++) {
         const barHeight = dataArray[i] / 2;
-        ctx.fillStyle = '#489c8c'; // SemaData Brand Green
+        ctx.fillStyle = '#489c8c';
         ctx.fillRect(x, HEIGHT - barHeight, barWidth, barHeight);
         x += barWidth + 1;
       }
@@ -52,14 +50,13 @@ const AudioVisualizer = ({ stream , isPaused}) => {
 
     draw();
 
-    // CLEANUP: Essential to prevent memory leaks and "too many contexts" errors
     return () => {
       cancelAnimationFrame(animationFrameId);
       if (audioContext.state !== 'closed') {
         audioContext.close();
       }
     };
-  }, [stream,isPaused]);
+  }, [stream, isPaused]);
 
   return <canvas ref={canvasRef} width="600" height="100" className="waveform-canvas" />;
 };
@@ -68,7 +65,7 @@ const AudioVisualizer = ({ stream , isPaused}) => {
 const CollectorHome = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   const locationState = location.state || {};
   const task = locationState.task || "General Ingestion";
   const ref = locationState.ref || localStorage.getItem('refNum') || "N/A";
@@ -84,6 +81,7 @@ const CollectorHome = () => {
   const audioChunks = useRef([]);
   const timerRef = useRef(null);
 
+  // Connection Monitoring
   useEffect(() => {
     const handleStatus = () => setIsOnline(navigator.onLine);
     window.addEventListener('online', handleStatus);
@@ -94,6 +92,7 @@ const CollectorHome = () => {
     };
   }, []);
 
+  // Timer Logic
   useEffect(() => {
     if (isRecording && !isPaused) {
       timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
@@ -116,14 +115,17 @@ const CollectorHome = () => {
       mediaRecorder.current = new MediaRecorder(audioStream);
       audioChunks.current = [];
 
-      mediaRecorder.current.ondataavailable = (e) => audioChunks.current.push(e.data);
+      mediaRecorder.current.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunks.current.push(e.data);
+      };
+
       mediaRecorder.current.start();
-      
       setIsRecording(true);
       setIsPaused(false);
       setDuration(0);
       setTranscription("Listening to Conversation signal...");
     } catch (err) {
+      console.error(err);
       alert("Hardware Error: Microphone access denied.");
     }
   };
@@ -143,7 +145,7 @@ const CollectorHome = () => {
   };
 
   const stopRecording = () => {
-    if (mediaRecorder.current) {
+    if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
       mediaRecorder.current.stop();
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
@@ -155,49 +157,57 @@ const CollectorHome = () => {
   };
 
   const handleSaveAndSync = async () => {
-    const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
-
-    if (!isOnline) {
-      saveToDraft(audioBlob);
-      alert("NETWORK LOW: Session saved to local encrypted vault.");
-      navigate('/userDashboard');
+    if (audioChunks.current.length === 0) {
+      alert("No audio data captured.");
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", audioBlob, "recording.webm");
-    // Ensure these match the request.form.get keys in your Python code
-    formData.append("referenceNumber", ref); 
-    formData.append("user_id", localStorage.getItem('userId'));
-    formData.append("id", localStorage.getItem('domainId'));
+    const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
 
-    try {
-      setTranscription("Transmitting to SemaData Cloud...");
-      const response = await fetch('http://localhost:8000/api/core/transcribe', {
-        method: 'POST',
-        body: formData,
-      });
-      if (response.ok) {
-        alert("Sync Complete!");
-        navigate('/userDashboard');
-      } else {
-        throw new Error("Server Reject");
+    // 1. Attempt Cloud Sync
+    if (isOnline) {
+      try {
+        setTranscription("Transmitting to SemaData Cloud...");
+        const formData = new FormData();
+        formData.append("file", audioBlob, "recording.webm");
+        formData.append("referenceNumber", ref);
+        formData.append("user_id", localStorage.getItem('userId'));
+        formData.append("domainId", localStorage.getItem('domainId'));
+
+        const response = await fetch('http://localhost:8000/api/core/transcribe', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          alert("✅ Sync Complete!");
+          navigate('/userDashboard');
+          return;
+        } else {
+          throw new Error("Cloud rejected the data");
+        }
+      } catch (err) {
+        console.warn("Cloud sync failed. Redirecting to Local Vault.");
       }
-    } catch (err) {
-      saveToDraft(audioBlob);
-      alert("Sync Failed: Moving to Drafts.");
     }
-  };
 
-  const saveToDraft = (blob) => {
-    const drafts = JSON.parse(localStorage.getItem('sema_drafts') || "[]");
-    drafts.push({ 
-      ref, 
-      task, 
-      timestamp: new Date().toISOString(),
-      duration: formatTime(duration)
-    });
-    localStorage.setItem('sema_drafts', JSON.stringify(drafts));
+    // 2. Fallback: Save to IndexedDB (Dexie)
+    try {
+      await db.drafts.add({
+        audioBlob: audioBlob,
+        refNum: ref,
+        task: task,
+        domainId: localStorage.getItem('domainId'),
+        status: 'Pending Sync',
+        timestamp: Date.now(),
+        duration: formatTime(duration)
+      });
+      alert("NETWORK LOW: Session saved to secure local vault.");
+      navigate('/userDashboard');
+    } catch (dbErr) {
+      console.error("Critical Storage Error:", dbErr);
+      alert("Failed to save locally. Please check your storage settings.");
+    }
   };
 
   return (
@@ -219,17 +229,15 @@ const CollectorHome = () => {
 
         <div className="visualizer-box">
           <div className="timer-display">{formatTime(duration)}</div>
-          {isRecording && !isPaused ?(
-            <AudioVisualizer stream={stream} />
-
-          )
-           : <div className="silent-wave"></div>}
+          {isRecording && !isPaused ? (
+            <AudioVisualizer stream={stream} isPaused={isPaused} />
+          ) : <div className="silent-wave"></div>}
         </div>
 
-        <div className="mic-sect/ion">
+        <div className="mic-section">
           <div className="controls-row">
             {isRecording && (
-              <button 
+              <button
                 className={`secondary-btn ${isPaused ? 'pause-active' : ''}`}
                 onClick={isPaused ? resumeRecording : pauseRecording}
               >
@@ -237,7 +245,7 @@ const CollectorHome = () => {
               </button>
             )}
 
-            <button 
+            <button
               className={`mic-button ${isRecording ? 'recording' : ''}`}
               onClick={isRecording ? stopRecording : startRecording}
             >
@@ -252,14 +260,14 @@ const CollectorHome = () => {
         </div>
 
         <div className="action-footer">
-           <button className="cancel-btn" onClick={() => navigate('/userDashboard')}>Cancel Session</button>
-           <button 
-            className={`save-btn ${!isOnline ? 'draft-mode' : ''}`} 
+          <button className="cancel-btn" onClick={() => navigate('/userDashboard')}>Cancel Session</button>
+          <button
+            className={`save-btn ${!isOnline ? 'draft-mode' : ''}`}
             disabled={isRecording || duration === 0}
             onClick={handleSaveAndSync}
-           >
-             {isOnline ? "Finalize & Sync Cloud" : "Save to Local Vault"}
-           </button>
+          >
+            {isOnline ? "Finalize & Sync Cloud" : "Save to Local Vault"}
+          </button>
         </div>
       </div>
     </div>
