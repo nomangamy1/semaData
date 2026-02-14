@@ -1,191 +1,160 @@
-/* UserDashboard.css */
-
-:root {
-  --primary-green: #10b981; /* Emerald Green */
-  --dark-green: #065f46;    /* Forest Green */
-  --light-green: #ecfdf5;   /* Very light mint */
-  --pure-white: #ffffff;
-  --soft-gray: #f9fafb;
-  --border-color: #e5e7eb;
-}
-
-.dashboard-wrapper {
-  background-color: var(--soft-gray);
-  min-height: 100vh;
-  padding: 2rem;
-  font-family: 'Inter', sans-serif;
-  color: #1f2937;
-}
-
-/* Header Section */
-header.dashboard-header {
-  margin-bottom: 2.5rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 2px solid var(--border-color);
+/* --- NEW: Sync Warning Banner --- */
+.sync-warning-box {
+  background: linear-gradient(90deg, #fffbeb 0%, #fef3c7 100%); /* Warm Yellow */
+  border: 1px solid #fbbf24;
+  border-left: 6px solid #fbbf24;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  animation: slideDown 0.4s ease-out;
 }
 
-.profile-id-shield {
-  background: var(--dark-green);
+.sync-warning-box span {
+  color: #92400e;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.sync-btn {
+  background: #92400e;
   color: white;
-  padding: 10px 20px;
-  border-radius: 12px;
-  border: 2px solid var(--primary-green);
-  text-align: center;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.id-label {
-  display: block;
-  font-size: 0.65rem;
-  letter-spacing: 0.1em;
-  opacity: 0.8;
+.sync-btn:hover:not(:disabled) {
+  background: #b45309;
+  transform: translateY(-1px);
 }
 
-.id-number {
-  font-family: 'Mono', monospace;
-  font-size: 1.2rem;
-  font-weight: bold;
+.sync-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.status-badge {
-  color: var(--primary-green);
-  font-size: 0.8rem;
-  font-weight: 600;
-  margin-top: 5px;
-}
-
-header h1 {
-  font-size: 1.875rem;
-  font-weight: 800;
-  color: var(--dark-green);
-  letter-spacing: -0.025em;
-}
-
-header mark {
-  background-color: var(--light-green);
-  color: var(--dark-green);
-  padding: 0.2rem 0.6rem;
-  border-radius: 4px;
-  font-weight: 600;
-}
-
-/* Main Grid Layout */
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 2rem;
-}
-
-/* Cards */
-.task-card, .stats-card, .instructions-aside {
+/* --- NEW: Local Vault Section --- */
+.drafts-vault-card {
   background: var(--pure-white);
   padding: 2rem;
   border-radius: 16px;
   border: 1px solid var(--border-color);
+  margin-top: 2rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s ease;
 }
 
-.task-card:hover {
-  transform: translateY(-5px);
-}
-
-/* Active Assignment Styling */
-.active-assignment-box {
-  margin: 1.5rem 0;
-  padding: 1.5rem;
-  background-color: var(--light-green);
-  border: 1px solid rgba(16, 185, 129, 0.2);
-  border-left: 5px solid var(--primary-green);
-  border-radius: 12px;
-}
-
-.active-assignment-box h3 {
+.drafts-vault-card h3 {
   color: var(--dark-green);
-  margin-bottom: 0.5rem;
-}
-.collector-avatar {
-  width: 65px;
-  height: 65px;
-  background: var(--primary-accent, #2c3e50); /* Dark professional base */
-  background: linear-gradient(135deg, #1a1a1a 0%, #34495e 100%);
-  color: #00ff88; /* Neon green "Agent" color */
-  border: 2px solid #00ff88;
-  border-radius: 12px; /* Slightly squared for a "Badge" look */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.4rem;
-  font-weight: 800;
-  margin-right: 20px;
-  box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
-  letter-spacing: 1px;
-}
-
-.profile-intro {
-  display: flex;
-  align-items: center;
-}
-
-/* Progress Bar */
-.progress-container {
-  background: #d1fae5;
-  height: 12px;
-  border-radius: 999px;
-  margin: 1.5rem 0 0.5rem 0;
-  overflow: hidden;
-}
-
-.progress-fill {
-  background: linear-gradient(90deg, var(--primary-green), var(--dark-green));
-  height: 100%;
-  border-radius: 999px;
-  transition: width 1s ease-in-out;
-}
-
-/* Action Button */
-.start-session-btn {
-  width: 100%;
-  padding: 1rem;
-  background-color: var(--primary-green);
-  color: white;
-  border: none;
-  border-radius: 10px;
   font-size: 1.1rem;
+  margin-bottom: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.draft-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.draft-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--soft-gray);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  transition: border-color 0.2s ease;
+}
+
+.draft-item:hover {
+  border-color: var(--primary-green);
+}
+
+.draft-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.draft-task {
   font-weight: 700;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.draft-meta {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-family: 'Mono', monospace;
+}
+
+.draft-status-pill {
+  background: #dbeafe;
+  color: #1e40af;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* --- Profile Details Card Updates --- */
+.profile-details-card {
+  background: var(--pure-white);
+  padding: 2rem;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  margin-top: 2rem;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.info-item label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.info-item p {
+  font-weight: 600;
+  color: #111827;
+}
+
+.logout-link {
+  background: none;
+  border: none;
+  color: #ef4444; /* Error/Logout Red */
+  font-weight: 600;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+  padding: 0;
+  text-decoration: underline;
 }
 
-.start-session-btn:hover {
-  background-color: var(--dark-green);
-  transform: scale(1.02);
+.logout-link:hover {
+  color: #b91c1c;
 }
 
-/* Sidebar Styling */
-.instructions-aside {
-  background-color: var(--dark-green);
-  color: var(--light-green);
-}
-
-.instructions-aside h4 {
-  color: var(--pure-white);
-  margin-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 0.5rem;
-}
-
-.instructions-aside ul li {
-  margin-bottom: 0.8rem;
-  opacity: 0.9;
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
+/* Animations */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
