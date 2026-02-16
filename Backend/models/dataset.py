@@ -16,6 +16,7 @@ class Dataset(db.Model):
     segmented_text = db.Column(db.JSON, nullable=True)
     status = db.Column(db.String(50), nullable=False, default='Initial')
     Ai_confidence = db.Column(db.Float)
+    audio_file_path = db.Column(db.String(255),nullable =True)
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
