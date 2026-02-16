@@ -240,6 +240,7 @@ def refine_with_llm(transcribed_text, segmented_text):
     - name (Full name or 'N/A')
     - age (Digits only or 'N/A')
     - crop (Type of crop or 'N/A')
+    - 
     
     Example Output: {{"name": "John Doe", "age": 34, "crop": "Maize"}}
     Return ONLY JSON.
@@ -255,4 +256,5 @@ def refine_with_llm(transcribed_text, segmented_text):
         return response['message']['content']
     except Exception as e:
         print(f"LLM Offline Error: {e}")
+        
         return segmented_text # Fallback to your existing logic
