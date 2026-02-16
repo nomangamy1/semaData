@@ -37,23 +37,32 @@ const UserDashboard = () => {
 
   // --- Sync Logic ---
   const handleSyncData = async () => {
+    const domainId = localStorage.getItem('domainId');
     if (drafts.length === 0) return;
     
     try {
       setIsSyncing(true);
       
       for (const draft of drafts) {
+        if (!draft.ref || draft.ref ==='N/A') {
+          console.warn(`Skipping draft ${draft.id} due to missing reference number.`);
+          continue;
+        }
         const formData = new FormData();
+        formData.append("id",localStorage.getItem('domainId'));
         // Append the binary audio blob and metadata
         formData.append("file", draft.audioBlob, `sync_${draft.timestamp}.webm`);
-        formData.append("referenceNumber", draft.refNum);
+        formData.append("referenceNumber", draft.ref);
         formData.append("task", draft.task);
         formData.append("user_id", localStorage.getItem('userId'));
 
-        const response = await fetch('http://localhost:8000/api/main/upload', {
+        const response = await fetch('http://localhost:8000/api/core/transcribe', {
           method: 'POST',
           body: formData, // Send as FormData, not JSON.stringify
         });
+        if (!domainId) {
+          throw new Error("Domain ID is missing. Cannot sync data.");
+        }
 
         if (response.ok) {
           await db.drafts.delete(draft.id);

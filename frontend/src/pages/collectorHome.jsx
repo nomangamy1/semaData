@@ -172,7 +172,7 @@ const CollectorHome = () => {
         formData.append("file", audioBlob, "recording.webm");
         formData.append("referenceNumber", ref);
         formData.append("user_id", localStorage.getItem('userId'));
-        formData.append("domainId", localStorage.getItem('domainId'));
+        formData.append("id", localStorage.getItem('domainId'));
 
         const response = await fetch('http://localhost:8000/api/core/transcribe', {
           method: 'POST',
@@ -197,7 +197,7 @@ const CollectorHome = () => {
         audioBlob: audioBlob,
         refNum: ref,
         task: task,
-        domainId: localStorage.getItem('domainId'),
+        domainId: localStorage.getItem('Id'),
         status: 'Pending Sync',
         timestamp: Date.now(),
         duration: formatTime(duration)

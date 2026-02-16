@@ -7,7 +7,10 @@ import json
 import random
 
 def generate_ref_number():
-    return random.randint(100000, 999999)  # Generates a 6-digit integer
+    return random.randint(100000, 999999) #
+
+
+
 
 domain_bp = Blueprint("domain",__name__)
 
@@ -90,3 +93,15 @@ def get_owner_domains(owner_id):
             "submission_count": submission_counts
         })
     return jsonify(output), 200
+
+
+'''
+Here on the domain features,I should consider 
+adding some floating showing the resepcts the data collectors should consider 
+when collecting data:
+for example if Location is there should 
+for certain age or 
+
+
+dataset features specification 
+'''

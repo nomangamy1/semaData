@@ -44,13 +44,16 @@ def login():
         if domain_owner and check_password_hash(
             domain_owner.password_hash, password
         ):
-            login_user(domain_owner)
-
-            return {
+            stored_hash = getattr(domain_owner, 'password_hash', None)
+            if stored_hash and check_password_hash(stored_hash, password):
+                login_user(domain_owner)
+                return {
                 "message": "Domain Owner login successful",
                 "role": "domain_owner",
                 "domain": domain.domain_name,
-                "domainOwnerId": domain_owner.id
+                "domainId": domain.id,
+                "userId": domain_owner.id,
+
                 
             }, 200
 
@@ -61,6 +64,12 @@ def login():
         ).first()
 
         if not user:
+            return {
+                "error": "Invalid credentials"
+            }, 401
+        
+        user_hash = getattr(user, 'password_hash', None)
+        if not user_hash or not check_password_hash(user_hash, password):
             return {
                 "error": "Invalid credentials"
             }, 401
@@ -95,6 +104,7 @@ def login():
                 }, 200
 
     except Exception as e:
+        print(f"Login error: {str(e)}")
         return {"error": str(e)}, 500
 
      

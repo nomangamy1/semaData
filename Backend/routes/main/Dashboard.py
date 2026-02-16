@@ -47,3 +47,17 @@ def get_DomainProfileName():
     return jsonify({"domain_profile_name": "Example Domain Profile Name"})
 
 # This endpoint is for the frontend to fetch the domain profile name for display # For simplicity, we will return a static name here. In a real application, this would likely query the database. return jsonify({"domain_profile_name": "Example Domain Profile Name"})
+'''
+@dashboard_bp.route('/download/<int:domain_id>', methods=['GET'])
+def download_dataset(domain_id):
+    domain = Domain.query.get(domain_id)
+    
+    if not domain.is_fully_paid:
+        return jsonify({
+            "error": "Payment Required",
+            "message": f"Please clear the balance of {domain.remaining_balance} to download."
+        }), 402 # 402 is the official HTTP code for 'Payment Required'
+        
+    # Logic to generate CSV/JSON from the Dataset model and return it
+    return export_dataset_as_file(domain_id)
+    '''
