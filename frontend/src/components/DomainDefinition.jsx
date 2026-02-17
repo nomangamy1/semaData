@@ -32,7 +32,9 @@ const DefineFeatures = () => {
         const payload = {
             id: ownerId,
             domain_name: domainName,
-            domain_features: features.filter(f => f.trim() !== '') // Clean empty fields
+            target_goal:target_goal,
+            domain_features: features.filter(f => f.trim() !== ''), // Clean empty fields
+            requirements: requirements
         };
 
         try {
@@ -46,7 +48,7 @@ const DefineFeatures = () => {
             if (response.ok) {
             //    alert(`Domain features defined successfully! Reference Number: ${data.reference_number}`);
                 // Success! Show them their new Reference Number
-                navigate('/Success', { 
+                navigate('/checkout', { 
                     state: { 
                         refNum: data.reference_number,
                         domainName: data.domain_name 
@@ -86,7 +88,15 @@ const DefineFeatures = () => {
                             <button onClick={() => handleRemoveFeature(index)}>×</button>
                         )}
                     </div>
+                    
                 ))}
+            </div>
+            <div>
+                <p>Kindly provide your Dataset Specification </p>
+                <textarea 
+    placeholder="Floating Respects:'Collectors should only interview people in Nairobi' or 'Focus on dairy farmers only'"
+    value={requirements}
+    onChange={(e) => setRequirements(e.target.value)}/>
             </div>
 
             <button type="button" onClick={handleAddFeature}>+ Add Feature</button>

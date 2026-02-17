@@ -3,6 +3,8 @@ from extensions import db
 class Domain(db.Model):
     __tablename__ = 'domain'
     id = db.Column(db.Integer, primary_key=True)
+    owner_id = db.Column(db.Integer, db.ForeignKey('DomainOwner.id'))
+
     domain_name = db.Column(db.String(128), index=True)
     is_active = db.Column(db.Boolean, default=False)
     total_budget = db.Column(db.Float, nullable=True, default=0.0)
@@ -12,6 +14,23 @@ class Domain(db.Model):
     is_automated = db.Column(db.Boolean, default=False)
     reference_number = db.Column(db.String(64), unique=True, nullable=False)
     domain_features = db.relationship('Feature',lazy =True,backref = 'domain')
-    owner_id = db.Column(db.Integer, db.ForeignKey('DomainOwner.id'))
+    datasets = db.relationship('Dataset', backref='domain', lazy=True)
+    requirements = db.Column(db.Text)
     # Domain features can be defined by the owner  
      
+
+    def update_payment(self,new_amount):
+        self.amount_paid += new_amount
+
+        activation_amount = self.total_budget*0.3
+        
+        if self.amount_paid >= activation_amount:
+            self.is_active = True 
+        
+        if self.amount_paid >= self.total_budget:
+            self.payment_status = "Completed"
+
+        elif self.amount_paid > 0:
+            self.payment_status = "Partially paid" 
+
+        return self.is_active

@@ -10,3 +10,4 @@ class Payment(db.Model):
     payment_type = db.Column(db.String(20)) # 'Downpayment' or 'Final'
     status = db.Column(db.String(20)) # 'Success', 'Failed', 'Pending'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+

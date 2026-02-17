@@ -4,12 +4,13 @@ from models import Domain,User, DomainOwner,Dataset
 from extensions import db 
 import secrets
 import json
+import string
 import random
 
-def generate_ref_number():
-    return random.randint(100000, 999999) #
-
-
+def generate_ref_number(domain_name):
+    prefix = domain_name[:4].upper()
+    suffix = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(6))
+    return f"{prefix}--{suffix}"
 
 
 domain_bp = Blueprint("domain",__name__)
