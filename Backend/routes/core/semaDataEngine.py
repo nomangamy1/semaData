@@ -1,6 +1,6 @@
 import re
 import os 
-#import torch 
+import torch 
 import json
 import librosa
 import numpy as np
@@ -110,6 +110,38 @@ def is_audible_valid(file_path):
         return True, "Valid"
     except Exception as e:
         return False, str(e)
+    
+def refine_with_llm(transcribed_text, segmented_text):
+    """
+    Takes the messy 'Not Mentioned' or 'Sentence' results and turns them 
+    into clean data points using a local LLM.
+    """
+    prompt = f"""
+    You are a data extraction bot. Based on this Kenyan transcript: "{transcribed_text}"
+    And these potential matches: {segmented_text}
+    
+    Return a valid JSON object extracting:
+    - name (Full name or 'N/A')
+    - age (Digits only or 'N/A')
+    - crop (Type of crop or 'N/A')
+    - 
+    
+    Example Output: {{"name": "John Doe", "age": 34, "crop": "Maize"}}
+    Return ONLY JSON.
+    """
+    
+    try:
+        response = ollama.chat(model='llama3.2:1b',
+                               format = 'json',
+                                messages=[
+            {'role': 'user', 'content': prompt},
+        ])
+        # Clean the string to ensure it's just JSON
+        return response['message']['content']
+    except Exception as e:
+        print(f"LLM Offline Error: {e}")
+
+        return segmented_text # Fallback to your existing logic
 
 # --- API Routes ---
 
@@ -155,16 +187,18 @@ def semaData_transcribe():
         return jsonify({"error": 'Reference number does not match domain context'}), 400
     
 
+    #Segmentation 
     initial_segments = process_semantic_segmentation(transcribed_text,required_features)
-    refined_json_strings = refine_with_llm(transcribed_text,initial_segments)
+
     try:
+        refined_json_strings = refine_with_llm(transcribed_text,initial_segments)
         segmented_text = json.loads(refined_json_strings)
-    except:
+
+        print("LLM refinement successful ")
+    except Exception as e:
+        print(f"Ollama Error {e} . Falling back to initial segmentation ")
         segmented_text = initial_segments
-    
-    secure_filename = f"DOMAIN_{domain_id}__REF__{ref_number}.wav"
-    final_path = os.path.join(SECURE_STORAGE,secure_filename)
-    os.rename(audio_path,final_path)
+  
 
     print(f"Audio secured at : {final_path}")
 
@@ -173,9 +207,16 @@ def semaData_transcribe():
         segments, info = semaData_model.transcribe(audio_path, task='transcribe')
         transcribed_text = " ".join([segment.text for segment in segments]).strip()
 
+        final_filename = f"DOMAIN_{domain_id}__REF__{ref_number}.wav"
+        final_path = os.path.join(SECURE_STORAGE,final_filename)
+        os.rename(audio_path,final_path)
+
         # 4. Semantic Processing (Segmentation)
         # Using the internal function to avoid conflict with nlp_matcher import
+        target_domain =Domain.query.get(domain_id)
         segmented_text = process_semantic_segmentation(transcribed_text, required_features)
+          
+       
 
         # 5. Database Logic (Session Aggregation)
         existing_entry = Dataset.query.filter_by(ref_number=ref_number, domain_id=domain_id).first()
@@ -226,35 +267,3 @@ def semaData_transcribe():
             os.remove(audio_path)
         
         return jsonify({'error': str(e)}), 500
-
-def refine_with_llm(transcribed_text, segmented_text):
-    """
-    Takes the messy 'Not Mentioned' or 'Sentence' results and turns them 
-    into clean data points using a local LLM.
-    """
-    prompt = f"""
-    You are a data extraction bot. Based on this Kenyan transcript: "{transcribed_text}"
-    And these potential matches: {segmented_text}
-    
-    Return a valid JSON object extracting:
-    - name (Full name or 'N/A')
-    - age (Digits only or 'N/A')
-    - crop (Type of crop or 'N/A')
-    - 
-    
-    Example Output: {{"name": "John Doe", "age": 34, "crop": "Maize"}}
-    Return ONLY JSON.
-    """
-    
-    try:
-        response = ollama.chat(model='llama3.2:1b',
-                               format = 'json',
-                                messages=[
-            {'role': 'user', 'content': prompt},
-        ])
-        # Clean the string to ensure it's just JSON
-        return response['message']['content']
-    except Exception as e:
-        print(f"LLM Offline Error: {e}")
-        
-        return segmented_text # Fallback to your existing logic
