@@ -48,7 +48,7 @@ const DefineFeatures = () => {
             if (response.ok) {
             //    alert(`Domain features defined successfully! Reference Number: ${data.reference_number}`);
                 // Success! Show them their new Reference Number
-                navigate('/checkout', { 
+                navigate('/payInitiate', { 
                     state: { 
                         refNum: data.reference_number,
                         domainName: data.domain_name 

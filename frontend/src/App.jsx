@@ -15,6 +15,7 @@ import DataAnalytics from './components/DataAnalytics';
 import TeamCollectors from './components/TeamCollectors';
 import logo from './assets/logo.png';
 import Navbar from './components/NavBar';
+import PayInitiation from './components/PaymentInitiation';
 
 function SemaData_App() {
   return (
@@ -34,6 +35,7 @@ function SemaData_App() {
           <Route path="/ContactUs" element={<ContactUs />} />
           <Route path ="/DataAnalytics" element={<DataAnalytics/>} />
           <Route path="/TeamCollector" element={<TeamCollectors/>} />
+          <Route path="/PaymentIniation" element={<PayInitiation/>} />
           <Route path="*" element={<div className="text-white">Route Not Found - Check URL</div>} />
 
         </Routes>
