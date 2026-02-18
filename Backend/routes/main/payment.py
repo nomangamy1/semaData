@@ -28,15 +28,21 @@ def initiate_payment():
             transaction_ref=transaction_reference,
                 status="Pending"
         )
-        db.session(new_payment)
+        db.session.add(new_payment)
         db.session.commit()
+
+        #this is  where the logic to call payment methods should be 
+        #I will then add the sucess redirection url here
+
+        redirect_url = f"http://localhost:3000/Success?domain_id={domain_id}" 
 
         
         return jsonify({
             "status": "success",
             "checkout_url": "https://checkout.provider.com/ref123",
             "message": "Payment initiated",
-            "deposit": deposit_amount
+            "deposit": deposit_amount,
+
         }),200
     except Exception as e:
         return jsonify({
@@ -65,4 +71,14 @@ def payment_callback():
         "activated":is_now_active,
         "new total":domain.amount_paid
 
+    }),200
+
+@payment_bp.route('/<domain-status>/<int:domain_id>', methods =['GET'])
+def get_status(domain_id):
+    domain= Domain.query.get(domain_id)
+
+    return jsonify({
+        "is_active":domain.is_active,
+        "reference_number":domain.reference_number,
+        "domain_name":domain.domain_name
     }),200

@@ -1,0 +1,216 @@
+/* SemaData Green Theme Variables */
+:root {
+  --primary-green: #489c8c;        /* Your Success Check Color */
+  --dark-green: #367c6e;
+  --bg-light-green: #f0fdfa;
+  --border-green: #ccfbf1;
+  --text-dark: #1f2937;
+  --text-gray: #6b7280;
+  --warning-gold: #f59e0b;
+  --white: #ffffff;
+}
+
+.pay-page-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f9fafb;
+  padding: 20px;
+  font-family: 'Inter', -apple-system, sans-serif;
+}
+
+.pay-card {
+  background: var(--white);
+  width: 100%;
+  max-width: 440px;
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f3f4f6;
+}
+
+/* Header Section */
+.pay-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 28px;
+  gap: 12px;
+}
+
+.back-btn {
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--text-gray);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.back-btn:hover {
+  background-color: var(--bg-light-green);
+  border-color: var(--border-green);
+  color: var(--primary-green);
+}
+
+.pay-header h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+/* Domain Summary & Ref Box */
+.domain-summary {
+  margin-bottom: 24px;
+}
+
+.label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.domain-title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--text-dark);
+  margin: 0 0 16px 0;
+}
+
+.ref-status-box {
+  background-color: var(--bg-light-green);
+  border: 2px dashed var(--border-green);
+  padding: 20px;
+  border-radius: 16px;
+  text-align: center;
+}
+
+.tiny-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--dark-green);
+  opacity: 0.8;
+}
+
+.ref-display {
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 8px 0;
+}
+
+.lock-icon {
+  color: var(--warning-gold);
+}
+
+.status-text {
+  font-size: 0.875rem;
+  color: var(--text-gray);
+  margin: 0;
+}
+
+.status-text span {
+  color: #ef4444; /* Red for Inactive */
+  font-weight: 700;
+}
+
+/* Price Section */
+.price-breakdown {
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 28px;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  color: var(--text-gray);
+  margin-bottom: 12px;
+}
+
+.price-row.total {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--text-dark);
+}
+
+/* Action Button */
+.pay-now-btn {
+  width: 100%;
+  background-color: var(--primary-green);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 16px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+}
+
+.pay-now-btn:hover:not(:disabled) {
+  background-color: var(--dark-green);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(72, 156, 140, 0.2);
+}
+
+.pay-now-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.pay-now-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+/* Footer & Animation */
+.pay-footer {
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--text-gray);
+  font-weight: 500;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 16px;
+}

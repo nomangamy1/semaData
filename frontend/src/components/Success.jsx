@@ -3,12 +3,45 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Copy, Check, LayoutDashboard, Share2 } from 'lucide-react';
 
 const SuccessPage = () => {
+  const [searchParams] = userSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
+  const [loading,setLoading] = userState(True);
+  const [domainData,setDomainData] =userState({refNum: '',domainName: '',isActive :false})
+
+  const domainId =searchParams.get('domain_id')
 
   // Get data passed from the Domain Definition page
-  const { refNum, domainName } = location.state || { refNum: '000000', domainName: 'Project' };
+  useEffect(() => {
+    if (!domainId) return;
+
+    // 2. Poll the backend to see if the payment callback has arrived
+    const checkPaymentStatus = async () => {
+        try {
+            const response = await fetch(`http://localhost:8000/domain-status/${domainId}`);
+            const data = await response.json();
+            
+            if (data.is_active) {
+                setDomainData({
+                    refNum: data.reference_number,
+                    domainName: data.domain_name,
+                    isActive: true
+                });
+                setLoading(false);
+            }
+        } catch (err) {
+            console.error("Polling error", err);
+        }
+    };
+
+    // Check every 3 seconds until active
+    const interval = setInterval(() => {
+        if (!domainData.isActive) checkPaymentStatus();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [domainId, domainData.isActive]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(refNum);
