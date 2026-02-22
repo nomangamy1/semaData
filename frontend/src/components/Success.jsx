@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Copy, Check, LayoutDashboard, Share2 } from 'lucide-react';
+import './Success.css';
 
 const SuccessPage = () => {
-  const [searchParams] = userSearchParams();
+  const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
-  const [loading,setLoading] = userState(True);
-  const [domainData,setDomainData] =userState({refNum: '',domainName: '',isActive :false})
+  const [loading, setLoading] = useState(true);
+  const [domainData, setDomainData] = useState({ refNum: '', domainName: '', isActive: false })
 
-  const domainId =searchParams.get('domain_id')
+  const domainId = searchParams.get('domain_id')
 
   // Get data passed from the Domain Definition page
   useEffect(() => {
@@ -18,49 +19,50 @@ const SuccessPage = () => {
 
     // 2. Poll the backend to see if the payment callback has arrived
     const checkPaymentStatus = async () => {
-        try {
-            const response = await fetch(`http://localhost:8000/domain-status/${domainId}`);
-            const data = await response.json();
-            
-            if (data.is_active) {
-                setDomainData({
-                    refNum: data.reference_number,
-                    domainName: data.domain_name,
-                    isActive: true
-                });
-                setLoading(false);
-            }
-        } catch (err) {
-            console.error("Polling error", err);
+      try {
+        const response = await fetch(`http://localhost:8000/api/main/status/${domainId}`);
+        const data = await response.json();
+
+        if (data.is_active) {
+          setDomainData({
+            refNum: data.reference_number,
+            domainName: data.domain_name,
+            isActive: true
+          });
+          setLoading(false);
         }
+      } catch (err) {
+        console.error("Polling error", err);
+      }
     };
 
     // Check every 3 seconds until active
     const interval = setInterval(() => {
-        if (!domainData.isActive) checkPaymentStatus();
+      if (!domainData.isActive) checkPaymentStatus();
     }, 3000);
 
     return () => clearInterval(interval);
   }, [domainId, domainData.isActive]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(refNum);
+    navigator.clipboard.writeText(domainData.refNum);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000); // Reset icon after 2s
   };
 
   return (
+
     <div className="definition-container">
       <div className="definition-card text-center">
         <div className="flex justify-center mb-6">
           <div className="bg-[#f0fdfa] p-4 rounded-full">
             <Check size={48} className="text-[#489c8c]" />
           </div>
-        </div>
 
+        </div>
         <h2 className="text-3xl font-black mb-2">Domain Created!</h2>
         <p className="text-gray-600 mb-8">
-          Your project <strong>{domainName}</strong> is now live. Use the Reference Number below to invite collectors.
+          Your project <strong>{domainData.domainName}</strong> is now live. Use the Reference Number below to invite collectors.
         </p>
 
         {/* --- THE TOKEN DISPLAY --- */}
@@ -69,10 +71,10 @@ const SuccessPage = () => {
             Reference Number / Token
           </span>
           <div className="text-5xl font-mono font-black text-[#489c8c] tracking-tighter">
-            {refNum}
+            {domainData.refNum}
           </div>
-          
-          <button 
+
+          <button
             onClick={handleCopy}
             className="absolute top-4 right-4 p-2 bg-white shadow-sm border rounded-lg hover:bg-gray-50 transition-all"
           >
@@ -81,13 +83,13 @@ const SuccessPage = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-4">
-          <button 
+          <button
             onClick={() => navigate('/dashboard')}
             className="finalize-btn"
           >
             <LayoutDashboard size={20} /> Go to Dashboard
           </button>
-          
+
           <p className="text-sm text-gray-500 mt-4">
             This number is now saved in your Dashboard under <strong>"Active Domains"</strong>.
           </p>

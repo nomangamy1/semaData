@@ -1,5 +1,12 @@
 from flask import Flask,jsonify,Blueprint
-from models import User,Dataset,Domain,domainowner
+from models import User,Dataset,Domain,domainowner,Transcription,Feature
+from flask import send_file, current_app
+from flask_jwt_extended import jwt_required, get_jwt_identity
+import csv 
+import json
+from io import StringIO
+import logging
+
 
 
 dashboard_bp = Blueprint('dashboard',__name__)
@@ -46,18 +53,62 @@ def get_owner_dashboard_stats(owner_id):
 def get_DomainProfileName():
     return jsonify({"domain_profile_name": "Example Domain Profile Name"})
 
-# This endpoint is for the frontend to fetch the domain profile name for display # For simplicity, we will return a static name here. In a real application, this would likely query the database. return jsonify({"domain_profile_name": "Example Domain Profile Name"})
-'''
+
+logger = logging.getLogger(__name__)
+
 @dashboard_bp.route('/download/<int:domain_id>', methods=['GET'])
+@jwt_required()
 def download_dataset(domain_id):
-    domain = Domain.query.get(domain_id)
-    
-    if not domain.is_fully_paid:
-        return jsonify({
-            "error": "Payment Required",
-            "message": f"Please clear the balance of {domain.remaining_balance} to download."
-        }), 402 # 402 is the official HTTP code for 'Payment Required'
+    try: 
+        current_owner_id = get_jwt_identity() 
+        domain = Domain.query.get(domain_id)
+        if not domain:
+            logger.warning(f"Download attempt: domain {domain_id} not found")
+            return jsonify({"error": "Domain not found"}), 404
+        if domain.owner_id != current_owner_id:
+            logger.warning(f"Unauthorized download attempt: owner {current_owner_id} trying to access domain {domain_id}")
+            return jsonify({"error": "Unauthorized"}), 403
         
-    # Logic to generate CSV/JSON from the Dataset model and return it
-    return export_dataset_as_file(domain_id)
-    '''
+        # Get all processed datasets
+        datasets = Dataset.query.filter_by(domain_id=domain_id, status="Processed").all()
+        if not datasets:
+            logger.info(f"Owner {current_owner_id} attempted download for domain {domain_id} but no processed datasets available")
+            return jsonify({"error": "No processed datasets available for download"}), 400
+        
+        # Get domain features specification (column names)
+        domain_features = Feature.query.filter_by(domain_id=domain_id).all()
+        feature_names = [f.name for f in domain_features]
+        
+        if not feature_names:
+            logger.warning(f"Domain {domain_id} has no features defined")
+            return jsonify({"error": "Domain has no features defined"}), 400
+        
+        # Create CSV in memory - features only
+        output = StringIO()
+        writer = csv.writer(output)
+        writer.writerow(feature_names)  # Header with feature names only
+
+        total_records = 0
+        for dataset in datasets:
+            # Get all transcriptions for this dataset
+            transcriptions = Transcription.query.filter_by(dataset_id=dataset.id).all()
+            
+            for transcription in transcriptions:
+                # Extract only feature values
+                if transcription.domain_features:
+                    domain_features_dict = transcription.domain_features if isinstance(transcription.domain_features, dict) else json.loads(transcription.domain_features)
+                    feature_values = [domain_features_dict.get(fname, '') for fname in feature_names]
+                    writer.writerow(feature_values)
+                    total_records += 1
+        
+        if total_records == 0:
+            logger.info(f"Owner {current_owner_id} attempted download for domain {domain_id} but no transcriptions with features found")
+            return jsonify({"error": "No transcription data with features available"}), 400
+        
+        logger.info(f"Owner {current_owner_id} successfully downloaded features dataset for domain {domain_id} with {total_records} records")
+
+        output.seek(0)
+        return send_file(StringIO(output.getvalue()), mimetype='text/csv', as_attachment=True, download_name=f'domain_{domain_id}_features.csv')    
+    except Exception as e:
+        logger.error(f"Error during dataset download for domain {domain_id}: {str(e)}")
+        return jsonify({"error": "An error occurred while processing your request"}), 500

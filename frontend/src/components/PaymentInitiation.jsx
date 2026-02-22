@@ -1,42 +1,69 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CreditCard, ArrowLeft, Loader2, Lock, ShieldCheck } from 'lucide-react';
+import { CreditCard, ArrowLeft, Loader2, Lock, ShieldCheck, Smartphone } from 'lucide-react';
 import './PaymentInitiation.css';
 
-const PayInitiation = () => {
+const PayInitiate = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    
-    // Data passed from DefineFeatures.jsx
-    const { domainId, domainName, refNum, deposit } = location.state || {};
+
+    const { domainId, domainName, refNum, target_goal } = location.state || {};
 
     const [isProcessing, setIsProcessing] = useState(false);
+    const [phoneNumber, setPhoneNumber] = useState(''); // New state for phone
+    const [showSuccess, setShowSuccess] = useState(false); // For the "Fake" success feedback
+    const [transactionRef, setTransactionRef] = useState(null);
 
-    const handlePayment = async () => {
+    // Calculate deposit: target_goal * 20 * 0.3
+    const deposit = target_goal ? parseFloat(target_goal) * 20 * 0.3 : 0;
+
+    const handlePayment = async (e) => {
+        e.preventDefault();
+
+        // Basic Kenyan Phone Validation (07... or 01...)
+        if (!/^0(7|1)\d{8}$/.test(phoneNumber)) {
+            alert("Please enter a valid M-Pesa phone number (e.g., 0712345678)");
+            return;
+        }
+
         setIsProcessing(true);
-        
+
         try {
-            const response = await fetch('http://localhost:8000/pay/initiate', {
+            // Updated endpoint to match your blueprint structure
+            const response = await fetch('http://localhost:8000/api/main/pay/initiate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     domain_id: domainId,
-                    amount: deposit 
+                    phone: phoneNumber
                 }),
             });
 
             const data = await response.json();
 
-            if (response.ok && data.checkout_url) {
-                // External redirect to Daraja/M-Pesa/Provider
-                window.location.href = data.checkout_url;
+            if (response.ok) {
+                // Store transaction ref for tracking
+                setTransactionRef(data.transaction_ref);
+
+                // SIMULATED WAIT: 
+                // This mimics the time it takes a user to receive STK and enter PIN
+                setTimeout(() => {
+                    setIsProcessing(false);
+                    setShowSuccess(true);
+
+                    // Final redirect using backend's redirect_url
+                    setTimeout(() => {
+                        const redirectUrl = data.redirect_url || `/UserDashboard?domain_id=${domainId}`;
+                        window.location.href = redirectUrl;
+                    }, 2000);
+                }, 4000);
             } else {
                 alert(data.error || "Payment initiation failed.");
                 setIsProcessing(false);
             }
         } catch (error) {
             console.error("Payment Error:", error);
-            alert("Backend connection failed.");
+            alert("Backend connection failed. Make sure your Flask server is running.");
             setIsProcessing(false);
         }
     };
@@ -60,49 +87,66 @@ const PayInitiation = () => {
                     <h2>Activation Deposit</h2>
                 </header>
 
-                <section className="domain-summary">
-                    <p className="label">Project Domain</p>
-                    <h3 className="domain-title">{domainName}</h3>
-                    
-                    <div className="ref-status-box">
-                        <span className="tiny-label">ASSIGNED REFERENCE NUMBER</span>
-                        <div className="ref-display">
-                            {refNum} <Lock size={16} className="lock-icon" />
+                {showSuccess ? (
+                    <div className="success-overlay">
+                        <div className="success-content">
+                            <ShieldCheck size={60} color="#22c55e" />
+                            <h3>Payment Received!</h3>
+                            <p>Activating your agricultural domain...</p>
                         </div>
-                        <p className="status-text">Status: <span>Inactive</span></p>
                     </div>
-                </section>
+                ) : (
+                    <>
+                        <section className="domain-summary">
+                            <p className="label">Project Domain</p>
+                            <h3 className="domain-title">{domainName}</h3>
+                            <div className="ref-display">
+                                {refNum} <Lock size={16} className="lock-icon" />
+                            </div>
+                        </section>
 
-                <section className="price-breakdown">
-                    <div className="price-row">
-                        <span>Managed Setup (30% Deposit)</span>
-                        <span>KES {deposit?.toLocaleString()}</span>
-                    </div>
-                    <div className="price-row total">
-                        <span>Amount to Pay</span>
-                        <span>KES {deposit?.toLocaleString()}</span>
-                    </div>
-                </section>
+                        <section className="payment-input-section">
+                            <label className="tiny-label">M-PESA PHONE NUMBER</label>
+                            <div className="phone-input-wrapper">
+                                <Smartphone size={18} className="input-icon" />
+                                <input
+                                    type="text"
+                                    placeholder="07xxxxxxxx"
+                                    value={phoneNumber}
+                                    onChange={(e) => setPhoneNumber(e.target.value)}
+                                    disabled={isProcessing}
+                                />
+                            </div>
+                        </section>
 
-                <button 
-                    className="pay-now-btn" 
-                    onClick={handlePayment} 
-                    disabled={isProcessing}
-                >
-                    {isProcessing ? (
-                        <><Loader2 className="spinner" /> Processing...</>
-                    ) : (
-                        <><CreditCard /> Pay with M-Pesa</>
-                    )}
-                </button>
+                        <section className="price-breakdown">
+                            <div className="price-row total">
+                                <span>Amount to Pay</span>
+                                <span>KES {deposit?.toLocaleString()}</span>
+                            </div>
+                        </section>
+
+                        <button
+                            className="pay-now-btn"
+                            onClick={handlePayment}
+                            disabled={isProcessing || !phoneNumber}
+                        >
+                            {isProcessing ? (
+                                <><Loader2 className="spinner" /> Check your Phone...</>
+                            ) : (
+                                <><CreditCard /> Send M-Pesa Prompt</>
+                            )}
+                        </button>
+                    </>
+                )}
 
                 <footer className="pay-footer">
                     <ShieldCheck size={14} />
-                    <span>Secure Payment via SemaData Gateway</span>
+                    <span>Secure M-Pesa Gateway</span>
                 </footer>
             </div>
         </div>
     );
 };
 
-export default PayInitiation;
+export default PayInitiate;

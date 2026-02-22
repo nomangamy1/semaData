@@ -9,6 +9,6 @@ class Transcription(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)
     contributor_name = db.Column(db.String(100), nullable=False)
     transcription_text = db.Column(db.Text, nullable=False)
-    domain_features = db.Column(db.JSON)
+    domain_features = db.Column(db.JSON, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())

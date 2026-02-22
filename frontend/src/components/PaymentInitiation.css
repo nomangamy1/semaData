@@ -1,6 +1,6 @@
 /* SemaData Green Theme Variables */
 :root {
-  --primary-green: #489c8c;        /* Your Success Check Color */
+  --primary-green: #489c8c;
   --dark-green: #367c6e;
   --bg-light-green: #f0fdfa;
   --border-green: #ccfbf1;
@@ -8,6 +8,7 @@
   --text-gray: #6b7280;
   --warning-gold: #f59e0b;
   --white: #ffffff;
+  --success-bg: rgba(255, 255, 255, 0.95);
 }
 
 .pay-page-container {
@@ -15,9 +16,9 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #f9fafb;
+  background-color: #f3f4f6;
   padding: 20px;
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 .pay-card {
@@ -26,8 +27,10 @@
   max-width: 440px;
   border-radius: 24px;
   padding: 32px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   border: 1px solid #f3f4f6;
+  position: relative; /* Essential for success overlay */
+  overflow: hidden;
 }
 
 /* Header Section */
@@ -46,112 +49,108 @@
   cursor: pointer;
   color: var(--text-gray);
   transition: all 0.2s;
-  display: flex;
-  align-items: center;
-}
-
-.back-btn:hover {
-  background-color: var(--bg-light-green);
-  border-color: var(--border-green);
-  color: var(--primary-green);
 }
 
 .pay-header h2 {
   font-size: 1.25rem;
   font-weight: 800;
   color: var(--text-dark);
-  margin: 0;
 }
 
-/* Domain Summary & Ref Box */
+/* Domain Summary */
 .domain-summary {
-  margin-bottom: 24px;
-}
-
-.label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--text-gray);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 4px;
+  margin-bottom: 20px;
 }
 
 .domain-title {
-  font-size: 1.5rem;
-  font-weight: 900;
-  color: var(--text-dark);
-  margin: 0 0 16px 0;
-}
-
-.ref-status-box {
-  background-color: var(--bg-light-green);
-  border: 2px dashed var(--border-green);
-  padding: 20px;
-  border-radius: 16px;
-  text-align: center;
-}
-
-.tiny-label {
-  font-size: 0.7rem;
+  font-size: 1.4rem;
   font-weight: 800;
-  color: var(--dark-green);
-  opacity: 0.8;
+  color: var(--text-dark);
+  margin-bottom: 12px;
 }
 
-.ref-display {
-  font-family: 'Monaco', 'Consolas', monospace;
-  font-size: 1.75rem;
-  font-weight: 900;
-  color: var(--text-dark);
+/* NEW: Phone Input Section */
+.payment-input-section {
+  margin-bottom: 24px;
+}
+
+.phone-input-wrapper {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin: 8px 0;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 12px 16px;
+  transition: all 0.2s ease;
+  gap: 12px;
 }
 
-.lock-icon {
-  color: var(--warning-gold);
+.phone-input-wrapper:focus-within {
+  border-color: var(--primary-green);
+  background: var(--white);
+  box-shadow: 0 0 0 4px var(--border-green);
 }
 
-.status-text {
-  font-size: 0.875rem;
+.phone-input-wrapper input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  outline: none;
+}
+
+.input-icon {
   color: var(--text-gray);
-  margin: 0;
-}
-
-.status-text span {
-  color: #ef4444; /* Red for Inactive */
-  font-weight: 700;
 }
 
 /* Price Section */
 .price-breakdown {
-  background: #f8fafc;
+  background: var(--bg-light-green);
   border-radius: 16px;
   padding: 20px;
-  margin-bottom: 28px;
-}
-
-.price-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.95rem;
-  color: var(--text-gray);
-  margin-bottom: 12px;
+  margin-bottom: 24px;
 }
 
 .price-row.total {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
   font-weight: 800;
-  font-size: 1.15rem;
+  font-size: 1.1rem;
+  color: var(--dark-green);
+}
+
+/* NEW: Success Overlay */
+.success-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--success-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.success-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.success-content h3 {
+  font-size: 1.5rem;
+  font-weight: 800;
   color: var(--text-dark);
 }
 
-/* Action Button */
+/* Buttons & Animations */
 .pay-now-btn {
   width: 100%;
   background-color: var(--primary-green);
@@ -166,35 +165,6 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  transition: all 0.2s ease;
-}
-
-.pay-now-btn:hover:not(:disabled) {
-  background-color: var(--dark-green);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(72, 156, 140, 0.2);
-}
-
-.pay-now-btn:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.pay-now-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  filter: grayscale(0.5);
-}
-
-/* Footer & Animation */
-.pay-footer {
-  margin-top: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-size: 0.75rem;
-  color: var(--text-gray);
-  font-weight: 500;
 }
 
 .spinner {
@@ -206,11 +176,7 @@
   to { transform: rotate(360deg); }
 }
 
-.error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  gap: 16px;
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }

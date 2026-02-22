@@ -1,59 +1,375 @@
-/* NavBar.css */
+/* ============================================
+   NAVBAR - PROFESSIONAL STYLING
+   ============================================ */
 
+/* Main navbar container */
 .glass-nav {
-  background: rgba(255, 255, 255, 0.8) !important;
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
-  border-bottom: 1px solid rgba(209, 213, 219, 0.3);
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(209, 213, 219, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.glass-nav::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(16, 185, 129, 0.1),
+      transparent);
+  pointer-events: none;
+}
+
+/* ============================================
+   LOGO STYLING
+   ============================================ */
+
+.glass-nav a[href="/"] {
+  font-size: clamp(1.5rem, 3vw, 1.75rem);
+  font-weight: 900;
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-nav a[href="/"]:hover {
+  transform: scale(1.02);
+}
+
+/* ============================================
+   DESKTOP NAVIGATION LINKS
+   ============================================ */
+
+.glass-nav .hidden.md\:flex {
+  gap: 1.5rem;
+  align-items: center;
 }
 
 .nav-link {
   position: relative;
-  padding: 0.5rem 0;
-  color: #4b5563;
-  transition: color 0.3s ease;
-}
-
-/* The Animated Underline Effect */
-.nav-link::after {
-  content: '';
-  position: absolute;
-  width: 0;
-  height: 2px;
-  bottom: 0;
-  left: 0;
-  background-color: #489c8c;
-  transition: width 0.3s ease;
-}
-
-.nav-link:hover::after, 
-.nav-link.active::after {
-  width: 100%;
+  padding: 0.5rem 0.75rem;
+  color: #475569;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  letter-spacing: 0.01em;
 }
 
 .nav-link:hover {
-  color: #489c8c;
+  color: #14b8a6;
 }
 
-/* Mobile Menu Animation */
+.nav-link.active {
+  color: #14b8a6;
+  font-weight: 600;
+}
+
+/* Animated underline effect */
+.nav-link::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2.5px;
+  bottom: -2px;
+  left: 0;
+  background: linear-gradient(90deg, #14b8a6, #10b981);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 2px;
+}
+
+.nav-link:hover::before,
+.nav-link.active::before {
+  width: 100%;
+}
+
+.nav-link strong {
+  font-weight: 700;
+  color: inherit;
+}
+
+/* ============================================
+   AUTH BUTTONS CONTAINER
+   ============================================ */
+
+.glass-nav .hidden.md\:flex.items-center {
+  gap: 1rem;
+}
+
+/* ============================================
+   PRIMARY BUTTON (JOIN NOW)
+   ============================================ */
+
+.btn-primary-glow {
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  color: white;
+  padding: 0.625rem 1.5rem;
+  border-radius: 0.625rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 15px rgba(20, 184, 166, 0.35),
+    0 2px 8px rgba(20, 184, 166, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Button shine effect */
+.btn-primary-glow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent);
+  transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary-glow:hover::before {
+  left: 100%;
+}
+
+.btn-primary-glow:hover {
+  background: linear-gradient(135deg, #0d9488 0%, #047857 100%);
+  box-shadow: 0 8px 25px rgba(20, 184, 166, 0.45),
+    0 4px 12px rgba(20, 184, 166, 0.3);
+  transform: translateY(-2px);
+}
+
+.btn-primary-glow:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.25),
+    0 2px 6px rgba(20, 184, 166, 0.15);
+}
+
+/* ============================================
+   LOGOUT BUTTON
+   ============================================ */
+
+.glass-nav a[href="/login"] {
+  color: #64748b;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.glass-nav a[href="/login"]:hover {
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* ============================================
+   MOBILE MENU TOGGLE
+   ============================================ */
+
+.glass-nav button.md\:hidden {
+  color: #64748b;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.glass-nav button.md\:hidden:hover {
+  color: #14b8a6;
+}
+
+/* ============================================
+   MOBILE MENU DROPDOWN
+   ============================================ */
+
 .mobile-menu-enter {
   animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+.glass-nav .md\:hidden.absolute {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-top: 1px solid rgba(209, 213, 219, 0.3);
+  border-bottom: 1px solid rgba(209, 213, 219, 0.2);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  padding: 1.5rem;
+}
+
+.glass-nav .md\:hidden.absolute a {
+  display: block;
+  padding: 0.875rem 1rem;
+  border-radius: 0.625rem;
+  font-weight: 600;
+  color: #475569;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 0.5rem;
+}
+
+.glass-nav .md\:hidden.absolute a:hover {
+  background-color: rgba(20, 184, 166, 0.1);
+  color: #14b8a6;
+}
+
+.glass-nav .md\:hidden.absolute .bg-\[\#489c8c\] {
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  color: white;
+  padding: 0.875rem 1rem;
+  border-radius: 0.625rem;
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(20, 184, 166, 0.25);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.glass-nav .md\:hidden.absolute .bg-\[\#489c8c\]:hover {
+  background: linear-gradient(135deg, #0d9488 0%, #047857 100%);
+  box-shadow: 0 8px 20px rgba(20, 184, 166, 0.35);
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-15px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* Glowing Join Button */
-.btn-primary-glow {
-  background-color: #489c8c;
-  box-shadow: 0 4px 14px 0 rgba(72, 156, 140, 0.39);
-  transition: all 0.3s ease;
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+  .glass-nav {
+    padding: 1rem 1.5rem;
+  }
+
+  .glass-nav>div {
+    flex-wrap: wrap;
+  }
+
+  .glass-nav button.md\:hidden {
+    padding: 0.25rem;
+  }
 }
 
-.btn-primary-glow:hover {
-  background-color: #367a6d;
-  box-shadow: 0 6px 20px rgba(72, 156, 140, 0.23);
-  transform: translateY(-1px);
+@media (max-width: 480px) {
+  .glass-nav {
+    padding: 0.75rem 1rem;
+  }
+
+  .glass-nav a[href="/"] {
+    font-size: 1.35rem;
+  }
+
+  .glass-nav .md\:hidden.absolute {
+    padding: 1rem;
+  }
+
+  .glass-nav .md\:hidden.absolute a {
+    padding: 0.75rem 0.75rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* ============================================
+   DARK MODE SUPPORT
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  .glass-nav {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border-bottom-color: rgba(71, 85, 105, 0.2);
+  }
+
+  .nav-link {
+    color: #cbd5e1;
+  }
+
+  .nav-link:hover,
+  .nav-link.active {
+    color: #14b8a6;
+  }
+
+  .glass-nav button.md\:hidden {
+    color: #cbd5e1;
+  }
+
+  .glass-nav .md\:hidden.absolute {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-top-color: rgba(71, 85, 105, 0.2);
+  }
+
+  .glass-nav .md\:hidden.absolute a {
+    color: #cbd5e1;
+  }
+
+  .glass-nav .md\:hidden.absolute a:hover {
+    background-color: rgba(20, 184, 166, 0.15);
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .glass-nav,
+  .glass-nav * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.nav-link:focus-visible {
+  outline: 2px solid #14b8a6;
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+.btn-primary-glow:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+@media (prefers-contrast: more) {
+  .glass-nav {
+    border-bottom-width: 2px;
+  }
+
+  .nav-link::before {
+    height: 3px;
+  }
+
+  .btn-primary-glow {
+    border: 2px solid currentColor;
+  }
 }

@@ -4,10 +4,10 @@ import { User, Briefcase, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 const Signup = () => {
   const navigate = useNavigate();
-  const [role, setRole] = useState('User'); // 'User' (Collector) or 'DomainOwner'
+  const [role, setRole] = useState('User'); 
   const [formData, setFormData] = useState({
     first_name: '',
-    last_name: '', // Maps to last_name for Owner, second_name for Collector
+    last_name: '', 
     email: '',
     username: '', 
     password: '',
@@ -47,9 +47,11 @@ const Signup = () => {
     const data = await response.json();
 
     if (response.ok) {
-      if(data.owner_id){
-        localStorage.setItem('owner_id', data.owner_id);
-      }
+      const userId = data.user_id;
+     if(userId){
+      localStorage.setItem('owner_id',userId);
+
+     }
       alert("Registration Successful! Please check your email for verification.");
     //  navigate('/login'); // Take them to login
 
