@@ -11,11 +11,10 @@ class Config:
     MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL', 'True').lower() == 'true'
     FLASK_ENV = os.environ.get('FLASK_ENV', 'development')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173').rstrip('/')
 
     TESTING = os.environ.get('TESTING', 'False').lower() == 'true'
     MAIL_SUPPRESS_SEND = os.environ.get('MAIL_SUPPRESS_SEND')
-    
-
     
     # Google OAuth settings
     GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
@@ -24,7 +23,12 @@ class Config:
 
     WTF_CSRF_ENABLED = True
     
-
+    # Daraja M-Pesa settings
+    DARAJA_CONSUMER_KEY = os.getenv('DARAJA_CONSUMER_KEY')
+    DARAJA_CONSUMER_SECRET = os.getenv('DARAJA_CONSUMER_SECRET')
+    DARAJA_BUSINESS_CODE = os.getenv('DARAJA_BUSINESS_CODE', '174379')
+    DARAJA_PASSKEY = os.getenv('DARAJA_PASSKEY')
+    DARAJA_CALLBACK_URL = os.getenv('DARAJA_CALLBACK_URL', 'http://localhost:8000/api/main/payment/callback')
 
     def init_app(semaData):
         pass
@@ -51,7 +55,7 @@ class ProductionConfig(Config):
     SECRET_KEY = os.environ.get('SECRET_KEY')
     SECURITY_PASSWORD_SALT = '2026/17/1'
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_SENDER')
-    WHISPER_MODEL = os.environ.get('MODEL_NAME', 'base')  # Default to 'large' in production
+    WHISPER_MODEL = os.environ.get('MODEL_NAME', 'base')
 
 class TestConfig(Config):
     SECRET_KEY = os.environ.get('SECRET_KEY', 'test_secret_key')

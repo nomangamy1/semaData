@@ -12,6 +12,9 @@ class Domain(db.Model):
     payment_status = db.Column(db.String(20), default='Unpaid')
     target_goal = db.Column(db.Integer, nullable=False)
     is_automated = db.Column(db.Boolean, default=False)
+    #agent_commission
+    #is_verified  
+    #total_cost_per_response =
     reference_number = db.Column(db.String(64), unique=True, nullable=False)
     domain_features = db.relationship('Feature',lazy =True,backref = 'domain')
     datasets = db.relationship('Dataset', backref='domain', lazy=True)
@@ -34,3 +37,10 @@ class Domain(db.Model):
             self.payment_status = "Partially paid" 
 
         return self.is_active
+    def save(self, *args, **kwargs):
+        # Calculate once during creation
+        self.total_budget = self.target_goal * 150
+        self.deposit_amount = self.total_budget * 0.3
+        super().save(*args, **kwargs)
+
+

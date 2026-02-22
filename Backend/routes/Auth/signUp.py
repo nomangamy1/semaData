@@ -4,8 +4,10 @@ from models import User ,Domain,DomainOwner,Dataset
 from extensions import db
 from utils.tokens import generate_verification_token,confirm_token_verification
 from utils.email import send_email
-from flask import url_for
+from flask import url_for,redirect,current_app
+from itsdangerous import SignatureExpired, BadTimeSignature,serializer
 import traceback
+import os 
 role = 'user'  # Default role for users 
 register_bp = Blueprint("register",__name__)
 
@@ -72,13 +74,16 @@ def signUp():
                 """
         send_email(user.email, subject, html)
         if role == 'domainowner':
+            return jsonify({
+    "status": "success",
+    "message": "User created successfully",
+    "next_step": "/define_features", # Give the path, not the full domain
+    "user_id": user.id,
+    "requires_verification": True
+}), 201
 
-                 return {
-                    "message": "Account created. Please define your domain features to get your reference number.","owner_id": user.id,
-                    "next_step": "define_features"
-                    }, 201
-            
         return {'message':"User Registered. Please check your email to verify your account."},201
+    
     
     except Exception as e:
         db.session.rollback()
@@ -91,25 +96,36 @@ def signUp():
 
 @register_bp.route('/confirm/<token>', methods=['GET'])
 def email_verification(token):
+    frontend_base = current_app.config['FRONTEND_URL']
+
     try:
         email = confirm_token_verification(token)
-    except:
-        return {'message': "The confirmation link is invalid or has expired."}, 401
+        if not email:
+            return redirect(f"{frontend_base}/login?error=invalid_token")
+    except (SignatureExpired, BadTimeSignature):
+        return redirect(f"{frontend_base}/login?error=expired")
+    
     
     # Check User table FIRST, then DomainOwner table if not found
     user = User.query.filter_by(email=email).first() or \
            DomainOwner.query.filter_by(email=email).first()
 
     if not user:
-        return {"message": "User not found"}, 404
-
-    # Use the correct attribute name (check if it's is_verified or isVerified in your models)
-    if getattr(user, 'is_verified', False): 
-        return {"message": "Account already verified"}, 200
+        return redirect(f"{frontend_base}/signup?error=not_found")
     
-    user.is_verified = True 
-    db.session.commit()
 
-    return {"message": "Success! Email verified. You can now login."}, 200
+
+    if not user.is_verified:
+        user.is_verified = True 
+        db.session.commit()
+        
+    if user.is_verified:
+        return redirect(f"{frontend_base}/DomainDefinition?message=already_verified&owner_id={user.id}")
+    
+
+#if user is already verified
+
+    return redirect(f"{frontend_base}/DomainDefinition?verified=true&owner_id={user.id}")
+
 
 

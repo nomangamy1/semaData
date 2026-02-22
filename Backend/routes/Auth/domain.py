@@ -12,7 +12,6 @@ def generate_ref_number(domain_name):
     suffix = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(6))
     return f"{prefix}--{suffix}"
 
-
 domain_bp = Blueprint("domain",__name__)
 
 @domain_bp.route('/domain',methods=['POST'])
@@ -22,7 +21,9 @@ def domain_register():
         owner_id = data.get('id')
         features_list = data.get("domain_features",[])
         target_goal = data.get('target_goal')
-
+        deposit_amount = data.get('deposit_amount')
+        
+        requirements_text = data.get('requirements')
 
         if not owner_id:
             return jsonify({"error": "Owner ID is required"}), 400
@@ -36,12 +37,20 @@ def domain_register():
         if existing_domain:
             return jsonify({"error": "Domain name already exists"}), 400
         
-        reference_number = generate_ref_number()
-
+        reference_number = generate_ref_number(domain_name)
         owner.reference_number = reference_number 
+
+        #payment
+        price_per_response =20
+        target_goal_val = data.get('target_goal', 0)
+        total_budget = price_per_response * target_goal
+        target_goal_numeric =int(target_goal_val)
+        system_buffer_goal = int(target_goal_numeric * 2.10)  # 10% buffer
+
+
+        
         domain_features = data.get('domain_features', [])
 
-        system_buffer_goal = int(target_goal * 2.10)  # 10% buffer
 
         if not isinstance(domain_features, list):
             return jsonify({"error": "Domain features must be a list"}), 400
@@ -50,6 +59,10 @@ def domain_register():
             owner_id = data.get('id'),
             reference_number=reference_number,
             target_goal=system_buffer_goal,
+            total_budget =total_budget,
+            requirements=requirements_text,
+            deposit_amount = deposit_amount
+            
         )
         db.session.add(domain)
         db.session.flush()
@@ -66,10 +79,14 @@ def domain_register():
 
         db.session.commit()
 
+
         return jsonify({
             "message": "Domain and Features saved successfully",
+            "domain_id":domain.id,
             "reference_number": reference_number,
-            "domain_name": domain_name
+            "domain_name": domain_name,
+            "deposit":deposit_amount
+
         }), 201
 
       

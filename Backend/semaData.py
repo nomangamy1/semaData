@@ -9,8 +9,11 @@ from routes.Auth.google_login import google_login_bp
 from routes.Auth.google_sign_up import auth_bp  
 from routes.core import semaData_engine_bp  
 from routes.main.Dashboard import dashboard_bp
+from routes.main.payment import payment_bp
 from routes.main.UserDashboard import UserDashboard_bp
-#from routes.main.payment import payment_bp
+from routes.main.payment import payment_bp
+from routes.main.doDataAnalytics import UserAnalytics_bp
+from routes.main.contact import contact_bp
 from utils.email import mail 
 from flask_cors import CORS
 from Config import config
@@ -28,7 +31,7 @@ def semaData_app():
         semaData.config.from_object(config['development'])
     else:
         semaData.config.from_object(config[config_name])
-    CORS(semaData)
+    CORS(semaData,resources={r"/api/*": {"origins": os.getenv('FRONTEND_URL')}})
     migrate.init_app(semaData,db)
     mail.init_app(semaData)
 
@@ -36,7 +39,7 @@ def semaData_app():
     jwt = JWTManager(semaData)
     login_manager.init_app(semaData)
     semaData.register_blueprint(register_bp, url_prefix='/api/Auth')
-    semaData.register_blueprint(domain_bp)
+    semaData.register_blueprint(domain_bp,url_prefix='/api')
 
     semaData.register_blueprint(login_bp, url_prefix='/api/Auth')
     semaData.register_blueprint(google_login_bp, url_prefix='/api/Auth')
@@ -44,8 +47,9 @@ def semaData_app():
     semaData.register_blueprint(semaData_engine_bp, url_prefix='/api/core')
     semaData.register_blueprint(dashboard_bp, url_prefix ='/api/main')
     semaData.register_blueprint(UserDashboard_bp,url_prefix='/api/main')
- #   semaData.register_blueprint(payment_bp,url_prefix='/api/main')
-    
+    semaData.register_blueprint(payment_bp,url_prefix='/api/main')
+    semaData.register_blueprint(UserAnalytics_bp,url_prefix='/api/main')
+    semaData.register_blueprint(contact_bp,url_prefix='/api/main')
     
 
     return semaData
