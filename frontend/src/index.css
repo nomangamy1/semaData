@@ -1,18 +1,67 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 
-
-/* 1. Tell Tailwind v4 to generate classes from these variables */
-:root{
+@theme {
   --color-semadata-green: #489c8c;
   --color-semadata-dark: #367a6d;
+  --color-sema-emerald: #10b981;
+  --color-sema-slate: #0f172a;
+  --font-inter: "Inter", sans-serif;
 }
 
-/* 2. Your font imports */
+:root {
+  --sema-emerald: #10b981;
+  --sema-slate: #0f172a;
+}
 
-/* 3. Global Styles */
-body {
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  -webkit-font-smoothing: antialiased;
+@layer base {
+  body {
+    margin: 0;
+    background-color: #fcfcfd;
+    font-family: var(--font-inter);
+    -webkit-font-smoothing: antialiased;
+    color: #1e293b;
+  }
+}
+
+/* Custom utility classes */
+.sema-card-shadow {
+  box-shadow: 0 10px 40px -10px rgba(15, 23, 42, 0.05);
+  transition: box-shadow 0.3s ease;
+}
+
+.sema-card-shadow:hover {
+  box-shadow: 0 20px 60px -15px rgba(16, 185, 129, 0.15);
+}
+
+.filter-glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+@keyframes pulse-glow {
+  0% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.1); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 0.5; }
+}
+
+.animate-glow {
+  animation: pulse-glow 8s infinite ease-in-out;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }

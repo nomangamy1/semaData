@@ -6,6 +6,7 @@ from utils.tokens import generate_verification_token,confirm_token_verification
 from utils.email import send_email
 from flask import url_for,redirect,current_app
 from itsdangerous import SignatureExpired, BadTimeSignature,serializer
+from models.JobApplication import JobApplication
 import traceback
 import os 
 role = 'user'  # Default role for users 
@@ -18,6 +19,9 @@ def signUp():
         data =request.get_json()
         role = data.get('role').lower()
         email = data.get('email')
+
+      
+                                                    
         #Validation
         username = data.get('username') if role == 'domainowner' else None
         if User.query.filter_by(email=email).first() or DomainOwner.query.filter_by(email=email).first():
@@ -28,18 +32,26 @@ def signUp():
 
         #role-based user creation
         if role =='user':
+            ref_number = data.get('reference_number')
+
             domain = Domain.query.filter_by(reference_number=data['reference_number']).first()
             if not domain:
                 return {"error ":'Invalid domain reference Number'},400
+            application = JobApplication.query.filter_by(email=email,reference_number_assigned=ref_number,status='approved').first()
+            if not application:
+                return {"error": "Application not approved or does not exist"},400
+            if application:
+                application.assigned_user_id = user.id
+
             user = User(
             first_name = data.get('first_name'),
             second_name =data.get('second_name'),
             email =email,
-            
             password_hash =generate_password_hash(data['password']),
             role =role,
             reference_number = data.get('reference_number')
             )
+            
         else:
             user = DomainOwner(
                 first_name = data.get('first_name'),
@@ -106,26 +118,33 @@ def email_verification(token):
         return redirect(f"{frontend_base}/login?error=expired")
     
     
-    # Check User table FIRST, then DomainOwner table if not found
-    user = User.query.filter_by(email=email).first() or \
-           DomainOwner.query.filter_by(email=email).first()
+    # Distinguish DomainOwner vs regular User for correct frontend redirect
+    owner = DomainOwner.query.filter_by(email=email).first()
+    user = User.query.filter_by(email=email).first()
 
-    if not user:
+    if not owner and not user:
         return redirect(f"{frontend_base}/signup?error=not_found")
-    
 
+    subject_obj = owner if owner else user
 
-    if not user.is_verified:
-        user.is_verified = True 
+    # Check if already verified BEFORE marking as verified
+    was_verified = subject_obj.is_verified
+    if not was_verified:
+        subject_obj.is_verified = True
         db.session.commit()
-        
-    if user.is_verified:
-        return redirect(f"{frontend_base}/DomainDefinition?message=already_verified&owner_id={user.id}")
-    
 
-#if user is already verified
-
-    return redirect(f"{frontend_base}/DomainDefinition?verified=true&owner_id={user.id}")
+    # DomainOwner -> DomainDefinition; regular User (collector) -> userDashboard
+    if owner:
+        if was_verified:
+            return redirect(f"{frontend_base}/DomainDefinition?message=already_verified&owner_id={owner.id}")
+        return redirect(f"{frontend_base}/DomainDefinition?verified=true&owner_id={owner.id}")
+    else:
+        # attempt to find the domain id for the user via reference_number
+        domain = Domain.query.filter_by(reference_number=user.reference_number).first()
+        domain_id = domain.id if domain else ''
+        if was_verified:
+            return redirect(f"{frontend_base}/userDashboard?message=already_verified&domain_id={domain_id}")
+        return redirect(f"{frontend_base}/userDashboard?verified=true&domain_id={domain_id}")
 
 
 

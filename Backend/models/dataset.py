@@ -8,6 +8,7 @@ class Dataset(db.Model):
     __tablename__ = 'datasets'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    owner_id = db.Column(db.Integer, db.ForeignKey('DomainOwner.id'), nullable=True, index=True)
     domain_id = db.Column(db.Integer, db.ForeignKey('domain.id'), nullable=False, index=True)
     collector_id = db.Column(db.Integer, nullable=False)
     ref_number = db.Column(db.String(64), nullable=False)
@@ -21,5 +22,9 @@ class Dataset(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, index=True, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
+    # Composite index for faster queries filtering by owner and domain
+    __table_args__ = (
+        db.Index('ix_dataset_owner_domain', 'owner_id', 'domain_id'),
+    )
 
     contributions = db.relationship('Transcription', backref='dataset', lazy=True)

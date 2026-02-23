@@ -10,6 +10,7 @@ from faster_whisper import WhisperModel
 import ollama 
 from sentence_transformers import SentenceTransformer, util
 from werkzeug.utils import secure_filename 
+from models.Transcription import Transcription
 
 # Project Internal Imports
 from extensions import db
@@ -115,6 +116,7 @@ def refine_with_llm(transcribed_text, segmented_text):
     """
     Takes the messy 'Not Mentioned' or 'Sentence' results and turns them 
     into clean data points using a local LLM.
+    Returns: (refined_data, metadata) where metadata tracks processing status
     """
     prompt = f"""
     You are a data extraction bot. Based on this Kenyan transcript: "{transcribed_text}"
@@ -132,29 +134,46 @@ def refine_with_llm(transcribed_text, segmented_text):
     
     try:
         response = ollama.chat(model='llama3.2:1b',
-                               format = 'json',
-                                messages=[
+                               format='json',
+                               messages=[
             {'role': 'user', 'content': prompt},
         ])
-        # Clean the string to ensure it's just JSON
-        return response['message']['content']
+        result = response['message']['content']
+        return result, {'status': 'LLM_SUCCESS', 'model': 'llama3.2:1b', 'confidence': 'high'}
+    except ConnectionError as e:
+        print(f"Ollama service unavailable: {e}")
+        return segmented_text, {'status': 'OLLAMA_OFFLINE', 'fallback': 'semantic', 'error': str(e)}
+    except json.JSONDecodeError as e:
+        print(f"LLM returned invalid JSON: {e}")
+        return segmented_text, {'status': 'LLM_PARSE_ERROR', 'fallback': 'semantic', 'error': str(e)}
     except Exception as e:
-        print(f"LLM Offline Error: {e}")
-
-        return segmented_text # Fallback to your existing logic
+        print(f"LLM Error: {e}")
+        return segmented_text, {'status': 'LLM_ERROR', 'fallback': 'semantic', 'error': str(e)}
 
 # --- API Routes ---
 
 @semaData_engine_bp.route('/transcribe', methods=['POST'])
 def semaData_transcribe():
-   
+    """
+    Transcribe audio files with strict collector authorization.
+    SECURITY: Verifies collector can only transcribe for their assigned domain.
+    """
     # Retrieve form data from React Frontend
     ref_number = request.form.get('referenceNumber')
+    collector_id_raw = request.form.get("user_id")
     
     try:
         domain_id = int(request.form.get("id"))
     except (TypeError, ValueError):
         return jsonify({"error": "Invalid domain Id"}), 400
+    
+    try:
+        collector_id = int(collector_id_raw) if collector_id_raw and collector_id_raw.isdigit() else None
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid collector ID"}), 400
+    
+    if not collector_id:
+        return jsonify({"error": "Collector ID is required"}), 400
 
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
@@ -181,27 +200,33 @@ def semaData_transcribe():
         if os.path.exists(audio_path): os.remove(audio_path)
         return jsonify({"error": 'Domain context not found in database'}), 404
     
-    required_features = target_domain.domain_features 
+    # SECURITY: Verify reference number matches (primary check)
     if target_domain.reference_number != ref_number:
         if os.path.exists(audio_path): os.remove(audio_path)
         return jsonify({"error": 'Reference number does not match domain context'}), 400
     
-
-    #Segmentation 
-    initial_segments = process_semantic_segmentation(transcribed_text,required_features)
-
-    try:
-        refined_json_strings = refine_with_llm(transcribed_text,initial_segments)
-        segmented_text = json.loads(refined_json_strings)
-
-        print("LLM refinement successful ")
-    except Exception as e:
-        print(f"Ollama Error {e} . Falling back to initial segmentation ")
-        segmented_text = initial_segments
-  
-
-    print(f"Audio secured at : {final_path}")
-
+    # SECURITY: Verify collector belongs to this domain (critical authorization check)
+    collector = User.query.get(collector_id)
+    if not collector:
+        if os.path.exists(audio_path): os.remove(audio_path)
+        return jsonify({"error": 'Collector not found'}), 404
+    
+    if collector.reference_number != ref_number:
+        if os.path.exists(audio_path): os.remove(audio_path)
+        return jsonify({"error": 'Collector is not authorized for this domain. Collector reference does not match domain reference.'}), 403
+    
+    if not target_domain.is_active:
+        if os.path.exists(audio_path): os.remove(audio_path)
+        return jsonify({"error": 'This domain is no longer active'}), 403
+    
+    # Log successful authorization for audit trail
+    print(f"✓ AUTHORIZATION VERIFIED: Collector ID {collector_id} ({collector.first_name} {collector.second_name}) authorized for Domain ID {domain_id} (ref: {ref_number})")
+    
+    required_features = target_domain.domain_features 
+    # Get domain owner for dataset association
+    domain_owner_id = target_domain.owner_id
+    
+    
     try:
         # 3. Speech-to-Text Processing (Faster-Whisper)
         segments, info = semaData_model.transcribe(audio_path, task='transcribe')
@@ -211,48 +236,72 @@ def semaData_transcribe():
         final_path = os.path.join(SECURE_STORAGE,final_filename)
         os.rename(audio_path,final_path)
 
+        print(f"Audio secured at : {final_path}")
+
         # 4. Semantic Processing (Segmentation)
         # Using the internal function to avoid conflict with nlp_matcher import
-        target_domain =Domain.query.get(domain_id)
-        segmented_text = process_semantic_segmentation(transcribed_text, required_features)
+        target_domain = Domain.query.get(domain_id)
+        
+        # Segmentation 
+        initial_segments = process_semantic_segmentation(transcribed_text, required_features)
+
+        # 4b. LLM Refinement with Enhanced Error Handling
+        try:
+            refined_json_strings, llm_metadata = refine_with_llm(transcribed_text, initial_segments)
+            segmented_text = json.loads(refined_json_strings)
+            print(f"LLM refinement successful: {llm_metadata['status']}")
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse LLM output: {e}. Using semantic segmentation fallback.")
+            segmented_text = initial_segments
+            llm_metadata = {'status': 'PARSE_FAILED', 'error': str(e)}
+        except Exception as e:
+            print(f"Unexpected LLM error: {e}. Using semantic segmentation fallback.")
+            segmented_text = initial_segments
+            llm_metadata = {'status': 'ERROR', 'error': str(e)}
           
        
 
         # 5. Database Logic (Session Aggregation)
         existing_entry = Dataset.query.filter_by(ref_number=ref_number, domain_id=domain_id).first()
 
-        collector_id_raw = request.form.get("user_id")
-        collector_id = int(collector_id_raw) if collector_id_raw and collector_id_raw.isdigit() else None   
+        # collector_id already validated and extracted at the beginning
 
-    
+        dataset_record = None
+        
         if existing_entry:
             # Append to existing text if this is a "AI_passed" session
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
             existing_entry.combined_text += f"\n\n--- Entry: {timestamp} ---\n{transcribed_text}"
             existing_entry.segmented_text = segmented_text
             existing_entry.status = "AI_Passed"
+            dataset_record = existing_entry
         else:
             # Create a fresh record
-            new_dataset = Dataset(
+            dataset_record = Dataset(
                 name=f"Ingestion_{ref_number}_{datetime.now().strftime('%H%M')}", 
-                
-                # 2. Add a Description (Even if empty, it's better than None)
                 description="Automated AI Transcription",
+                owner_id=domain_owner_id,
                 ref_number=ref_number,
                 domain_id=domain_id,
-                audio_file_path =final_path,
+                audio_file_path=final_path,
                 collector_id=collector_id,
                 combined_text=transcribed_text,
                 segmented_text=segmented_text,
-                
                 status="AI_Passed"
-
             )
-            db.session.add(new_dataset)
+            db.session.add(dataset_record)
         
-        db.session.commit() 
-        print(f"Data stored for Ref: {ref_number}, Domain ID: {domain_id}, Collector ID: {collector_id}")
-
+        # Critical Fix: Flush to get dataset_id before creating Transcription
+        db.session.flush()
+        
+        # 5b. Create Transcription Record (Critical for CSV Export)
+        transcription_record = Transcription(
+            dataset_id=dataset_record.id,
+            user_id=collector_id,
+            contributor_name=f"Collector_{collector_id}" if collector_id else "Unknown",
+            transcription_text=transcribed_text,
+            domain_features=segmented_text,
+        )
 
         # Cleanup audio file to free up drive space (solves [Errno 28])
         

@@ -11,9 +11,12 @@ from routes.core import semaData_engine_bp
 from routes.main.Dashboard import dashboard_bp
 from routes.main.payment import payment_bp
 from routes.main.UserDashboard import UserDashboard_bp
-from routes.main.payment import payment_bp
 from routes.main.doDataAnalytics import UserAnalytics_bp
 from routes.main.contact import contact_bp
+from routes.AdminCareers import AdminCareers_bp
+
+from routes.main.AdminDashboard import admin_bp
+from routes.main.careersPage import careers_bp
 from utils.email import mail 
 from flask_cors import CORS
 from Config import config
@@ -50,6 +53,9 @@ def semaData_app():
     semaData.register_blueprint(payment_bp,url_prefix='/api/main')
     semaData.register_blueprint(UserAnalytics_bp,url_prefix='/api/main')
     semaData.register_blueprint(contact_bp,url_prefix='/api/main')
+    semaData.register_blueprint(admin_bp,url_prefix='/api/main')
+    semaData.register_blueprint(careers_bp,url_prefix ='/api/main')
+    semaData.register_blueprint(AdminCareers_bp,url_prefix='/api')
     
 
     return semaData

@@ -11,7 +11,7 @@ class Payment(db.Model):
     amount = db.Column(db.Float)
     currency = db.Column(db.String(10), default='USD') # Track if they paid in KES or USD
     payment_type = db.Column(db.String(20)) # 'Downpayment' or 'Final'
-    phone_number = db.Column(db.Integer,nullable =True)
+    phone_number = db.Column(db.String(32), nullable=True)
     status = db.Column(db.String(20)) # 'Success', 'Failed', 'Pending'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     processed_at = db.Column(db.DateTime, nullable=True)

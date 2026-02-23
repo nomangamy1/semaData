@@ -69,8 +69,8 @@ def download_dataset(domain_id):
             logger.warning(f"Unauthorized download attempt: owner {current_owner_id} trying to access domain {domain_id}")
             return jsonify({"error": "Unauthorized"}), 403
         
-        # Get all processed datasets
-        datasets = Dataset.query.filter_by(domain_id=domain_id, status="Processed").all()
+        # Get all processed datasets for this domain owned by current user
+        datasets = Dataset.query.filter_by(domain_id=domain_id, owner_id=current_owner_id, status="Processed").all()
         if not datasets:
             logger.info(f"Owner {current_owner_id} attempted download for domain {domain_id} but no processed datasets available")
             return jsonify({"error": "No processed datasets available for download"}), 400

@@ -9,6 +9,7 @@ class Domain(db.Model):
     is_active = db.Column(db.Boolean, default=False)
     total_budget = db.Column(db.Float, nullable=True, default=0.0)
     amount_paid = db.Column(db.Float, default=0.0)
+    deposit_amount = db.Column(db.Float, nullable=True, default=0.0)
     payment_status = db.Column(db.String(20), default='Unpaid')
     target_goal = db.Column(db.Integer, nullable=False)
     is_automated = db.Column(db.Boolean, default=False)
@@ -38,9 +39,19 @@ class Domain(db.Model):
 
         return self.is_active
     def save(self, *args, **kwargs):
-        # Calculate once during creation
-        self.total_budget = self.target_goal * 150
+        # Ensure numeric target_goal and calculate budgets consistently
+        try:
+            tg = int(self.target_goal)
+        except Exception:
+            tg = 0
+
+        # Use per-item rate of 20 (matches payment initiation calculation)
+        self.total_budget = float(tg) * 20
         self.deposit_amount = self.total_budget * 0.3
-        super().save(*args, **kwargs)
+
+        # Persist using the session (some code expects a save() helper)
+        db.session.add(self)
+        db.session.commit()
+        return self
 
 
