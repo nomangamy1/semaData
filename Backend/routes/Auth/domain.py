@@ -41,11 +41,17 @@ def domain_register():
         owner.reference_number = reference_number 
 
         #payment
-        price_per_response =20
+        price_per_response = 20
         target_goal_val = data.get('target_goal', 0)
-        total_budget = price_per_response * target_goal
-        target_goal_numeric =int(target_goal_val)
-        system_buffer_goal = int(target_goal_numeric * 2.10)  # 10% buffer
+        try:
+            target_goal_numeric = int(target_goal_val)
+        except Exception:
+            target_goal_numeric = 0
+
+        total_budget = price_per_response * target_goal_numeric
+        deposit_amount = float(total_budget) * 0.3
+        # keep a small system buffer (10%) if needed elsewhere
+        system_buffer_goal = int(target_goal_numeric * 1.10)
 
 
         
@@ -58,10 +64,10 @@ def domain_register():
             domain_name=domain_name,
             owner_id = data.get('id'),
             reference_number=reference_number,
-            target_goal=system_buffer_goal,
-            total_budget =total_budget,
+            target_goal=target_goal_numeric,
+            total_budget=total_budget,
             requirements=requirements_text,
-            deposit_amount = deposit_amount
+            deposit_amount=deposit_amount
             
         )
         db.session.add(domain)
@@ -82,11 +88,12 @@ def domain_register():
 
         return jsonify({
             "message": "Domain and Features saved successfully",
-            "domain_id":domain.id,
+            "domain_id": domain.id,
             "reference_number": reference_number,
             "domain_name": domain_name,
-            "deposit":deposit_amount
-
+            "deposit": deposit_amount,
+            "target_goal": target_goal_numeric,
+            "total_budget": total_budget
         }), 201
 
       
@@ -108,7 +115,12 @@ def get_owner_domains(owner_id):
             "reference_number": d.reference_number,
             "feature_count": feature_counts,
             "collector_count": collector_count,
-            "submission_count": submission_counts
+            "submission_count": submission_counts,
+            "total_budget": d.total_budget,
+            "deposit_amount": d.deposit_amount,
+            "amount_paid": d.amount_paid or 0,
+            "payment_status": d.payment_status,
+            "domain_id": d.id
         })
     return jsonify(output), 200
 

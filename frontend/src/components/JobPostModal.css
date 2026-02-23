@@ -1,0 +1,47 @@
+/* JobPostModal.css */
+
+.admin-input-field {
+    background-color: #f8fafc;
+    border: 2px solid #f1f5f9;
+    border-radius: 1rem;
+    padding: 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1e293b;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.admin-input-field:focus {
+    background-color: #ffffff;
+    border-color: #489c8c;
+    box-shadow: 0 0 0 4px rgba(72, 156, 140, 0.1);
+}
+
+.admin-input-field::placeholder {
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+/* Custom Scrollbar for the form body */
+.admin-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.admin-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.admin-scroll::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+
+.admin-scroll::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
+}
+
+/* Modal sizing override for the form */
+.modal-container {
+    max-width: 800px !important;
+}

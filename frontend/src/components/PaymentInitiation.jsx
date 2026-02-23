@@ -120,9 +120,26 @@ const PayInitiate = () => {
                         </section>
 
                         <section className="price-breakdown">
+                            <div className="breakdown-label">Payment Breakdown</div>
+                            <div className="price-row">
+                                <span>Target Goal</span>
+                                <span>KES {parseFloat(target_goal)?.toLocaleString()}</span>
+                            </div>
+                            <div className="price-row">
+                                <span>Multiplier</span>
+                                <span>× 20</span>
+                            </div>
+                            <div className="price-row">
+                                <span>Subtotal</span>
+                                <span>KES {(parseFloat(target_goal) * 20)?.toLocaleString()}</span>
+                            </div>
+                            <div className="price-row">
+                                <span>Deposit Rate</span>
+                                <span>30%</span>
+                            </div>
                             <div className="price-row total">
-                                <span>Amount to Pay</span>
-                                <span>KES {deposit?.toLocaleString()}</span>
+                                <span>Total Deposit Required</span>
+                                <span className="amount-highlight">KES {deposit?.toLocaleString()}</span>
                             </div>
                         </section>
 

@@ -73,6 +73,12 @@ def login():
             return {
                 "error": "Invalid credentials"
             }, 401
+        
+        # SECURITY: Verify user is actually a collector (user_type check)
+        if user.user_type != 'User':
+            return {
+                "error": "Invalid user type for collector login"
+            }, 401
 
         if not user.is_verified:
             token = generate_verification_token(user.email)

@@ -111,6 +111,36 @@
   border-radius: 16px;
   padding: 20px;
   margin-bottom: 24px;
+  border: 2px solid var(--border-green);
+}
+
+.breakdown-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  font-size: 0.95rem;
+  color: var(--text-dark);
+  border-bottom: 1px solid rgba(72, 156, 140, 0.1);
+}
+
+.price-row:last-child {
+  border-bottom: none;
+}
+
+.price-row span:last-child {
+  font-weight: 600;
+  color: var(--primary-green);
 }
 
 .price-row.total {
@@ -119,6 +149,16 @@
   font-weight: 800;
   font-size: 1.1rem;
   color: var(--dark-green);
+  padding: 14px 0;
+  margin-top: 8px;
+  padding-top: 14px;
+  border-top: 2px solid var(--border-green);
+  border-bottom: none;
+}
+
+.amount-highlight {
+  color: var(--dark-green);
+  font-size: 1.25rem;
 }
 
 /* NEW: Success Overlay */

@@ -373,3 +373,20 @@
     border: 2px solid currentColor;
   }
 }
+.glass-nav {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+  transition: all 0.3s ease;
+}
+
+.nav-link {
+  font-weight: 600;
+  color: #64748b;
+  transition: color 0.2s;
+}
+
+.nav-link.active {
+  color: #489c8c;
+}

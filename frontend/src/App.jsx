@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -16,8 +16,21 @@ import TeamCollectors from './components/TeamCollectors';
 import logo from './assets/logo.png';
 import Navbar from './components/NavBar';
 import PayInitiate from './components/PaymentInitiation';
+import JobDescriptionView from './pages/JobDescription';
+import CareersPage from './pages/careersPublic';
+import AdminDashboard from './pages/AdminDashboard';
 
 function SemaData_App() {
+  const AdminRoute = ({ children }) => {
+  const user = JSON.parse(localStorage.getItem('user')); // Assuming you store user object
+  
+  // Check specifically for the 'admin' role
+  if (!user || user.role !== 'admin') {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+};
   return (
     <Router>
       <Navbar />
@@ -36,8 +49,10 @@ function SemaData_App() {
           <Route path ="/DataAnalytics" element={<DataAnalytics/>} />
           <Route path="/TeamCollector" element={<TeamCollectors/>} />
           <Route path="/payInitiate" element={<PayInitiate/>} />
+          <Route path="/careerPublic" element={<CareersPage />} />
+          <Route path="/careers/:id" element={<JobDescriptionView />} />
+          <Route path="/AdminDashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="*" element={<div className="text-white">Route Not Found - Check URL</div>} />
-
         </Routes>
       </main>
       <Footer />

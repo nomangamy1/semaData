@@ -1,0 +1,200 @@
+/* JobDescription.css */
+
+/* 1. Page Entrance Animation */
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.job-view-container {
+  animation: slideUpFade 0.6s ease-out forwards;
+}
+
+/* 2. The Content Card - Custom Glass & Border */
+.description-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 20px -5px rgba(15, 23, 42, 0.03);
+  transition: all 0.3s ease;
+}
+
+/* 3. Typography Refinements */
+.job-title {
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  background: linear-gradient(to bottom right, #0f172a, #334155);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.section-heading {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.section-heading::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 40%;
+  height: 3px;
+  background: #10b981; /* SemaData Emerald */
+  border-radius: 10px;
+}
+
+/* 4. The Sidebar Form Styles */
+.apply-sidebar {
+  background: #0f172a; /* Deep Slate */
+  box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.25); /* Emerald Glow */
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.input-field {
+  transition: all 0.2s ease;
+  border: 1px solid transparent !important;
+}
+
+.input-field:focus {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(16, 185, 129, 0.5) !important;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+}
+
+/* 5. Custom Bullet Points (Checkmarks) */
+.requirement-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.requirement-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  transition: transform 0.2s ease;
+}
+
+.requirement-item:hover {
+  transform: translateX(5px);
+  border-color: #10b981;
+}
+
+/* 6. Button "Pulse" Effect */
+.btn-submit {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39);
+}
+
+.btn-submit:hover {
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+  transform: scale(1.01);
+}
+
+.btn-submit:active {
+  transform: scale(0.98);
+}
+
+/* 7. Success State Animation */
+.success-check-pulse {
+  animation: checkBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes checkBounce {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
+}
+
+/* JobDescription.css */
+
+/* Layout & Background */
+.min-h-screen {
+    background-color: #f8fafc; /* Soft slate background */
+}
+
+/* Glassmorphism for the Job Detail Card */
+.bg-white.p-10.rounded-\[40px\] {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.bg-white.p-10.rounded-\[40px\]:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+}
+
+/* Typography Enhancements */
+h1 {
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+}
+
+.prose h3 {
+    margin-top: 2rem;
+    color: #1e293b;
+}
+
+/* The Dark Sidebar Form */
+.bg-slate-900 {
+    background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
+}
+
+/* Custom Input Styling for Dark Theme */
+input, textarea {
+    transition: all 0.2s ease;
+    border: 1px solid transparent !important;
+}
+
+input:focus, textarea:focus {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    border-color: #10b981 !important; /* Emerald green focus */
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1) !important;
+}
+
+/* Resume Upload Styling */
+.group:hover .border-dashed {
+    border-color: #10b981 !important;
+    background-color: rgba(16, 185, 129, 0.05) !important;
+}
+
+/* Success Animation */
+@keyframes popIn {
+    0% { transform: scale(0.9); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.text-center.py-10 {
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Button Pulse on Hover */
+button.bg-\[\#489c8c\]:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 15px -3px rgba(72, 156, 140, 0.3);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 1024px) {
+    .sticky {
+        position: relative !important;
+        top: 0 !important;
+    }
+    
+    .rounded-\[40px\] {
+        border-radius: 2rem !important;
+    }
+}
