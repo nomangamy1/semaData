@@ -53,9 +53,9 @@ def semaData_app():
     semaData.register_blueprint(payment_bp,url_prefix='/api/main')
     semaData.register_blueprint(UserAnalytics_bp,url_prefix='/api/main')
     semaData.register_blueprint(contact_bp,url_prefix='/api/main')
-    semaData.register_blueprint(admin_bp,url_prefix='/api/main')
+    semaData.register_blueprint(admin_bp,url_prefix='/api/admin')
     semaData.register_blueprint(careers_bp,url_prefix ='/api/main')
-    semaData.register_blueprint(AdminCareers_bp,url_prefix='/api')
+    semaData.register_blueprint(AdminCareers_bp,url_prefix='/api/AdminCareers')
     
 
     return semaData

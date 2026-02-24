@@ -69,12 +69,25 @@ const Dashboard = () => {
   const [domains, setDomains] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const ownerId = localStorage.getItem('owner_id'); 
+  const ownerId = localStorage.getItem('userId') || localStorage.getItem('owner_id'); // Support both keys for flexibility
 
   useEffect(() => {
+
     const fetchDomains = async () => {
+
+
+
+    const token = localStorage.getItem('token');
+
       try {
-        const response = await fetch(`http://localhost:8000/my-domains/${ownerId}`);
+        const response = await fetch(`http://localhost:8000/api/my-domains`, {
+          method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+        });
+
         const data = await response.json();
         setDomains(data);
         setLoading(false);

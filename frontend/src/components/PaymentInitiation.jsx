@@ -53,7 +53,7 @@ const PayInitiate = () => {
 
                     // Final redirect using backend's redirect_url
                     setTimeout(() => {
-                        const redirectUrl = data.redirect_url || `/UserDashboard?domain_id=${domainId}`;
+                        const redirectUrl = data.redirect_url || `/Dashboard?domain_id=${domainId}`;
                         window.location.href = redirectUrl;
                     }, 2000);
                 }, 4000);
@@ -123,15 +123,15 @@ const PayInitiate = () => {
                             <div className="breakdown-label">Payment Breakdown</div>
                             <div className="price-row">
                                 <span>Target Goal</span>
-                                <span>KES {parseFloat(target_goal)?.toLocaleString()}</span>
+                                <span>Entries {parseFloat(target_goal)?.toLocaleString()}</span>
                             </div>
                             <div className="price-row">
-                                <span>Multiplier</span>
-                                <span>× 20</span>
+                                <span>Pricing per Entry</span>
+                                <span>× Ksh7</span>
                             </div>
                             <div className="price-row">
                                 <span>Subtotal</span>
-                                <span>KES {(parseFloat(target_goal) * 20)?.toLocaleString()}</span>
+                                <span>KES {(parseFloat(target_goal) * 7)?.toLocaleString()}</span>
                             </div>
                             <div className="price-row">
                                 <span>Deposit Rate</span>

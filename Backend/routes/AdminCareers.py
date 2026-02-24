@@ -29,10 +29,12 @@ def create_job():
         return jsonify({"error": "Only admins can create jobs"}), 403
     
     data = request.json
-    
+    domain_id = data.get('domain_id')
+
     try:
         job = Job(
             title=data.get('title'),
+            domain_id=domain_id,
             description=data.get('description'),
             field=data.get('field'),  # e.g., 'Agriculture', 'Health'
             specialization_required=data.get('specialization_required'),  # e.g., 'Agrovet Seller'
@@ -171,4 +173,3 @@ def reject_application(app_id):
     return jsonify({
         "message": "Application rejected",
     }), 200
-
