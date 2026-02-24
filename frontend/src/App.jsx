@@ -22,10 +22,12 @@ import AdminDashboard from './pages/AdminDashboard';
 
 function SemaData_App() {
   const AdminRoute = ({ children }) => {
-  const user = JSON.parse(localStorage.getItem('user')); // Assuming you store user object
+  const userString = localStorage.getItem('user');
+  const user = userString ? JSON.parse(userString) : null; // Safely parse user object
   
   // Check specifically for the 'admin' role
   if (!user || user.role !== 'admin') {
+    console.log('Access denied. User is:', user?.role || 'No user found');
     return <Navigate to="/login" replace />;
   }
 

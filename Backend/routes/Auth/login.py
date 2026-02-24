@@ -6,6 +6,7 @@ from models import User, Domain, DomainOwner
 from flask_login import login_user
 from werkzeug.security import check_password_hash,generate_password_hash
 from models import User, Domain, DomainOwner
+from flask_jwt_extended import create_access_token
 
 login_bp = Blueprint("login",__name__)
 
@@ -17,6 +18,27 @@ def login():
         email = data.get('email')
         password = data.get('password')
         reference_number = data.get('reference_number')
+
+        admin_user = User.query.filter_by(email=email, role='admin').first()
+        if admin_user:
+            if check_password_hash(admin_user.password_hash, password):
+                login_user(admin_user)
+                access_token = create_access_token(identity=admin_user.id, additional_claims={"role": "admin"})
+                return {
+                "message": "Admin login successful",
+                "role": "admin",
+                "userId": admin_user.id,
+                "email": admin_user.email,
+                "access_token": access_token,
+                "redirect_url":'/AdminDashboard'
+            }, 200
+            else:
+                return {
+                "error": "Invalid admin credentials"
+            }, 401
+
+
+
 
         # genaral validation of credentials provided
         if not email or not password or not reference_number:

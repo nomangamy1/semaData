@@ -5,8 +5,8 @@ from extensions import db
 import secrets
 import json
 import string
-import random
-
+import random 
+from flask_jwt_extended import jwt_required, get_jwt_identity
 def generate_ref_number(domain_name):
     prefix = domain_name[:4].upper()
     suffix = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(6))
@@ -101,18 +101,30 @@ def domain_register():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@domain_bp.route('/my-domains/<int:owner_id>', methods=['GET'])
+@domain_bp.route('/my-domains>', methods=['GET'])
+@jwt_required
 def get_owner_domains(owner_id):
-    domains = Domain.query.filter_by(owner_id=owner_id).all()
+    current_user_id = get_jwt_identity()
+    domains = Domain.query.filter_by(owner_id=current_user_id).all()
     output = []
     for d in domains:
         feature_counts = len(d.domain_features) if hasattr(d,'domain_features') else 0  # Assuming a relationship 'domain_features' exists
         submission_counts = Dataset.query.filter_by(domain_id=d.id).count()  # Assuming a relationship 'submissions' exists
         collector_count = User.query.filter_by(reference_number=d.reference_number).count()
+        datasets = Dataset.query.filter_by(domain_id=d.id).all()
+        dataset_list = []
+        for ds in datasets:
+            dataset_list.append({
+                "ref_number": ds.reference_number,
+                "segmented_text": json.loads(ds.segmented_text) if ds.segmented_text else None,
+                "status": ds.status
+            })
          # Assuming a relationship 'collectors' exists
         output.append({
             "domain_name": d.domain_name,
             "reference_number": d.reference_number,
+            "domain_field": d.requirements[:30] + "..." if d.requirements else "General Research",
+            "datasets": dataset_list,
             "feature_count": feature_counts,
             "collector_count": collector_count,
             "submission_count": submission_counts,

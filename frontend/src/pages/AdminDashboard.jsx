@@ -9,7 +9,7 @@ import {
 // Sub-components
 import ApplicantModal from '../components/ApplicantModal'; 
 import TemplateManager from '../components/TemplateManager';
-import JobPostModal from '../components/JobPostModal'; // Newly Created
+import JobPostModal from '../components/JobPostModal'; 
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('applications');
@@ -29,13 +29,14 @@ const AdminDashboard = () => {
     setLoading(true);
     const token = localStorage.getItem('token');
     try {
-      // Always fetch domains as they are needed for filtering and modals
-      const domRes = await fetch('http://localhost:8000/api/domains', {
+      // 1. Fetch All Domains (OneAcreFund etc.)
+      const domRes = await fetch('http://localhost:8000/api/admin/all-domains', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const domData = await domRes.json();
       setDomains(domData || []);
 
+      // 2. Fetch Tab Specific Data
       if (activeTab === 'applications') {
         const res = await fetch('http://localhost:8000/api/admin/applications', {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -62,7 +63,8 @@ const AdminDashboard = () => {
   const handlePublishJob = async (jobData) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('http://localhost:8000/api/admin/jobs/create', {
+      // Corrected endpoint to match AdminCareers_bp prefix
+      const res = await fetch('http://localhost:8000/api/admin/jobs', {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`, 
@@ -104,7 +106,7 @@ const AdminDashboard = () => {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
     });
     if (res.ok) {
-      alert("Application Rejected and email notification sent.");
+      alert("Application Rejected.");
       setSelectedApp(null);
       fetchInitialData();
     }
@@ -160,6 +162,7 @@ const AdminDashboard = () => {
           </div>
         </header>
 
+        {/* Dynamic Content Sections */}
         <div className="w-full">
           {activeTab === 'applications' && (
             <ApplicationsTable 
@@ -176,6 +179,13 @@ const AdminDashboard = () => {
               loading={loading} 
               jobs={jobs} 
               onDelete={(id) => console.log("Delete job", id)} 
+            />
+          )}
+
+          {activeTab === 'domains' && (
+            <DomainsTable 
+                loading={loading} 
+                domains={domains} 
             />
           )}
 
@@ -199,6 +209,61 @@ const AdminDashboard = () => {
           />
         )}
       </main>
+    </div>
+  );
+};
+
+// --- SUB-COMPONENT: DOMAINS TABLE ---
+const DomainsTable = ({ loading, domains }) => {
+  if (loading) return <div className="py-20 text-center animate-pulse font-bold text-slate-400 italic">Accessing Client Records...</div>;
+  
+  if (domains.length === 0) return (
+    <div className="py-20 text-center bg-white rounded-[32px] border border-dashed border-slate-200">
+      <Globe className="mx-auto text-slate-200 mb-4" size={48} />
+      <p className="font-bold text-slate-400 uppercase text-xs tracking-widest">No Domain Clients Registered</p>
+    </div>
+  );
+
+  return (
+    <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+      <table className="w-full text-left">
+        <thead className="bg-slate-50/50 border-b border-slate-100">
+          <tr>
+            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Domain Name</th>
+            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Reference Code</th>
+            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Payment Status</th>
+            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Target Goal</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-50">
+          {domains.map(d => (
+            <tr key={d.id} className="hover:bg-slate-50/50 transition-colors">
+              <td className="px-6 py-5">
+                <p className="font-bold text-slate-800">{d.name}</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">ID: {d.id}</p>
+              </td>
+              <td className="px-6 py-5">
+                 <code className="px-2 py-1 bg-slate-100 rounded text-xs font-mono text-slate-600">{d.reference_number || 'N/A'}</code>
+              </td>
+              <td className="px-6 py-5">
+                <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+                  d.status === 'Success' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                }`}>
+                  {d.status}
+                </span>
+              </td>
+              <td className="px-6 py-5 text-right font-black text-slate-700">
+                {d.target} <span className="text-[10px] text-slate-400 uppercase">Submissions</span>
+              </td>
+              <td className="px-6 py-5">
+  <p className="text-xs text-slate-600 italic">
+    {d.requirements ? d.requirements : "No specific constraints"}
+  </p>
+</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
@@ -247,7 +312,7 @@ const JobsTable = ({ loading, jobs, onDelete }) => {
   );
 };
 
-// --- REUSABLE COMPONENTS ---
+// --- SUB-COMPONENT: APPLICATIONS TABLE ---
 const ApplicationsTable = ({ loading, data, onView, onApprove, onReject }) => {
   if (loading) return <div className="py-20 text-center animate-pulse font-bold text-slate-400">Fetching Applications...</div>;
   return (
@@ -264,8 +329,8 @@ const ApplicationsTable = ({ loading, data, onView, onApprove, onReject }) => {
           {data.map(app => (
             <tr key={app.id} onClick={() => onView(app)} className="hover:bg-slate-50/80 transition-colors group cursor-pointer">
               <td className="px-6 py-5">
-                <p className="font-bold text-slate-800">{app.first_name} {app.second_name}</p>
-                <p className="text-xs text-slate-400">{app.email}</p>
+                <p className="font-bold text-slate-800">{app.applicant_name || 'Guest Applicant'}</p>
+                <p className="text-xs text-slate-400">{app.applicant_email}</p>
               </td>
               <td className="px-6 py-5">
                 <p className="text-sm font-bold text-slate-600">{app.job_title}</p>

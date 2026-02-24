@@ -24,27 +24,47 @@ def initiate_payment():
     domain = Domain.query.get(domain_id)
     if not domain:
         return jsonify({"error": "Domain not found"}), 404
-
-    if not phone:
-        return jsonify({"error": "phone is required"}), 400
-    phone = phone.strip()
-    if phone.startswith('0'):
-        phone = '254' + phone[1:]
-
-    # Use a field on the domain (fix previous bug where target_goal was undefined)
-    target_goal = getattr(domain, 'target_goal', None)
-    if target_goal is None:
-        return jsonify({"error": "Domain target_goal not set"}), 400
-
     try:
-        total_price = float(target_goal) * 20
-        deposit_amount = total_price * 0.3
-    except Exception:
-        current_app.logger.exception("Error computing amounts for domain %s", domain_id)
-        return jsonify({"error": "Invalid domain target goal"}), 500
+        # 1. Calculate the deposit (Keep logic consistent with UI)
+        target_goal = getattr(domain, 'target_goal', 0)
+        deposit_amount = float(target_goal) * 7 * 0.3
 
+        # 2. Create a "Success" payment record immediately
+        transaction_ref = f"MOCK-SEMA-{domain_id}-{int(time.time())}"
+        new_payment = Payment(
+            domain_id=domain_id,
+            amount=deposit_amount,
+            transaction_ref=transaction_ref,
+            status="Success", # Directly set to Success
+            phone_number=phone,
+            processed_at=datetime.utcnow()
+        )
+        db.session.add(new_payment)
+
+        # 3. Activate the domain immediately
+        domain.is_active = True
+        domain.amount_paid = (domain.amount_paid or 0) + deposit_amount
+        
+        db.session.commit()
+
+        # 4. Return the response the frontend is waiting for
+        redirect_url = f"http://localhost:5173/Success?type=owner&domain_id={domain_id}"
+
+        return jsonify({
+            "status": "success",
+            "message": "PROTOTYPE MODE: Payment Simulated Successfully",
+            "deposit": deposit_amount,
+            "transaction_ref": transaction_ref,
+            "redirect_url": redirect_url
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Shortcut Error: {str(e)}")
+        return jsonify({"error": "Internal prototype error"}), 500
     # generate transaction ref server-side if not provided
-    if not transaction_ref:
+''' 
+   if not transaction_ref:
         transaction_ref = f"SEMA{domain_id}-{int(time.time())}"
 
     # ensure uniqueness
@@ -100,7 +120,7 @@ def initiate_payment():
         current_app.logger.exception("Failed to create payment for domain %s", domain_id)
         db.session.rollback()
         return jsonify({"error": "Could not connect to payment gateway"}), 500
-
+'''
 
 @payment_bp.route('/payment/callback', methods=['POST'])
 def payment_callback():
@@ -167,103 +187,4 @@ def get_status(domain_id):
         "reference_number": getattr(domain, 'reference_number', None),
         "domain_name": getattr(domain, 'domain_name', None)
     }), 200
-'''
-from flask import Blueprint, request, jsonify,redirect_url
-from extensions import db
-from models.domain import Domain
-from models.payments import Payment 
-from datetime import datetime 
-import time 
-import requests
-payment_bp = Blueprint('payment', __name__)
 
-@payment_bp.route('/pay/initiate-mock', methods=['POST'])
-def initiate_payment():
-    data = request.json
-    domain_id = data.get('domain_id')
-    domain = Domain.query.get(domain_id)
-    phone = data.get('phone')
-    target_goal = data.get('target_goal')
-    amount =data.get('amount')
-    transaction_ref =data.get('transaction_ref')
-    
-    if phone.startswith('0'):
-
-        phone = '254' + phone[1:]
-    
-
-    
-    if not domain:
-        return jsonify({
-            "Error":"Domain not found"
-        }),404
-   
-
-
-
-    target_goal =Domain.query.get(target_goal)
-    
-    total_price = target_goal * 20
-    deposit_amount = total_price * 0.3
-
-    #transaction_reference =f"SEMA{domain_id}-{int(time.time())}"
-    try:
-        new_payment = Payment(
-            domain_id=domain_id,
-            amount=deposit_amount,
-            transaction_ref=transaction_ref,
-                status="Pending",
-                phone_number =phone
-        )
-        db.session.add(new_payment)
-        db.session.commit()
-
-        #this is  where the logic to call payment methods should be 
-        #I will then add the sucess redirection url here
-
-        redirect_url = f"http://localhost:3000/Success?domain_id={domain_id}" 
-
-        
-        return jsonify({
-            "status": "success",
-            "message": "Payment initiated",
-            "deposit": deposit_amount,
-
-        }),200
-    except Exception as e:
-        return jsonify({
-            "error":"Could not connect to payment gateaway"
-        }),500
-    
-@payment_bp.route('/payment/callback', methods=['POST'])
-def payment_callback():
-    data = request.json.get('Body',{}).get('stkCallback',{})
-    result_code = data.get('ResultCode')
-    checkout_request_id = data.get('CheckoutRequestID')       
-    domain_id = data.get('domain_id')
-
-    payment = Payment.query.filter_by(transaction_ref=checkout_request_id).first()
-    if result_code == 0:
-        payment.status = "Success"
-        domain = Domain.query.get(payment.domain_id)
-        domain.is_active = True
-        domain.amount_paid += payment.amount
-        db.session.commit()
-    else:
-        payment.status = "Failed"
-        db.session.commit()
-    return jsonify({
-        "ResultCode":0,
-        "ResultDesc": "Received successfully"
-    }),200
-
-@payment_bp.route('/<domain-status>/<int:domain_id>', methods =['GET'])
-def get_status(domain_id):
-    domain= Domain.query.get(domain_id)
-
-    return jsonify({
-        "is_active":domain.is_active,
-        "reference_number":domain.reference_number,
-        "domain_name":domain.domain_name
-    }),200
-'''

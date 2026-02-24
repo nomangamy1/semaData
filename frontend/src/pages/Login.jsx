@@ -28,15 +28,26 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
+        const userObj = {
+          role: data.role,
+          id: data.userId,
+          email:data.email
+        };
+        localStorage.setItem('user', JSON.stringify(userObj));
+
         // Store user info in localStorage for session persistence
         localStorage.setItem('userRole', data.role);
         localStorage.setItem('userId',data.userId);
-        localStorage.setItem('domain', data.domain);
-        localStorage.setItem('domainId', data.domainId);
-        localStorage.setItem('referenceNumber', formData.reference_number);
-        localStorage.setItem('username', data.username);
+        localStorage.setItem('token' , data.token  );
+        localStorage.setItem('domain', data.domain || '');
+        localStorage.setItem('domainId', data.domainId || '');
+        localStorage.setItem('referenceNumber', formData.reference_number || '');
+        localStorage.setItem('username', data.username || 'Admin');
         // Innovation Tip: Redirect based on role
-        if (data.role === 'domain_owner') {
+        if (data.role === 'admin') {
+          navigate('/adminDashboard');
+        } else if
+        (data.role === 'domain_owner') {
           navigate('/Dashboard');
         } else {
           navigate('/userDashboard');
@@ -56,7 +67,7 @@ const Login = () => {
       <form onSubmit={handleSubmit}>
         <input name="email" type="email" placeholder="Email" onChange={handleChange} required />
         <input name="password" type="password" placeholder="Password" onChange={handleChange} required />
-        <input name="reference_number" type="text" placeholder="Domain Reference Number" onChange={handleChange} required />
+        <input name="reference_number" type="text" placeholder="Domain Reference Number" onChange={handleChange} />
         <button type="submit">Unlock System</button>
       </form>
     </div>

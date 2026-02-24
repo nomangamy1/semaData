@@ -49,3 +49,17 @@ def get_all_domain_owners():
             } for o in owners
         ]
     }), 200
+
+
+@admin_bp.route('/admin/all-domains', methods=['GET'])
+@jwt_required()
+def get_all_domains():
+    # This fetches "OneAcreFund" and all other registered projects
+    domains = Domain.query.all()
+    return jsonify([{
+        "id": d.id,
+        "name": d.domain_name,
+        "status": d.payment_status,
+        "owner_id": d.owner_id,
+        "target": d.target_goal
+    } for d in domains]), 200
