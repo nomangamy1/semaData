@@ -78,7 +78,7 @@ const Dashboard = () => {
 
 
     const token = localStorage.getItem('token');
-
+ 
       try {
         const response = await fetch(`http://localhost:8000/api/my-domains`, {
           method: 'GET',
