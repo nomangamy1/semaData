@@ -43,7 +43,7 @@ def semaData_app():
     login_manager.init_app(semaData)
     semaData.register_blueprint(register_bp, url_prefix='/api/Auth')
     semaData.register_blueprint(domain_bp,url_prefix='/api')
-
+#the domain has issues
     semaData.register_blueprint(login_bp, url_prefix='/api/Auth')
     semaData.register_blueprint(google_login_bp, url_prefix='/api/Auth')
     semaData.register_blueprint(auth_bp, url_prefix='/api/Auth')
