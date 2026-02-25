@@ -44,7 +44,7 @@ def initiate_payment():
         # 3. Activate the domain immediately
         domain.is_active = True
         domain.amount_paid = (domain.amount_paid or 0) + deposit_amount
-        
+        domain.payment_status = "Paid"
         db.session.commit()
 
         # 4. Return the response the frontend is waiting for
