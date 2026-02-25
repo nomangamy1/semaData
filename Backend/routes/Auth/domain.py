@@ -106,6 +106,8 @@ def domain_register():
 def get_owner_domains(owner_id):
     current_user_id = get_jwt_identity()
     domains = Domain.query.filter_by(owner_id=current_user_id).all()
+    if not domains: 
+        return jsonify([]),200
     output = []
     for d in domains:
         feature_counts = len(d.domain_features) if hasattr(d,'domain_features') else 0  # Assuming a relationship 'domain_features' exists
