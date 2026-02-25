@@ -5,3 +5,9 @@ env
 .env
 .env.local
 __pycache__
+
+venv/
+__pycache__/
+*.pyc
+instance/
+.env
