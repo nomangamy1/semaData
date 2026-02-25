@@ -26,7 +26,7 @@ def get_dashboard_stats():
     }
     return jsonify(stats)
 
-@dashboard_bp.route('/owner-stats/<int:owner_id>', methods=['GET'])
+@dashboard_bp.route('/owner-stats/>', methods=['GET'])
 def get_owner_dashboard_stats(owner_id):
     # Only get domains belonging to THIS owner
     owner_domains = Domain.query.filter_by(owner_id=owner_id).all()
