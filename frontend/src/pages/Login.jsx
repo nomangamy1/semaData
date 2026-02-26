@@ -38,7 +38,8 @@ const Login = () => {
         // Store user info in localStorage for session persistence
         localStorage.setItem('userRole', data.role);
         localStorage.setItem('userId',data.userId);
-        localStorage.setItem('token' , data.token  );
+        // backend now returns access_token for admin and domain_owner
+        localStorage.setItem('token', data.access_token || data.token || '');
         localStorage.setItem('domain', data.domain || '');
         localStorage.setItem('domainId', data.domainId || '');
         localStorage.setItem('referenceNumber', formData.reference_number || '');
@@ -46,8 +47,7 @@ const Login = () => {
         // Innovation Tip: Redirect based on role
         if (data.role === 'admin') {
           navigate('/adminDashboard');
-        } else if
-        (data.role === 'domain_owner') {
+        } else if (data.role === 'domain_owner') {
           navigate('/Dashboard');
         } else {
           navigate('/userDashboard');

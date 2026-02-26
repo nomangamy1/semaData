@@ -26,16 +26,18 @@ def get_dashboard_stats():
     }
     return jsonify(stats)
 
-@dashboard_bp.route('/owner-stats/<int:owner_id>', methods=['GET'])
-def get_owner_dashboard_stats(owner_id):
-    # Only get domains belonging to THIS owner
+@dashboard_bp.route('/owner-stats', methods=['GET'])
+@jwt_required()
+def get_owner_dashboard_stats():
+    # determine owner from the JWT rather than trusting a URL param
+    owner_id = get_jwt_identity()
     owner_domains = Domain.query.filter_by(owner_id=owner_id).all()
     domain_ids = [d.id for d in owner_domains]
 
     # Aggregate stats across those domains
     total_datasets = Dataset.query.filter(Dataset.domain_id.in_(domain_ids)).count()
     
-    # Logic: How many records are "Initial" vs "Growing" vs "Processed"?
+    # Logic: How many records are "Initial" vs "Processed"?
     status_distribution = {
         "initial": Dataset.query.filter(Dataset.domain_id.in_(domain_ids), Dataset.status == "Initial").count(),
         "processed": Dataset.query.filter(Dataset.domain_id.in_(domain_ids), Dataset.status == "Processed").count()
@@ -45,7 +47,8 @@ def get_owner_dashboard_stats(owner_id):
         'total_domains': len(owner_domains),
         'total_submissions': total_datasets,
         'status_breakdown': status_distribution,
-        'active_token': owner_domains[0].reference_number if owner_domains else "None"
+        # return a list of tokens in case there are multiple domains
+        'active_tokens': [d.reference_number for d in owner_domains]
     })
 
 

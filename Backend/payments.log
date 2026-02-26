@@ -2486,3 +2486,44 @@ INFO:werkzeug:127.0.0.1 - - [24/Feb/2026 15:33:51] "[33mGET /api/careers/fields
 INFO:werkzeug:127.0.0.1 - - [24/Feb/2026 15:33:51] "[33mGET /api/careers/careers HTTP/1.1[0m" 404 -
 INFO:werkzeug:127.0.0.1 - - [24/Feb/2026 15:34:16] "[33mOPTIONS /api/my-domains HTTP/1.1[0m" 404 -
 INFO:werkzeug:127.0.0.1 - - [24/Feb/2026 15:34:16] "[33mOPTIONS /api/my-domains HTTP/1.1[0m" 404 -
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://192.168.188.188:8000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 298-800-860
+INFO:werkzeug:127.0.0.1 - - [25/Feb/2026 11:46:42] "[33mGET /api/careers/fields HTTP/1.1[0m" 404 -
+INFO:werkzeug:127.0.0.1 - - [25/Feb/2026 11:46:42] "[33mGET /api/careers/careers HTTP/1.1[0m" 404 -
+INFO:werkzeug:127.0.0.1 - - [25/Feb/2026 11:46:42] "[33mGET /api/careers/fields HTTP/1.1[0m" 404 -
+INFO:werkzeug:127.0.0.1 - - [25/Feb/2026 11:46:42] "[33mGET /api/careers/careers HTTP/1.1[0m" 404 -
+INFO:werkzeug:127.0.0.1 - - [25/Feb/2026 11:47:18] "OPTIONS /api/Auth/signup HTTP/1.1" 200 -
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT "Users".id AS "Users_id", "Users".user_type AS "Users_user_type", "Users".first_name AS "Users_first_name", "Users".second_name AS "Users_second_name", "Users".email AS "Users_email", "Users".is_verified AS "Users_is_verified", "Users".domain_name AS "Users_domain_name", "Users".role AS "Users_role", "Users".reference_number AS "Users_reference_number", "Users".password_hash AS "Users_password_hash" 
+FROM "Users" 
+WHERE "Users".email = ?
+ LIMIT ? OFFSET ?
+INFO:sqlalchemy.engine.Engine:[generated in 0.00138s] ('admin@semadata.com', 1, 0)
+INFO:sqlalchemy.engine.Engine:ROLLBACK
+INFO:werkzeug:127.0.0.1 - - [25/Feb/2026 11:47:19] "[35m[1mPOST /api/Auth/signup HTTP/1.1[0m" 500 -
+INFO:werkzeug: * Detected change in 'C:\\Users\\princessintech\\my_projects\\semaData\\Backend\\Init_db.py', reloading
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 298-800-860
+INFO:werkzeug: * Detected change in 'C:\\Users\\princessintech\\my_projects\\semaData\\Backend\\Init_db.py', reloading
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 298-800-860
+INFO:werkzeug: * Detected change in 'C:\\Users\\princessintech\\my_projects\\semaData\\Backend\\Init_db.py', reloading
+INFO:werkzeug: * Restarting with stat
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://192.168.74.188:8000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 298-800-860
+INFO:werkzeug: * Detected change in 'C:\\Users\\princessintech\\my_projects\\semaData\\Backend\\routes\\Auth\\domain.py', reloading
+INFO:werkzeug: * Restarting with stat

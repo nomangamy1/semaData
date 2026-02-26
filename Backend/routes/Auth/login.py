@@ -69,14 +69,16 @@ def login():
             stored_hash = getattr(domain_owner, 'password_hash', None)
             if stored_hash and check_password_hash(stored_hash, password):
                 login_user(domain_owner)
+                # create a JWT for the domain owner so frontend can call protected routes
+                access_token = create_access_token(identity=domain_owner.id,
+                                                   additional_claims={"role": "domain_owner"})
                 return {
                 "message": "Domain Owner login successful",
                 "role": "domain_owner",
                 "domain": domain.domain_name,
                 "domainId": domain.id,
                 "userId": domain_owner.id,
-
-                
+                "access_token": access_token
             }, 200
 
         # user to login

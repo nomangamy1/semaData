@@ -101,10 +101,12 @@ def domain_register():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@domain_bp.route('/my-domains>', methods=['GET'])
-@jwt_required
-def get_owner_domains(owner_id):
-    current_user_id = get_jwt_identity()
+@domain_bp.route('/my-domains', methods=['GET'])
+@jwt_required()
+def get_git add .
+git commit -m "updates"
+git push origin main 
+current_user_id = get_jwt_identity()
     domains = Domain.query.filter_by(owner_id=current_user_id).all()
     if not domains: 
         return jsonify([]),200
