@@ -24,11 +24,13 @@ def get_dashboard_stats():
     total_users = User.query.count()
     total_domains = Domain.query.count()
     total_collectors = User.query.filter(User.reference_number != None).count()
+    total_domains = Domain.query.count()
     return jsonify({
         "stats": {
             "pending_applications": pending_apps,
             "active_jobs": active_jobs,
             "total_collectors": total_collectors,
+            "total_domains": total_domains
         }
     }), 200
 

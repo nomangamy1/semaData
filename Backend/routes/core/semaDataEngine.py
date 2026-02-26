@@ -1,14 +1,47 @@
 import re
 import os 
-import torch 
 import json
-import librosa
-import numpy as np
 from datetime import datetime 
 from flask import request, jsonify, Blueprint
-from faster_whisper import WhisperModel
+
+# ML dependencies are optional; if they fail to import we fall back gracefully
+try:
+    import torch
+except ImportError:
+    torch = None
+    print("[Warning] torch library not available; semantic features disabled")
+
+try:
+    import librosa
+except ImportError:
+    librosa = None
+    print("[Warning] librosa library not available; audio validation disabled")
+
+try:
+    import numpy as np
+except ImportError:
+    np = None
+    print("[Warning] numpy library not available; audio/processing disabled")
+
+# later imports that depend on numpy/torch should handle None cases
+from flask import request, jsonify, Blueprint
+
+# whisper and transformers are optional
+try:
+    from faster_whisper import WhisperModel
+except Exception as e:
+    # catch FileNotFoundError, ImportError, etc. to avoid startup crash
+    WhisperModel = None
+    print(f"[Warning] faster_whisper import failed; transcription disabled ({e})")
+
 import ollama 
-from sentence_transformers import SentenceTransformer, util
+try:
+    from sentence_transformers import SentenceTransformer, util
+except ImportError:
+    SentenceTransformer = None
+    util = None
+    print("[Warning] sentence_transformers not available; semantic matching disabled")
+
 from werkzeug.utils import secure_filename 
 from models.Transcription import Transcription
 
@@ -23,24 +56,42 @@ from .nlp_matcher import segment_data
 # --- Model Initialization ---
 
 # Initializing globally to prevent memory spikes during API calls
-if os.environ.get('FLASK_ENV') != 'migration':
+semantic_model = None
+semaData_model = None
 
-    print("Loading Semantic Model...")
-    semantic_model = SentenceTransformer('all-MiniLM-L6-v2')
-    MODEL_NAME = os.environ.get('MODEL_NAME', 'small') 
-    device = "cpu" 
-    print(f"Loading Whisper Model ({MODEL_NAME})...")
-    semaData_model = WhisperModel(MODEL_NAME, device=device, compute_type="int8")
-else: 
-    semantic_model = None 
-    semantic_model = None 
+if os.environ.get('FLASK_ENV') != 'migration':
+    # only attempt to load models if the required libraries are available
+    if SentenceTransformer is None or torch is None:
+        print("[Warning] semantic libraries unavailable; skipping model loading")
+    else:
+        try:
+            print("Loading Semantic Model...")
+            semantic_model = SentenceTransformer('all-MiniLM-L6-v2')
+        except Exception as e:
+            print(f"Failed to load semantic model: {e}")
+            semantic_model = None
+    
+    if WhisperModel is None:
+        print("[Warning] whisper model not importable; transcription disabled")
+    else:
+        try:
+            MODEL_NAME = os.environ.get('MODEL_NAME', 'small')
+            device = "cpu"
+            print(f"Loading Whisper Model ({MODEL_NAME})...")
+            semaData_model = WhisperModel(MODEL_NAME, device=device, compute_type="int8")
+        except Exception as e:
+            print(f"Failed to load Whisper model: {e}")
+            semaData_model = None
 # --- Blueprint Setup ---
 # Variable name must match routes/core/__init__.py
 semaData_engine_bp = Blueprint('semaData_engine', __name__)
 
 
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+SECURE_STORAGE = os.path.join(BASE_DIR, '..', '..', 'secure_storage')
 #saving the audio 
-SECURE_STORAGE = " /var/www/semadata/protected_audio"
+
 os.makedirs(SECURE_STORAGE,exist_ok =True)
 UPLOAD_FOLDER = 'temp_audio'
 os.makedirs(UPLOAD_FOLDER,exist_ok =True)
