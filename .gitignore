@@ -1,2 +1,11 @@
+<<<<<<< HEAD
 venv/
 .venv/
+=======
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+>>>>>>> 2050b3a (Resolved pycache conflicts and updated gitignore)
