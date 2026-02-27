@@ -103,10 +103,8 @@ def domain_register():
 
 @domain_bp.route('/my-domains', methods=['GET'])
 @jwt_required()
-def get_git add .
-git commit -m "updates"
-git push origin main 
-current_user_id = get_jwt_identity()
+def get_my_domains():
+    current_user_id = get_jwt_identity()
     domains = Domain.query.filter_by(owner_id=current_user_id).all()
     if not domains: 
         return jsonify([]),200

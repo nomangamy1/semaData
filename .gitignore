@@ -1,11 +1,17 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 venv/
 .venv/
 =======
+=======
+>>>>>>> e77aa04ab77754919ee1d7ece85990ded28c5d8c
 __pycache__/
 *.py[cod]
 *$py.class
 venv/
 .env
 
+<<<<<<< HEAD
 >>>>>>> 2050b3a (Resolved pycache conflicts and updated gitignore)
+=======
+>>>>>>> e77aa04ab77754919ee1d7ece85990ded28c5d8c
