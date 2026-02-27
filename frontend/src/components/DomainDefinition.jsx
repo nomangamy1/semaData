@@ -63,11 +63,14 @@ const DefineFeatures = () => {
             const data = await response.json();
 
             if (response.ok) {
+                // Store owner_id and domain_id in localStorage for dashboard access
+                localStorage.setItem('ownerId', ownerId);
+                localStorage.setItem('domainId', data.domain_id);
 
                 // Navigate to payment/success page
                 navigate('/payInitiate', { 
                     state: { 
-                        domainId:data.domain_id,
+                        domainId: data.domain_id,
                         refNum: data.reference_number,
                         domainName: data.domain_name,
                         target_goal: data.target_goal,

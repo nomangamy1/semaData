@@ -68,39 +68,66 @@ const InsightsTable = ({ datasets, features }) => {
 const Dashboard = () => {
   const [domains, setDomains] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
-  const ownerId = localStorage.getItem('userId') || localStorage.getItem('owner_id'); // Support both keys for flexibility
+  const ownerId = localStorage.getItem('ownerId') || localStorage.getItem('userId') || localStorage.getItem('owner_id');
 
   useEffect(() => {
+    // If no owner ID, redirect to login
+    if (!ownerId) {
+      setError('Session expired. Please log in again.');
+      setTimeout(() => navigate('/login'), 2000);
+      return;
+    }
 
     const fetchDomains = async () => {
-
-
-
-    const token = localStorage.getItem('token');
+      const token = localStorage.getItem('token');
  
+      if (!token) {
+        setError('No authentication token found. Please log in again.');
+        navigate('/login');
+        return;
+      }
+
       try {
         const response = await fetch(`http://localhost:8000/api/my-domains`, {
           method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         });
 
+        if (response.status === 401 || response.status === 403) {
+          setError('Authentication failed. Please log in again.');
+          navigate('/login');
+          return;
+        }
+
         const data = await response.json();
-        setDomains(data);
+        setDomains(data || []);
         setLoading(false);
       } catch (err) {
-        console.error("Failed to fetch domains");
+        console.error("Failed to fetch domains:", err);
+        setError('Failed to load domains. Please check your connection.');
         setLoading(false);
       }
     };
-    if (ownerId) fetchDomains();
-  }, [ownerId]);
+
+    fetchDomains();
+  }, [ownerId, navigate]);
 
   // AGGREGATION LOGIC: Flatten all datasets from all domains into one list
   const allDatasets = domains.flatMap(domain => domain.datasets || []);
+
+  if (error) {
+    return (
+      <div className="p-20 text-center">
+        <p className="text-red-600 font-bold mb-4">{error}</p>
+        <p className="text-slate-500">Redirecting to login...</p>
+      </div>
+    );
+  }
 
   if (loading) return <div className="p-20 text-center font-bold text-[#489c8c] animate-pulse">Initializing Command Center...</div>;
 
