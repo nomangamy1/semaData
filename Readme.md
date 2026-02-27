@@ -1,4 +1,194 @@
-# semaData
+# SemaData — Field Data Collection & AI-Powered Linguistic Research Platform
+
+## Overview
+
+**SemaData** is an enterprise-grade platform for collecting, transcribing, and extracting structured data from field conversations in African languages and dialects. It combines audio recording, speech-to-text, semantic feature extraction, and domain-driven workflows to enable researchers, NGOs, and enterprises to gather high-quality linguistic and behavioral data at scale.
+
+### Core Value Proposition
+- **For Collectors**: Earn money by recording conversations; offline-capable app with local sync.
+- **For Researchers/Domains**: Define custom features, hire collectors via jobs, track progress dashboards.
+- **For Admins**: Manage domains, approve applications, review transcriptions, export datasets.
+- **For AI/ML**: Pre-processed, semantically segmented datasets ready for NLP/LLM training.
+
+## Architecture
+
+### Tech Stack
+- **Backend**: Python Flask, SQLAlchemy ORM, Alembic migrations
+- **Frontend**: React + Vite, Dexie (IndexedDB) for offline drafts
+- **ML/LLM**: faster-whisper (Inference), SentenceTransformers (embeddings), Ollama (local LLM)
+- **Database**: PostgreSQL
+- **Infrastructure**: Docker, Docker Compose, Gunicorn (production)
+- **Auth**: JWT (Flask-JWT-Extended)
+- **Payments**: Daraja M-Pesa integration
+
+### High-Level Flow
+```
+Collector → Audio Recording → IndexedDB Draft (offline)
+          ↓ (online)
+          ↓ POST /api/core/transcribe
+Backend   → Quality Gate → WebM→WAV → Transcription (Whisper)
+          → Semantic Segmentation → LLM Refinement (Ollama)
+          → Save Dataset + Transcription
+          ↓
+Admin     → View datasets, approve, export CSV
+```
+
+## Getting Started (Development)
+
+### Prerequisites
+- Python 3.9+, PostgreSQL 12+, Node.js 16+
+- `ffmpeg` (audio conversion), Ollama (optional LLM refinement)
+
+### Backend Setup
+```bash
+cd Backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env  # Edit with your config
+alembic upgrade head
+python run.py
+```
+
+Server: `http://localhost:8000`
+
+### Frontend Setup
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend: `http://localhost:5173`
+
+## Roadmap: Path to $1M+ ARR in Kenya & Africa
+
+### Phase 1: Product Consolidation (Months 1-3)
+**Goal**: Perfect core flow; build brand & early adopters.
+
+1. **Full DB Migration Suite** — Versioned migrations with rollback tests.
+2. **Quality & Testing** — Unit tests, integration tests, load testing.
+3. **Mobile App** — React Native/Flutter; offline-first; geo-tagging.
+4. **Data Export** — CSV/JSON export; transcription review UI.
+
+### Phase 2: Market Expansion (Months 4-9)
+**Goal**: Product-market fit; capture key verticals in Kenya.
+
+1. **Language Support** — Whisper models for Swahili, Luhya, Dinka, Somali; code-switching.
+2. **Domain Marketplace** — Researchers post requests; 15-20% SemaData commission.
+3. **Integration Partners** — NGOs, agricultural extension, fintech, MFIs.
+4. **Mobile Apps** — iOS/Android with push notifications, in-app M-Pesa earnings.
+5. **Payment & Incentives** — Instant M-Pesa payouts, quality bonuses, referrals.
+
+### Phase 3: Regional Scale (Months 10-18)
+**Goal**: Expand East/West Africa; build B2B revenue streams.
+
+1. **Enterprise Edition** — White-label, custom APIs, on-premise: $5k–$20k/month.
+2. **20+ Languages** — Amharic, Yoruba, Zulu, Lingala; partner with linguistic institutes.
+3. **Multi-Country Ops** — Kenya, Uganda, Nigeria, Ethiopia; local payment methods.
+4. **AI Model Marketplace** — Fine-tuned NLP models (sentiment, intent, entity extraction): $100/month licensing.
+5. **Analytics Dashboard** — Linguistic patterns, dialect heat maps, anonymized insights for dev orgs.
+
+### Phase 4: Enterprise & Scale (Months 19-30)
+**Goal**: Build $1M+ ARR; establish Africa's data infrastructure.
+
+1. **Government Contracts** — Census, health surveys, education: $50k–$500k+ per project.
+2. **Tech Partnerships** — OpenAI, Google, Meta licensing datasets; $500k–$2M per license.
+3. **Vertical Solutions** — AgriTech, HealthTech, FinTech; $10k–$50k/month each.
+4. **Deep Integrations** — Safaricom, Airtel, DeFi, banks (voice-based KYC, support); $10k–$100k/month.
+5. **Data Annotation Marketplace** — Crowdsourced transcription review; 30–40% margin.
+6. **Research Institute** — SemaData Labs; academic partnerships; grant funding.
+
+## Revenue Model Projections
+
+| Year | ARR | Milestones |
+|------|-----|-----------|
+| **Year 1** | Ksh 5–10M (~$40k–$80k) | 5–10 customers, 100 collectors |
+| **Year 2** | Ksh 50–100M (~$400k–$800k) | Regional expansion, 500–1k collectors, 30–50 customers, data licensing |
+| **Year 3** | Ksh 150–300M (~$1.2M–$2.4M) | Vertical solutions, govt contracts, 5k–10k collectors, 100–200 customers |
+
+## Competitive Advantages
+
+1. **Language-First Design** — Built for African languages from day one (not an afterthought).
+2. **Offline-Capable** — Collectors work on 2G/3G without stable internet.
+3. **Semantic Understanding** — STT + embeddings + LLM = nuanced extraction (not just transcription).
+4. **Local Expertise** — Built in Kenya for Africa; understand regional payments, languages, regulations.
+5. **Open & Extensible** — Partner-friendly APIs, white-label, data licensing.
+
+## Risks & Mitigations
+
+| Risk | Mitigation |
+|------|-----------|
+| **Competition** (Google, OpenAI) | Focus on underserved verticals (AgriTech, HealthTech) & data privacy. |
+| **Collector Churn** | Gamification, referral bonuses, transparent pay, quality incentives. |
+| **Data Quality** | Multi-level QA (auto + human), feedback loops, transparent rejection reasons. |
+| **Language Drift** | Regular model retraining, dialect fine-tuning, community feedback. |
+| **Regulatory** (privacy, labor) | GDPR/DPA compliance, local labor laws, clear ToS & consent. |
+| **CAC** (Customer Acquisition) | Self-serve onboarding, free tier, referrals, direct sales for enterprise. |
+
+## Deployment (Production)
+
+### Docker
+```bash
+docker-compose up -d
+```
+
+### Environment Variables
+```
+FLASK_ENV=production
+DATABASE_URI=postgresql://user:pass@host:5432/semadata
+SECRET_KEY=your-secret-key
+FRONTEND_URL=https://app.semadata.com
+MAIL_SERVER=smtp.gmail.com
+MAIL_USERNAME=your-email
+DARAJA_CONSUMER_KEY=your_key
+DARAJA_CONSUMER_SECRET=your_secret
+DARAJA_PASSKEY=your_passkey
+```
+
+### Hosting
+- **API**: AWS EC2, DigitalOcean, Render
+- **Database**: AWS RDS, Heroku Postgres
+- **Frontend**: Vercel, Netlify
+- **Storage**: AWS S3
+
+## API Endpoints (Summary)
+
+### Public
+- `GET /api/main/careers` — List published jobs
+- `POST /api/main/apply/<job_id>` — Apply for job
+
+### Collector (JWT Protected)
+- `GET /api/main/collector-stats/<user_id>` — Personal quota & progress
+- `POST /api/core/transcribe` — Upload audio for transcription
+
+### Admin (JWT + Role)
+- `POST /api/AdminCareers/admin/jobs` — Create job
+- `GET /api/AdminCareers/admin/applications` — Review apps
+- `POST /api/AdminCareers/admin/applications/<app_id>/approve` — Approve
+
+## Contributing
+
+1. Fork the repo.
+2. Feature branch: `git checkout -b feature/my-feature`.
+3. Commit: `git commit -m "Add feature"`.
+4. Push: `git push origin feature-my-feature`.
+5. Open PR.
+
+## License
+
+MIT License — See LICENSE file.
+
+## Contact
+
+- **Email**: support@semadata.com
+- **Twitter**: [@SemaDataAI](https://twitter.com/semadata)
+- **Slack**: [Community](https://semadata.slack.com) (Coming soon)
+
+---
+
+**Built with ❤️ in Kenya for Africa. — Feb 2026**
+
 
 
 
