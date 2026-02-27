@@ -34,7 +34,9 @@ def semaData_app():
         semaData.config.from_object(config['development'])
     else:
         semaData.config.from_object(config[config_name])
-    CORS(semaData,resources={r"/api/*": {"origins": os.getenv('FRONTEND_URL')}})
+    # Allow the configured FRONTEND_URL, but fall back to localhost during development
+    frontend_origin = os.getenv('FRONTEND_URL') or 'http://localhost:5173'
+    CORS(semaData, resources={r"/api/*": {"origins": frontend_origin}})
     migrate.init_app(semaData,db)
     mail.init_app(semaData)
 

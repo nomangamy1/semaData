@@ -1,5 +1,5 @@
-from flask import Flask,jsonify,Blueprint
-from models import User,Dataset,Domain,domainowner,Transcription,Feature
+from flask import Flask, jsonify, Blueprint
+from models import User, Dataset, Domain, DomainOwner, Transcription, Feature
 from flask import send_file, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 import csv 
@@ -16,7 +16,7 @@ def get_dashboard_stats():
     user_count = User.query.count()
     dataset_count = Dataset.query.count()
     domain_count = Domain.query.count()
-    owner_count = domainowner.query.count()
+    owner_count = DomainOwner.query.count()
 
     stats = {
         'user_count': user_count,
@@ -52,7 +52,7 @@ def get_owner_dashboard_stats():
     })
 
 
-@dashboard_bp.route('')
+@dashboard_bp.route('/')
 def get_DomainProfileName():
     return jsonify({"domain_profile_name": "Example Domain Profile Name"})
 
@@ -111,7 +111,11 @@ def download_dataset(domain_id):
         logger.info(f"Owner {current_owner_id} successfully downloaded features dataset for domain {domain_id} with {total_records} records")
 
         output.seek(0)
-        return send_file(StringIO(output.getvalue()), mimetype='text/csv', as_attachment=True, download_name=f'domain_{domain_id}_features.csv')    
+        # send_file expects a bytes buffer for streaming; convert text to bytes
+        from io import BytesIO
+        bytes_io = BytesIO(output.getvalue().encode('utf-8'))
+        bytes_io.seek(0)
+        return send_file(bytes_io, mimetype='text/csv', as_attachment=True, download_name=f'domain_{domain_id}_features.csv')    
     except Exception as e:
         logger.error(f"Error during dataset download for domain {domain_id}: {str(e)}")
         return jsonify({"error": "An error occurred while processing your request"}), 500
