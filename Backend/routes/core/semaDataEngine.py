@@ -44,6 +44,7 @@ except ImportError:
 
 from werkzeug.utils import secure_filename 
 from models.Transcription import Transcription
+from models.user import User
 
 # Project Internal Imports
 from extensions import db
@@ -234,10 +235,24 @@ def semaData_transcribe():
         return jsonify({'error': 'Empty filename'}), 400
     
     # File handling
+    import subprocess
     temp_filename = secure_filename(file.filename)
-    audio_path = os.path.join(UPLOAD_FOLDER,temp_filename)
+    audio_path = os.path.join(UPLOAD_FOLDER, temp_filename)
     file.save(audio_path)
-   
+    
+    # -- Convert incoming audio to WAV using ffmpeg if it's not already a WAV file --
+    if not temp_filename.lower().endswith('.wav'):
+        converted_path = os.path.join(UPLOAD_FOLDER, temp_filename + '.wav')
+        try:
+            # spawn ffmpeg; environment must have it installed
+            subprocess.run([
+                'ffmpeg', '-y', '-i', audio_path, converted_path
+            ], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            os.remove(audio_path)
+            audio_path = converted_path
+        except Exception as e:
+            # if ffmpeg conversion fails, we continue with original file hoping whisper can handle it
+            print(f"ffmpeg conversion failed: {e}")
 
     # 1. Quality Gate Check
     valid, message = is_audible_valid(audio_path)

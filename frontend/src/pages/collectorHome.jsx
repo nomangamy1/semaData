@@ -197,7 +197,7 @@ const CollectorHome = () => {
         audioBlob: audioBlob,
         refNum: ref,
         task: task,
-        domainId: localStorage.getItem('Id'),
+        domainId: localStorage.getItem('domainId'),
         status: 'Pending Sync',
         timestamp: Date.now(),
         duration: formatTime(duration)

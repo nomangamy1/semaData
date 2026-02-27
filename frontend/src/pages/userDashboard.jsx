@@ -187,7 +187,7 @@ const UserDashboard = () => {
                 <div className="progress-fill" style={{ width: `${progressPercent}%` }}></div>
               </div>
               <p className="progress-text">
-                {progressPercent}% Complete — {activeTask.currentCount} of {activeTask.targetCount} records ingested
+                {progressPercent}% Complete — {activeTask.description}
               </p>
             </div>
 

@@ -22,11 +22,13 @@ def create_job():
     ADMIN ONLY: Create a new data collection job posting
     """
     admin_id = get_jwt_identity()
-    
-    # Verify admin is a DomainOwner (simplified check - you might want stricter admin role)
-    admin = DomainOwner.query.get(admin_id)
-    if not admin:
-        return jsonify({"error": "Only admins can create jobs"}), 403
+    # Allow either a DomainOwner or a User with role 'admin'
+    domain_owner = DomainOwner.query.get(admin_id)
+    user_admin = None
+    if not domain_owner:
+        user_admin = User.query.get(admin_id)
+        if not user_admin or getattr(user_admin, 'role', None) != 'admin':
+            return jsonify({"error": "Only admins can create jobs"}), 403
     
     data = request.json
     domain_id = data.get('domain_id')
@@ -71,9 +73,12 @@ def list_admin_jobs():
     ADMIN ONLY: View all jobs (for management)
     """
     admin_id = get_jwt_identity()
-    admin = DomainOwner.query.get(admin_id)
-    if not admin:
-        return jsonify({"error": "Only admins can view jobs"}), 403
+    domain_owner = DomainOwner.query.get(admin_id)
+    user_admin = None
+    if not domain_owner:
+        user_admin = User.query.get(admin_id)
+        if not user_admin or getattr(user_admin, 'role', None) != 'admin':
+            return jsonify({"error": "Only admins can view jobs"}), 403
     
     jobs = Job.query.all()
     return jsonify({
@@ -88,6 +93,14 @@ def list_applications_for_review():
     """
     ADMIN ONLY: View all applications pending review
     """
+    admin_id = get_jwt_identity()
+    domain_owner = DomainOwner.query.get(admin_id)
+    user_admin = None
+    if not domain_owner:
+        user_admin = User.query.get(admin_id)
+        if not user_admin or getattr(user_admin, 'role', None) != 'admin':
+            return jsonify({"error": "Only admins can view applications"}), 403
+
     results = db.session.query(
         JobApplication,
         Job.title.label('job_title'),
@@ -118,6 +131,13 @@ def approve_application(app_id):
     ADMIN ONLY: Approve a collector application and assign reference number
     """
     admin_id = get_jwt_identity()
+    domain_owner = DomainOwner.query.get(admin_id)
+    user_admin = None
+    if not domain_owner:
+        user_admin = User.query.get(admin_id)
+        if not user_admin or getattr(user_admin, 'role', None) != 'admin':
+            return jsonify({"error": "Only admins can approve applications"}), 403
+
     application = JobApplication.query.get_or_404(app_id)
     field_prefix = application.job.field[:4].upper()  if application.job.field else "SEMA"
     random_code = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
@@ -128,7 +148,13 @@ def approve_application(app_id):
     
     # Update application status
     application.status = 'approved'
-    application.reviewed_by_id = admin_id
+    # Record reviewer: if DomainOwner approved, set reviewed_by_id; if User admin approved, set reviewed_by_user_id
+    if domain_owner:
+        application.reviewed_by_id = domain_owner.id
+        application.reviewed_by_user_id = None
+    else:
+        application.reviewed_by_user_id = user_admin.id
+        application.reviewed_by_id = None
     application.reviewed_at = datetime.now()
     application.reference_number_assigned = reference_number
     
@@ -160,6 +186,14 @@ def approve_application(app_id):
 @AdminCareers_bp.route('/admin/applications/<int:app_id>/reject', methods=['POST'])
 @jwt_required()
 def reject_application(app_id):
+    admin_id = get_jwt_identity()
+    domain_owner = DomainOwner.query.get(admin_id)
+    user_admin = None
+    if not domain_owner:
+        user_admin = User.query.get(admin_id)
+        if not user_admin or getattr(user_admin, 'role', None) != 'admin':
+            return jsonify({"error": "Only admins can reject applications"}), 403
+
     application = JobApplication.query.get_or_404(app_id)
     data = request.json
 

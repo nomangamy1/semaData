@@ -19,6 +19,7 @@ class JobApplication(db.Model):
     
     # Admin Review
     reviewed_by_id = db.Column(db.Integer, db.ForeignKey('DomainOwner.id'), nullable=True)
+    reviewed_by_user_id = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=True)
     rejection_reason = db.Column(db.Text)
     approval_notes = db.Column(db.Text)
     
@@ -29,6 +30,7 @@ class JobApplication(db.Model):
     # Relationships
     applicant = db.relationship('User', foreign_keys=[applicant_id])
     reviewed_by = db.relationship('DomainOwner', foreign_keys=[reviewed_by_id])
+    reviewed_by_user = db.relationship('User', foreign_keys=[reviewed_by_user_id])
     
     def to_dict(self):
         return {
@@ -42,5 +44,7 @@ class JobApplication(db.Model):
             'reviewed_at': self.reviewed_at.isoformat() if self.reviewed_at else None,
             'approval_notes': self.approval_notes,
             'rejection_reason': self.rejection_reason,
-            'reference_number': self.reference_number_assigned
+            'reference_number': self.reference_number_assigned,
+            'reviewed_by_domain_owner': self.reviewed_by.id if self.reviewed_by else None,
+            'reviewed_by_user': self.reviewed_by_user.id if self.reviewed_by_user else None
         }
