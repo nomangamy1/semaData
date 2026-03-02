@@ -9,30 +9,38 @@ const PayInitiate = () => {
 
     const { domainId, domainName, refNum, target_goal } = location.state || {};
 
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [phoneNumber, setPhoneNumber] = useState(''); // New state for phone
-    const [showSuccess, setShowSuccess] = useState(false); // For the "Fake" success feedback
-    const [transactionRef, setTransactionRef] = useState(null);
+    // ✅ Read JWT token from localStorage
+    const token = localStorage.getItem('token');
 
-    // Calculate deposit: target_goal * 20 * 0.3
-    const deposit = target_goal ? parseFloat(target_goal) * 20 * 0.3 : 0;
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [showSuccess, setShowSuccess] = useState(false);
+
+    const deposit = target_goal ? parseFloat(target_goal) * 7 * 0.3 : 0;
 
     const handlePayment = async (e) => {
         e.preventDefault();
 
-        // Basic Kenyan Phone Validation (07... or 01...)
         if (!/^0(7|1)\d{8}$/.test(phoneNumber)) {
             alert("Please enter a valid M-Pesa phone number (e.g., 0712345678)");
+            return;
+        }
+
+        if (!token) {
+            alert("Session expired. Please log in again.");
+            navigate('/login');
             return;
         }
 
         setIsProcessing(true);
 
         try {
-            // Updated endpoint to match your blueprint structure
             const response = await fetch('http://localhost:8000/api/main/pay/initiate', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`  // ✅ Send JWT token
+                },
                 body: JSON.stringify({
                     domain_id: domainId,
                     phone: phoneNumber
@@ -41,20 +49,23 @@ const PayInitiate = () => {
 
             const data = await response.json();
 
-            if (response.ok) {
-                // Store transaction ref for tracking
-                setTransactionRef(data.transaction_ref);
+            if (response.status === 401 || response.status === 403) {
+                alert("Session expired. Please log in again.");
+                localStorage.clear();
+                navigate('/login');
+                return;
+            }
 
-                // SIMULATED WAIT: 
-                // This mimics the time it takes a user to receive STK and enter PIN
+            if (response.ok) {
+                // Simulate STK push wait time
                 setTimeout(() => {
                     setIsProcessing(false);
                     setShowSuccess(true);
 
-                    // Final redirect using backend's redirect_url
+                    // ✅ Use React Router navigate() — no full page reload
+                    // This preserves auth state and React context
                     setTimeout(() => {
-                        const redirectUrl = data.redirect_url || `/Dashboard?domain_id=${domainId}`;
-                        window.location.href = redirectUrl;
+                        navigate(data.redirect_path || '/Dashboard');
                     }, 2000);
                 }, 4000);
             } else {
@@ -68,11 +79,12 @@ const PayInitiate = () => {
         }
     };
 
+    // ✅ Guard: no domain state = user navigated here directly
     if (!domainId) {
         return (
             <div className="error-state">
                 <h3>No active session found.</h3>
-                <button onClick={() => navigate(-1)}>Go Back</button>
+                <button onClick={() => navigate('/Dashboard')}>Go to Dashboard</button>
             </div>
         );
     }
@@ -92,7 +104,7 @@ const PayInitiate = () => {
                         <div className="success-content">
                             <ShieldCheck size={60} color="#22c55e" />
                             <h3>Payment Received!</h3>
-                            <p>Activating your agricultural domain...</p>
+                            <p>Activating your domain and loading your dashboard...</p>
                         </div>
                     </div>
                 ) : (

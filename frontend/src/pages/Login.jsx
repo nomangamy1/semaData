@@ -1,75 +1,132 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Database, Loader2, CheckCircle, AlertCircle, Briefcase, User } from 'lucide-react';
 import './Login.css';
-const Login = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    reference_number: ''
-  });
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+const Login = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const params = new URLSearchParams(location.search);
+  const justVerified = params.get('verified') === 'true';
+  const nextPath = params.get('next') || null;
+  const isFresh = params.get('fresh') === 'true';
+
+  // ✅ KEY FIX: runs at render time, synchronously, BEFORE useEffect
+  // ?fresh=true clears localStorage here so the useEffect finds no token
+  if (isFresh) {
+    localStorage.clear();
+  }
+
+  const [loginRole, setLoginRole] = useState('domainowner');
+  const [formData, setFormData] = useState({ email: '', password: '', reference_number: '' });
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (isFresh) return; // localStorage already cleared above — nothing to redirect to
+    const token = localStorage.getItem('token');
+    const userRole = localStorage.getItem('userRole');
+    if (!token || !userRole) return;
+    const role = userRole.toLowerCase();
+    if (role === 'admin') navigate('/adminDashboard', { replace: true });
+    else if (role === 'domain_owner' || role === 'domainowner') navigate('/Dashboard', { replace: true });
+    else if (role === 'user') navigate('/userDashboard', { replace: true });
+  }, [navigate, isFresh]);
+
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
+    setIsLoading(true);
+    const payload = {
+      email: formData.email,
+      password: formData.password,
+      ...(loginRole === 'collector' && { reference_number: formData.reference_number })
+    };
     try {
       const response = await fetch('http://localhost:8000/api/Auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
-
       const data = await response.json();
-
       if (response.ok) {
-        const userObj = {
-          role: data.role,
-          id: data.userId,
-          email:data.email
-        };
-        localStorage.setItem('user', JSON.stringify(userObj));
-
-        // Store user info in localStorage for session persistence
-        localStorage.setItem('userRole', data.role);
-        localStorage.setItem('userId',data.userId);
-        // backend now returns access_token for admin and domain_owner
-        localStorage.setItem('token', data.access_token || data.token || '');
-        localStorage.setItem('domain', data.domain || '');
-        localStorage.setItem('domainId', data.domainId || '');
-        localStorage.setItem('referenceNumber', formData.reference_number || '');
-        localStorage.setItem('username', data.username || 'Admin');
-        // Innovation Tip: Redirect based on role
-        if (data.role === 'admin') {
-          navigate('/adminDashboard');
-        } else if (data.role === 'domain_owner') {
-          navigate('/Dashboard');
-        } else {
-          navigate('/userDashboard');
-        }
+        localStorage.clear();
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('userRole', data.role || '');
+        localStorage.setItem('username', data.username || '');
+        if (data.ownerId) localStorage.setItem('ownerId', String(data.ownerId));
+        else if (data.userId) localStorage.setItem('ownerId', String(data.userId));
+        if (data.domainId) localStorage.setItem('domainId', String(data.domainId));
+        if (data.domain) localStorage.setItem('domain', data.domain);
+        if (nextPath) { navigate(nextPath); return; }
+        const role = (data.role || '').toLowerCase();
+        if (role === 'admin') navigate('/adminDashboard');
+        else if (role === 'domain_owner' || role === 'domainowner') navigate('/Dashboard');
+        else navigate('/userDashboard');
       } else {
-        setError(data.error || 'Login failed');
+        setError(data.error || 'Login failed. Please check your credentials.');
       }
-    } catch (err) {
+    } catch {
       setError('Server connection failed. Is Flask running?');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="login-container">
-    <h2>SemaData Login</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <input name="email" type="email" placeholder="Email" onChange={handleChange} required />
-        <input name="password" type="password" placeholder="Password" onChange={handleChange} required />
-        <input name="reference_number" type="text" placeholder="Domain Reference Number" onChange={handleChange} />
-        <button type="submit">Unlock System</button>
-      </form>
+    <div className="login-page">
+      <div className="login-card">
+        <div className="login-logo"><Database size={32} /> semaData</div>
+        {justVerified && (
+          <div className="verified-banner">
+            <CheckCircle size={20} style={{ flexShrink: 0, marginTop: 1 }} />
+            <div>
+              <p className="verified-banner-title">Email Verified Successfully!</p>
+              <p className="verified-banner-sub">Log in now to continue setting up your domain.</p>
+            </div>
+          </div>
+        )}
+        <h2 className="login-heading">Welcome back</h2>
+        <p className="login-subheading">Sign in to your semaData account</p>
+        <div className="role-toggle">
+          <button type="button" className={`role-toggle-btn ${loginRole === 'domainowner' ? 'active' : ''}`}
+            onClick={() => setLoginRole('domainowner')}>
+            <Briefcase size={15} /> Domain Owner
+          </button>
+          <button type="button" className={`role-toggle-btn ${loginRole === 'collector' ? 'active' : ''}`}
+            onClick={() => setLoginRole('collector')}>
+            <User size={15} /> Collector
+          </button>
+        </div>
+        {error && <div className="login-error"><AlertCircle size={16} /> {error}</div>}
+        <form className="login-form" onSubmit={handleSubmit}>
+          <div className="login-field">
+            <label className="login-label">Email</label>
+            <input className="login-input" name="email" type="email" required
+              placeholder="you@example.com" onChange={handleChange} />
+          </div>
+          <div className="login-field">
+            <label className="login-label">Password</label>
+            <input className="login-input" name="password" type="password" required
+              placeholder="••••••••" onChange={handleChange} />
+          </div>
+          {loginRole === 'collector' && (
+            <div className="login-field">
+              <label className="login-label">Domain Reference Number</label>
+              <input className="login-input" name="reference_number" type="text" required
+                placeholder="e.g. AGRI--ABC123" onChange={handleChange} />
+              <p className="login-input-hint">Provided by your Domain Owner</p>
+            </div>
+          )}
+          <button type="submit" className="login-btn" disabled={isLoading}>
+            {isLoading ? <><Loader2 size={18} className="spin" /> Signing in...</> : 'Unlock System'}
+          </button>
+        </form>
+        <p className="login-footer">Don't have an account? <Link to="/signup">Sign up</Link></p>
+      </div>
     </div>
   );
 };

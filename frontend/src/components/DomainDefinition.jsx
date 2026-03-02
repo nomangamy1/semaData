@@ -1,32 +1,29 @@
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Plus, Trash2, ShieldCheck, ArrowRight, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Trash2, ArrowRight } from 'lucide-react';
 import './DomainDefinition.css';
 
 const DefineFeatures = () => {
-    const location = useLocation();
     const navigate = useNavigate();
-    
-    // 1. Get query parameters and location state
-    const queryParams = new URLSearchParams(location.search);
-    const [ownerId] = useState(location.state?.owner_id || queryParams.get('owner_id'));
-    const isVerified = queryParams.get('verified');
-    // Important: Get owner_id from URL if it's not in location state (common after redirects)
+    const token = localStorage.getItem('token');
 
-    // 2. State Management
+    // Auth guard inside useEffect — never call navigate() in render body
+    useEffect(() => {
+        if (!token) navigate('/login', { replace: true });
+    }, [token, navigate]);
+
     const [domainName, setDomainName] = useState('');
-    const [features, setFeatures] = useState(['']); 
-    const [target_goal, setTargetGoal] = useState(''); 
+    const [features, setFeatures] = useState(['']);
+    const [target_goal, setTargetGoal] = useState('');
     const [requirements, setRequirements] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleAddFeature = () => {
-        setFeatures([...features, '']);
-    };
+    const handleAddFeature = () => setFeatures([...features, '']);
 
     const handleFeatureChange = (index, value) => {
-        const updatedFeatures = [...features];
-        updatedFeatures[index] = value;
-        setFeatures(updatedFeatures);
+        const updated = [...features];
+        updated[index] = value;
+        setFeatures(updated);
     };
 
     const handleRemoveFeature = (index) => {
@@ -34,113 +31,84 @@ const DefineFeatures = () => {
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault(); // Prevents page reload
-        console.log("Submitting with Owner ID:", ownerId);
-        
-        // Debugging: Check console if things don't move
-        console.log("Submit triggered. Payload preparing...");
-
-        if (!ownerId) {
-            alert("Error: Owner ID is missing. Please try signing up again or check your verification link.");
-            return;
-        }
+        e.preventDefault();
+        setIsSubmitting(true);
 
         const payload = {
-            id: ownerId,
             domain_name: domainName,
-            target_goal: target_goal,
-            domain_features: features.filter(f => f.trim() !== ''), // Remove empty fields
+            target_goal: parseInt(target_goal, 10),
+            domain_features: features.filter(f => f.trim() !== ''),
             requirements: requirements
         };
 
         try {
             const response = await fetch('http://localhost:8000/api/domain', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(payload),
             });
 
             const data = await response.json();
 
-            if (response.ok) {
-                // Store owner_id and domain_id in localStorage for dashboard access
-                localStorage.setItem('ownerId', ownerId);
-                localStorage.setItem('domainId', data.domain_id);
+            if (response.status === 401 || response.status === 403) {
+                alert('Session expired. Please log in again.');
+                localStorage.clear();
+                navigate('/login');
+                return;
+            }
 
-                // Navigate to payment/success page
-                navigate('/payInitiate', { 
-                    state: { 
+            if (response.ok) {
+                navigate('/payInitiate', {
+                    state: {
                         domainId: data.domain_id,
                         refNum: data.reference_number,
                         domainName: data.domain_name,
                         target_goal: data.target_goal,
                         total: data.total_budget
-                    } 
+                    }
                 });
             } else {
-                // Show backend error (e.g., Domain already exists)
-                alert(data.error || "Failed to save domain");
+                alert(data.error || 'Failed to save domain');
             }
         } catch (err) {
-            console.error("Submission error:", err);
-            alert("Server connection failed. Please ensure the backend is running.");
+            console.error('Submission error:', err);
+            alert('Server connection failed.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
+    if (!token) return null;
+
     return (
         <div className="features-container">
-            {/* Verification Success Notification */}
-            {isVerified === 'true' && (
-                <div className="alert-success" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                    <CheckCircle size={18} /> 
-                    <span>Email successfully verified! Welcome to SemaData Agriculture.</span>
-                </div>
-            )}
-
-            {/* THE FORM WRAPPER */}
             <form className="feature-builder" onSubmit={handleSubmit}>
                 <h2>Step 2: Define Data Features</h2>
                 <p>Specify the attributes you want your agents to collect.</p>
-                
+
                 <div className="input-group">
                     <label>Domain Name</label>
-                    <input 
-                        type="text" 
-                        placeholder="e.g., Agriculture Survey" 
-                        value={domainName}
-                        onChange={(e) => setDomainName(e.target.value)}
-                        required
-                    />
+                    <input type="text" placeholder="e.g., Agriculture Survey"
+                        value={domainName} onChange={(e) => setDomainName(e.target.value)} required />
                 </div>
 
                 <div className="input-group">
                     <label>Target Response Goal</label>
-                    <input 
-                        type="number" 
-                        placeholder="e.g., 500" 
-                        value={target_goal}
-                        onChange={(e) => setTargetGoal(e.target.value)}
-                        required
-                    />
+                    <input type="number" placeholder="e.g., 500" min="1"
+                        value={target_goal} onChange={(e) => setTargetGoal(e.target.value)} required />
                 </div>
 
                 <div className="features-list">
                     <label>Data Features to Collect</label>
                     {features.map((feature, index) => (
                         <div key={index} className="feature-row">
-                            <input 
-                                type="text" 
-                                placeholder={`Feature #${index + 1} (e.g., Soil PH)`}
-                                value={feature}
-                                onChange={(e) => handleFeatureChange(index, e.target.value)}
-                                required
-                            />
+                            <input type="text" placeholder={`Feature #${index + 1} (e.g., Soil PH)`}
+                                value={feature} onChange={(e) => handleFeatureChange(index, e.target.value)} required />
                             {features.length > 1 && (
-                                <button 
-                                    type="button" 
-                                    className="remove-btn" 
-                                    onClick={() => handleRemoveFeature(index)}
-                                >
+                                <button type="button" className="remove-btn" onClick={() => handleRemoveFeature(index)}>
                                     <Trash2 size={16} />
                                 </button>
                             )}
@@ -152,19 +120,16 @@ const DefineFeatures = () => {
                 </div>
 
                 <div className="specification-group">
-                    <p>Dataset Specification (Respects/Constraints)</p>
-                    <textarea 
-                        placeholder="e.g., 'Focus on dairy farmers only' or 'Collectors should only interview people in Nairobi'"
-                        value={requirements}
-                        onChange={(e) => setRequirements(e.target.value)}
-                    />
+                    <p>Dataset Specification (Constraints)</p>
+                    <textarea
+                        placeholder="e.g., 'Focus on dairy farmers only' or 'Only interview people in Nairobi'"
+                        value={requirements} onChange={(e) => setRequirements(e.target.value)} />
                 </div>
 
                 <hr />
-                
-                {/* Submit button inside the form */}
-                <button type="submit" className="finalize-btn">
-                    Finalize & Generate Reference Number <ArrowRight size={18} />
+
+                <button type="submit" className="finalize-btn" disabled={isSubmitting}>
+                    {isSubmitting ? 'Saving...' : <><span>Finalize & Generate Reference Number</span> <ArrowRight size={18} /></>}
                 </button>
             </form>
         </div>

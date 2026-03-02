@@ -11,3 +11,4 @@ __pycache__/
 *.pyc
 instance/
 .env
+/__pycache__

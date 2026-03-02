@@ -2527,3 +2527,417 @@ WARNING:werkzeug: * Debugger is active!
 INFO:werkzeug: * Debugger PIN: 298-800-860
 INFO:werkzeug: * Detected change in 'C:\\Users\\princessintech\\my_projects\\semaData\\Backend\\routes\\Auth\\domain.py', reloading
 INFO:werkzeug: * Restarting with stat
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://192.168.13.51:8000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 145-870-996
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:23:14] "OPTIONS /api/Auth/signup HTTP/1.1" 200 -
+INFO:sqlalchemy.engine.Engine:select pg_catalog.version()
+INFO:sqlalchemy.engine.Engine:[raw sql] {}
+INFO:sqlalchemy.engine.Engine:select current_schema()
+INFO:sqlalchemy.engine.Engine:[raw sql] {}
+INFO:sqlalchemy.engine.Engine:show standard_conforming_strings
+INFO:sqlalchemy.engine.Engine:[raw sql] {}
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT "Users".id AS "Users_id", "Users".user_type AS "Users_user_type", "Users".first_name AS "Users_first_name", "Users".second_name AS "Users_second_name", "Users".email AS "Users_email", "Users".is_verified AS "Users_is_verified", "Users".domain_name AS "Users_domain_name", "Users".role AS "Users_role", "Users".reference_number AS "Users_reference_number", "Users".password_hash AS "Users_password_hash" 
+FROM "Users" 
+WHERE "Users".email = %(email_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00022s] {'email_1': 'masikamercy@gmail.com', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT "DomainOwner".id AS "DomainOwner_id", "DomainOwner".user_type AS "DomainOwner_user_type", "DomainOwner".first_name AS "DomainOwner_first_name", "DomainOwner".last_name AS "DomainOwner_last_name", "DomainOwner".username AS "DomainOwner_username", "DomainOwner".is_verified AS "DomainOwner_is_verified", "DomainOwner".email AS "DomainOwner_email", "DomainOwner".domain_field AS "DomainOwner_domain_field", "DomainOwner".reference_number AS "DomainOwner_reference_number", "DomainOwner".password_hash AS "DomainOwner_password_hash" 
+FROM "DomainOwner" 
+WHERE "DomainOwner".email = %(email_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00024s] {'email_1': 'masikamercy@gmail.com', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT "DomainOwner".id AS "DomainOwner_id", "DomainOwner".user_type AS "DomainOwner_user_type", "DomainOwner".first_name AS "DomainOwner_first_name", "DomainOwner".last_name AS "DomainOwner_last_name", "DomainOwner".username AS "DomainOwner_username", "DomainOwner".is_verified AS "DomainOwner_is_verified", "DomainOwner".email AS "DomainOwner_email", "DomainOwner".domain_field AS "DomainOwner_domain_field", "DomainOwner".reference_number AS "DomainOwner_reference_number", "DomainOwner".password_hash AS "DomainOwner_password_hash" 
+FROM "DomainOwner" 
+WHERE "DomainOwner".username = %(username_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00026s] {'username_1': 'masika', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:INSERT INTO "DomainOwner" (user_type, first_name, last_name, username, is_verified, email, domain_field, reference_number, password_hash) VALUES (%(user_type)s, %(first_name)s, %(last_name)s, %(username)s, %(is_verified)s, %(email)s, %(domain_field)s, %(reference_number)s, %(password_hash)s) RETURNING "DomainOwner".id
+INFO:sqlalchemy.engine.Engine:[generated in 0.00027s] {'user_type': 'DomainOwner', 'first_name': 'mercy', 'last_name': 'masika', 'username': 'masika', 'is_verified': False, 'email': 'masikamercy@gmail.com', 'domain_field': 'Agriculture', 'reference_number': None, 'password_hash': 'scrypt:32768:8:1$NmOYLNDElP4sELZB$7d360de9f0ec904d1fcc6bb493b124706be0254b2a6c6e9a255e39350589a406e6cb1163c67393c125b281989ed1786ac27cfbb4ee6874fdc3d73269600f3fcd'}
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT "DomainOwner".id AS "DomainOwner_id", "DomainOwner".user_type AS "DomainOwner_user_type", "DomainOwner".first_name AS "DomainOwner_first_name", "DomainOwner".last_name AS "DomainOwner_last_name", "DomainOwner".username AS "DomainOwner_username", "DomainOwner".is_verified AS "DomainOwner_is_verified", "DomainOwner".email AS "DomainOwner_email", "DomainOwner".domain_field AS "DomainOwner_domain_field", "DomainOwner".reference_number AS "DomainOwner_reference_number", "DomainOwner".password_hash AS "DomainOwner_password_hash" 
+FROM "DomainOwner" 
+WHERE "DomainOwner".id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00060s] {'pk_1': 14}
+INFO:sqlalchemy.engine.Engine:ROLLBACK
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:23:15] "[35m[1mPOST /api/Auth/signup HTTP/1.1[0m" 201 -
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT "DomainOwner".id AS "DomainOwner_id", "DomainOwner".user_type AS "DomainOwner_user_type", "DomainOwner".first_name AS "DomainOwner_first_name", "DomainOwner".last_name AS "DomainOwner_last_name", "DomainOwner".username AS "DomainOwner_username", "DomainOwner".is_verified AS "DomainOwner_is_verified", "DomainOwner".email AS "DomainOwner_email", "DomainOwner".domain_field AS "DomainOwner_domain_field", "DomainOwner".reference_number AS "DomainOwner_reference_number", "DomainOwner".password_hash AS "DomainOwner_password_hash" 
+FROM "DomainOwner" 
+WHERE "DomainOwner".email = %(email_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 37.3s ago] {'email_1': 'masikamercy@gmail.com', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT "Users".id AS "Users_id", "Users".user_type AS "Users_user_type", "Users".first_name AS "Users_first_name", "Users".second_name AS "Users_second_name", "Users".email AS "Users_email", "Users".is_verified AS "Users_is_verified", "Users".domain_name AS "Users_domain_name", "Users".role AS "Users_role", "Users".reference_number AS "Users_reference_number", "Users".password_hash AS "Users_password_hash" 
+FROM "Users" 
+WHERE "Users".email = %(email_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 37.31s ago] {'email_1': 'masikamercy@gmail.com', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:UPDATE "DomainOwner" SET is_verified=%(is_verified)s WHERE "DomainOwner".id = %(DomainOwner_id)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00030s] {'is_verified': True, 'DomainOwner_id': 14}
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT "DomainOwner".id AS "DomainOwner_id", "DomainOwner".user_type AS "DomainOwner_user_type", "DomainOwner".first_name AS "DomainOwner_first_name", "DomainOwner".last_name AS "DomainOwner_last_name", "DomainOwner".username AS "DomainOwner_username", "DomainOwner".is_verified AS "DomainOwner_is_verified", "DomainOwner".email AS "DomainOwner_email", "DomainOwner".domain_field AS "DomainOwner_domain_field", "DomainOwner".reference_number AS "DomainOwner_reference_number", "DomainOwner".password_hash AS "DomainOwner_password_hash" 
+FROM "DomainOwner" 
+WHERE "DomainOwner".id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 37.18s ago] {'pk_1': 14}
+INFO:sqlalchemy.engine.Engine:ROLLBACK
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:23:52] "[32mGET /api/Auth/confirm/Im1hc2lrYW1lcmN5QGdtYWlsLmNvbSI.aaF-ow.qEGBVdM450YSYYjuXaSnY5ycXL8 HTTP/1.1[0m" 302 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:26:57] "OPTIONS /api/domain HTTP/1.1" 200 -
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT "DomainOwner".id AS "DomainOwner_id", "DomainOwner".user_type AS "DomainOwner_user_type", "DomainOwner".first_name AS "DomainOwner_first_name", "DomainOwner".last_name AS "DomainOwner_last_name", "DomainOwner".username AS "DomainOwner_username", "DomainOwner".is_verified AS "DomainOwner_is_verified", "DomainOwner".email AS "DomainOwner_email", "DomainOwner".domain_field AS "DomainOwner_domain_field", "DomainOwner".reference_number AS "DomainOwner_reference_number", "DomainOwner".password_hash AS "DomainOwner_password_hash" 
+FROM "DomainOwner" 
+WHERE "DomainOwner".id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00024s] {'pk_1': '14'}
+INFO:sqlalchemy.engine.Engine:SELECT domain.id AS domain_id, domain.owner_id AS domain_owner_id, domain.domain_name AS domain_domain_name, domain.is_active AS domain_is_active, domain.total_budget AS domain_total_budget, domain.amount_paid AS domain_amount_paid, domain.deposit_amount AS domain_deposit_amount, domain.payment_status AS domain_payment_status, domain.target_goal AS domain_target_goal, domain.is_automated AS domain_is_automated, domain.reference_number AS domain_reference_number, domain.requirements AS domain_requirements 
+FROM domain 
+WHERE domain.domain_name = %(domain_name_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00031s] {'domain_name_1': 'sams sales', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:INSERT INTO domain (owner_id, domain_name, is_active, total_budget, amount_paid, deposit_amount, payment_status, target_goal, is_automated, reference_number, requirements) VALUES (%(owner_id)s, %(domain_name)s, %(is_active)s, %(total_budget)s, %(amount_paid)s, %(deposit_amount)s, %(payment_status)s, %(target_goal)s, %(is_automated)s, %(reference_number)s, %(requirements)s) RETURNING domain.id
+INFO:sqlalchemy.engine.Engine:[generated in 0.00122s] {'owner_id': '14', 'domain_name': 'sams sales', 'is_active': False, 'total_budget': 5000, 'amount_paid': 0.0, 'deposit_amount': 1500.0, 'payment_status': 'Unpaid', 'target_goal': 250, 'is_automated': False, 'reference_number': 'SAMS--3MS83U', 'requirements': 'should specifically be from Central'}
+INFO:sqlalchemy.engine.Engine:UPDATE "DomainOwner" SET reference_number=%(reference_number)s WHERE "DomainOwner".id = %(DomainOwner_id)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00068s] {'reference_number': 'SAMS--3MS83U', 'DomainOwner_id': 14}
+INFO:sqlalchemy.engine.Engine:INSERT INTO domain_features (name, domain_id) SELECT p0::VARCHAR, p1::INTEGER FROM (VALUES (%(name__0)s, %(domain_id__0)s, 0), (%(name__1)s, %(domain_id__1)s, 1), (%(name__2)s, %(domain_id__2)s, 2), (%(name__3)s, %(domain_id__3)s, 3)) AS imp_sen(p0, p1, sen_counter) ORDER BY sen_counter RETURNING domain_features.id, domain_features.id AS id__1
+INFO:sqlalchemy.engine.Engine:[generated in 0.00042s (insertmanyvalues) 1/1 (ordered)] {'name__0': 'age of customer', 'domain_id__0': 8, 'name__1': 'gender', 'domain_id__1': 8, 'name__2': 'Location', 'domain_id__2': 8, 'name__3': 'quantity', 'domain_id__3': 8}
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT domain.id AS domain_id, domain.owner_id AS domain_owner_id, domain.domain_name AS domain_domain_name, domain.is_active AS domain_is_active, domain.total_budget AS domain_total_budget, domain.amount_paid AS domain_amount_paid, domain.deposit_amount AS domain_deposit_amount, domain.payment_status AS domain_payment_status, domain.target_goal AS domain_target_goal, domain.is_automated AS domain_is_automated, domain.reference_number AS domain_reference_number, domain.requirements AS domain_requirements 
+FROM domain 
+WHERE domain.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00053s] {'pk_1': 8}
+INFO:sqlalchemy.engine.Engine:ROLLBACK
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:26:58] "[35m[1mPOST /api/domain HTTP/1.1[0m" 201 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:28:10] "OPTIONS /api/main/pay/initiate HTTP/1.1" 200 -
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT domain.id AS domain_id, domain.owner_id AS domain_owner_id, domain.domain_name AS domain_domain_name, domain.is_active AS domain_is_active, domain.total_budget AS domain_total_budget, domain.amount_paid AS domain_amount_paid, domain.deposit_amount AS domain_deposit_amount, domain.payment_status AS domain_payment_status, domain.target_goal AS domain_target_goal, domain.is_automated AS domain_is_automated, domain.reference_number AS domain_reference_number, domain.requirements AS domain_requirements 
+FROM domain 
+WHERE domain.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00049s] {'pk_1': 8}
+INFO:sqlalchemy.engine.Engine:UPDATE domain SET is_active=%(is_active)s, amount_paid=%(amount_paid)s, payment_status=%(payment_status)s WHERE domain.id = %(domain_id)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00028s] {'is_active': True, 'amount_paid': 525.0, 'payment_status': 'Paid', 'domain_id': 8}
+INFO:sqlalchemy.engine.Engine:INSERT INTO payment (domain_id, provider_id, transaction_ref, checkout_request_id, amount, currency, payment_type, phone_number, status, created_at, processed_at, attempts) VALUES (%(domain_id)s, %(provider_id)s, %(transaction_ref)s, %(checkout_request_id)s, %(amount)s, %(currency)s, %(payment_type)s, %(phone_number)s, %(status)s, %(created_at)s, %(processed_at)s, %(attempts)s) RETURNING payment.id
+INFO:sqlalchemy.engine.Engine:[generated in 0.00059s] {'domain_id': 8, 'provider_id': None, 'transaction_ref': 'MOCK-SEMA-8-1772191690', 'checkout_request_id': None, 'amount': 525.0, 'currency': 'USD', 'payment_type': None, 'phone_number': '0113165657', 'status': 'Success', 'created_at': datetime.datetime(2026, 2, 27, 11, 28, 10, 244670), 'processed_at': datetime.datetime(2026, 2, 27, 11, 28, 10, 234608), 'attempts': 0}
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:28:10] "POST /api/main/pay/initiate HTTP/1.1" 200 -
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT domain.id AS domain_id, domain.owner_id AS domain_owner_id, domain.domain_name AS domain_domain_name, domain.is_active AS domain_is_active, domain.total_budget AS domain_total_budget, domain.amount_paid AS domain_amount_paid, domain.deposit_amount AS domain_deposit_amount, domain.payment_status AS domain_payment_status, domain.target_goal AS domain_target_goal, domain.is_automated AS domain_is_automated, domain.reference_number AS domain_reference_number, domain.requirements AS domain_requirements 
+FROM domain 
+WHERE domain.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 9.52s ago] {'pk_1': 8}
+INFO:sqlalchemy.engine.Engine:ROLLBACK
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:28:19] "GET /api/main/status/8 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:28:56] "OPTIONS /api/my-domains HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:28:56] "OPTIONS /api/my-domains HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:28:56] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:28:56] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:29:04] "OPTIONS /api/my-domains HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:29:04] "OPTIONS /api/my-domains HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:29:04] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:29:04] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:29:05] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:29:05] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:29:07] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:29:07] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:29:08] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:29:08] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:29:27] "[31m[1mGET /api/main/collector-stats/1010 HTTP/1.1[0m" 401 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:29:27] "[31m[1mGET /api/main/collector-stats/1010 HTTP/1.1[0m" 401 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:29:41] "OPTIONS /api/my-domains HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:29:41] "OPTIONS /api/my-domains HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:29:41] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:29:41] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://192.168.13.51:8000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 145-870-996
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:59:02] "OPTIONS /api/main/pay/initiate HTTP/1.1" 200 -
+INFO:sqlalchemy.engine.Engine:select pg_catalog.version()
+INFO:sqlalchemy.engine.Engine:[raw sql] {}
+INFO:sqlalchemy.engine.Engine:select current_schema()
+INFO:sqlalchemy.engine.Engine:[raw sql] {}
+INFO:sqlalchemy.engine.Engine:show standard_conforming_strings
+INFO:sqlalchemy.engine.Engine:[raw sql] {}
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT domain.id AS domain_id, domain.owner_id AS domain_owner_id, domain.domain_name AS domain_domain_name, domain.is_active AS domain_is_active, domain.total_budget AS domain_total_budget, domain.amount_paid AS domain_amount_paid, domain.deposit_amount AS domain_deposit_amount, domain.payment_status AS domain_payment_status, domain.target_goal AS domain_target_goal, domain.is_automated AS domain_is_automated, domain.reference_number AS domain_reference_number, domain.requirements AS domain_requirements 
+FROM domain 
+WHERE domain.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00069s] {'pk_1': 8}
+INFO:sqlalchemy.engine.Engine:UPDATE domain SET amount_paid=%(amount_paid)s WHERE domain.id = %(domain_id)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00166s] {'amount_paid': 1050.0, 'domain_id': 8}
+INFO:sqlalchemy.engine.Engine:INSERT INTO payment (domain_id, provider_id, transaction_ref, checkout_request_id, amount, currency, payment_type, phone_number, status, created_at, processed_at, attempts) VALUES (%(domain_id)s, %(provider_id)s, %(transaction_ref)s, %(checkout_request_id)s, %(amount)s, %(currency)s, %(payment_type)s, %(phone_number)s, %(status)s, %(created_at)s, %(processed_at)s, %(attempts)s) RETURNING payment.id
+INFO:sqlalchemy.engine.Engine:[generated in 0.00064s] {'domain_id': 8, 'provider_id': None, 'transaction_ref': 'MOCK-SEMA-8-1772193543', 'checkout_request_id': None, 'amount': 525.0, 'currency': 'USD', 'payment_type': None, 'phone_number': '0113165657', 'status': 'Success', 'created_at': datetime.datetime(2026, 2, 27, 11, 59, 3, 89406), 'processed_at': datetime.datetime(2026, 2, 27, 11, 59, 3, 74009), 'attempts': 0}
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:59:03] "POST /api/main/pay/initiate HTTP/1.1" 200 -
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT domain.id AS domain_id, domain.owner_id AS domain_owner_id, domain.domain_name AS domain_domain_name, domain.is_active AS domain_is_active, domain.total_budget AS domain_total_budget, domain.amount_paid AS domain_amount_paid, domain.deposit_amount AS domain_deposit_amount, domain.payment_status AS domain_payment_status, domain.target_goal AS domain_target_goal, domain.is_automated AS domain_is_automated, domain.reference_number AS domain_reference_number, domain.requirements AS domain_requirements 
+FROM domain 
+WHERE domain.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 9.607s ago] {'pk_1': 8}
+INFO:sqlalchemy.engine.Engine:ROLLBACK
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:59:12] "GET /api/main/status/8 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:59:17] "OPTIONS /api/my-domains HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:59:17] "OPTIONS /api/my-domains HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:59:17] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:59:17] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:59:26] "OPTIONS /api/my-domains HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:59:26] "OPTIONS /api/my-domains HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:59:26] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:59:26] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:59:28] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 14:59:28] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:00:02] "OPTIONS /api/my-domains HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:00:02] "OPTIONS /api/my-domains HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:00:02] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:00:02] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:00:14] "OPTIONS /api/my-domains HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:00:14] "OPTIONS /api/my-domains HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:00:14] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:00:14] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://192.168.13.51:8000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 145-870-996
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:29:06] "OPTIONS /api/Auth/signup HTTP/1.1" 200 -
+INFO:sqlalchemy.engine.Engine:select pg_catalog.version()
+INFO:sqlalchemy.engine.Engine:[raw sql] {}
+INFO:sqlalchemy.engine.Engine:select current_schema()
+INFO:sqlalchemy.engine.Engine:[raw sql] {}
+INFO:sqlalchemy.engine.Engine:show standard_conforming_strings
+INFO:sqlalchemy.engine.Engine:[raw sql] {}
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT "Users".id AS "Users_id", "Users".user_type AS "Users_user_type", "Users".first_name AS "Users_first_name", "Users".second_name AS "Users_second_name", "Users".email AS "Users_email", "Users".is_verified AS "Users_is_verified", "Users".domain_name AS "Users_domain_name", "Users".role AS "Users_role", "Users".reference_number AS "Users_reference_number", "Users".password_hash AS "Users_password_hash" 
+FROM "Users" 
+WHERE "Users".email = %(email_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00022s] {'email_1': 'carenmakena@gmail.com', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT "DomainOwner".id AS "DomainOwner_id", "DomainOwner".user_type AS "DomainOwner_user_type", "DomainOwner".first_name AS "DomainOwner_first_name", "DomainOwner".last_name AS "DomainOwner_last_name", "DomainOwner".username AS "DomainOwner_username", "DomainOwner".is_verified AS "DomainOwner_is_verified", "DomainOwner".email AS "DomainOwner_email", "DomainOwner".domain_field AS "DomainOwner_domain_field", "DomainOwner".reference_number AS "DomainOwner_reference_number", "DomainOwner".password_hash AS "DomainOwner_password_hash" 
+FROM "DomainOwner" 
+WHERE "DomainOwner".email = %(email_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00033s] {'email_1': 'carenmakena@gmail.com', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT "DomainOwner".id AS "DomainOwner_id", "DomainOwner".user_type AS "DomainOwner_user_type", "DomainOwner".first_name AS "DomainOwner_first_name", "DomainOwner".last_name AS "DomainOwner_last_name", "DomainOwner".username AS "DomainOwner_username", "DomainOwner".is_verified AS "DomainOwner_is_verified", "DomainOwner".email AS "DomainOwner_email", "DomainOwner".domain_field AS "DomainOwner_domain_field", "DomainOwner".reference_number AS "DomainOwner_reference_number", "DomainOwner".password_hash AS "DomainOwner_password_hash" 
+FROM "DomainOwner" 
+WHERE "DomainOwner".username = %(username_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00032s] {'username_1': 'carenmakena', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:INSERT INTO "DomainOwner" (user_type, first_name, last_name, username, is_verified, email, domain_field, reference_number, password_hash) VALUES (%(user_type)s, %(first_name)s, %(last_name)s, %(username)s, %(is_verified)s, %(email)s, %(domain_field)s, %(reference_number)s, %(password_hash)s) RETURNING "DomainOwner".id
+INFO:sqlalchemy.engine.Engine:[generated in 0.00029s] {'user_type': 'DomainOwner', 'first_name': 'caren', 'last_name': 'makena', 'username': 'carenmakena', 'is_verified': False, 'email': 'carenmakena@gmail.com', 'domain_field': 'Agriculture', 'reference_number': None, 'password_hash': 'scrypt:32768:8:1$joqSdabQNeTSNHbc$e2613363f36e3971d638dc286f086d3e7ae42d53ea10a26e80e40e687cadf4ecf0fdf87015d6397cf89539438f8e282e4848495f7d97b6c032f48c33106dc34c'}
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT "DomainOwner".id AS "DomainOwner_id", "DomainOwner".user_type AS "DomainOwner_user_type", "DomainOwner".first_name AS "DomainOwner_first_name", "DomainOwner".last_name AS "DomainOwner_last_name", "DomainOwner".username AS "DomainOwner_username", "DomainOwner".is_verified AS "DomainOwner_is_verified", "DomainOwner".email AS "DomainOwner_email", "DomainOwner".domain_field AS "DomainOwner_domain_field", "DomainOwner".reference_number AS "DomainOwner_reference_number", "DomainOwner".password_hash AS "DomainOwner_password_hash" 
+FROM "DomainOwner" 
+WHERE "DomainOwner".id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00045s] {'pk_1': 15}
+INFO:sqlalchemy.engine.Engine:ROLLBACK
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:29:06] "[35m[1mPOST /api/Auth/signup HTTP/1.1[0m" 201 -
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT "DomainOwner".id AS "DomainOwner_id", "DomainOwner".user_type AS "DomainOwner_user_type", "DomainOwner".first_name AS "DomainOwner_first_name", "DomainOwner".last_name AS "DomainOwner_last_name", "DomainOwner".username AS "DomainOwner_username", "DomainOwner".is_verified AS "DomainOwner_is_verified", "DomainOwner".email AS "DomainOwner_email", "DomainOwner".domain_field AS "DomainOwner_domain_field", "DomainOwner".reference_number AS "DomainOwner_reference_number", "DomainOwner".password_hash AS "DomainOwner_password_hash" 
+FROM "DomainOwner" 
+WHERE "DomainOwner".email = %(email_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 19.72s ago] {'email_1': 'carenmakena@gmail.com', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT "Users".id AS "Users_id", "Users".user_type AS "Users_user_type", "Users".first_name AS "Users_first_name", "Users".second_name AS "Users_second_name", "Users".email AS "Users_email", "Users".is_verified AS "Users_is_verified", "Users".domain_name AS "Users_domain_name", "Users".role AS "Users_role", "Users".reference_number AS "Users_reference_number", "Users".password_hash AS "Users_password_hash" 
+FROM "Users" 
+WHERE "Users".email = %(email_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 19.73s ago] {'email_1': 'carenmakena@gmail.com', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:UPDATE "DomainOwner" SET is_verified=%(is_verified)s WHERE "DomainOwner".id = %(DomainOwner_id)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00227s] {'is_verified': True, 'DomainOwner_id': 15}
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT "DomainOwner".id AS "DomainOwner_id", "DomainOwner".user_type AS "DomainOwner_user_type", "DomainOwner".first_name AS "DomainOwner_first_name", "DomainOwner".last_name AS "DomainOwner_last_name", "DomainOwner".username AS "DomainOwner_username", "DomainOwner".is_verified AS "DomainOwner_is_verified", "DomainOwner".email AS "DomainOwner_email", "DomainOwner".domain_field AS "DomainOwner_domain_field", "DomainOwner".reference_number AS "DomainOwner_reference_number", "DomainOwner".password_hash AS "DomainOwner_password_hash" 
+FROM "DomainOwner" 
+WHERE "DomainOwner".id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 19.68s ago] {'pk_1': 15}
+INFO:sqlalchemy.engine.Engine:ROLLBACK
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:29:26] "[32mGET /api/Auth/confirm/ImNhcmVubWFrZW5hQGdtYWlsLmNvbSI.aaGOEg.bT94cfRDERvW3Yxh3Tuf2RgNtjQ HTTP/1.1[0m" 302 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:39:27] "OPTIONS /api/domain HTTP/1.1" 200 -
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT "DomainOwner".id AS "DomainOwner_id", "DomainOwner".user_type AS "DomainOwner_user_type", "DomainOwner".first_name AS "DomainOwner_first_name", "DomainOwner".last_name AS "DomainOwner_last_name", "DomainOwner".username AS "DomainOwner_username", "DomainOwner".is_verified AS "DomainOwner_is_verified", "DomainOwner".email AS "DomainOwner_email", "DomainOwner".domain_field AS "DomainOwner_domain_field", "DomainOwner".reference_number AS "DomainOwner_reference_number", "DomainOwner".password_hash AS "DomainOwner_password_hash" 
+FROM "DomainOwner" 
+WHERE "DomainOwner".id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00067s] {'pk_1': '15'}
+INFO:sqlalchemy.engine.Engine:SELECT domain.id AS domain_id, domain.owner_id AS domain_owner_id, domain.domain_name AS domain_domain_name, domain.is_active AS domain_is_active, domain.total_budget AS domain_total_budget, domain.amount_paid AS domain_amount_paid, domain.deposit_amount AS domain_deposit_amount, domain.payment_status AS domain_payment_status, domain.target_goal AS domain_target_goal, domain.is_automated AS domain_is_automated, domain.reference_number AS domain_reference_number, domain.requirements AS domain_requirements 
+FROM domain 
+WHERE domain.domain_name = %(domain_name_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00107s] {'domain_name_1': 'Agrifarmers sales', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:INSERT INTO domain (owner_id, domain_name, is_active, total_budget, amount_paid, deposit_amount, payment_status, target_goal, is_automated, reference_number, requirements) VALUES (%(owner_id)s, %(domain_name)s, %(is_active)s, %(total_budget)s, %(amount_paid)s, %(deposit_amount)s, %(payment_status)s, %(target_goal)s, %(is_automated)s, %(reference_number)s, %(requirements)s) RETURNING domain.id
+INFO:sqlalchemy.engine.Engine:[generated in 0.00063s] {'owner_id': '15', 'domain_name': 'Agrifarmers sales', 'is_active': False, 'total_budget': 400000, 'amount_paid': 0.0, 'deposit_amount': 120000.0, 'payment_status': 'Unpaid', 'target_goal': 20000, 'is_automated': False, 'reference_number': 'AGRI--3M1HX5', 'requirements': 'dataset should be specifically from Nairobi.'}
+INFO:sqlalchemy.engine.Engine:UPDATE "DomainOwner" SET reference_number=%(reference_number)s WHERE "DomainOwner".id = %(DomainOwner_id)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00027s] {'reference_number': 'AGRI--3M1HX5', 'DomainOwner_id': 15}
+INFO:sqlalchemy.engine.Engine:INSERT INTO domain_features (name, domain_id) SELECT p0::VARCHAR, p1::INTEGER FROM (VALUES (%(name__0)s, %(domain_id__0)s, 0), (%(name__1)s, %(domain_id__1)s, 1)) AS imp_sen(p0, p1, sen_counter) ORDER BY sen_counter RETURNING domain_features.id, domain_features.id AS id__1
+INFO:sqlalchemy.engine.Engine:[generated in 0.00010s (insertmanyvalues) 1/1 (ordered)] {'domain_id__0': 9, 'name__0': 'age of farmer', 'domain_id__1': 9, 'name__1': 'size of land'}
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT domain.id AS domain_id, domain.owner_id AS domain_owner_id, domain.domain_name AS domain_domain_name, domain.is_active AS domain_is_active, domain.total_budget AS domain_total_budget, domain.amount_paid AS domain_amount_paid, domain.deposit_amount AS domain_deposit_amount, domain.payment_status AS domain_payment_status, domain.target_goal AS domain_target_goal, domain.is_automated AS domain_is_automated, domain.reference_number AS domain_reference_number, domain.requirements AS domain_requirements 
+FROM domain 
+WHERE domain.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00064s] {'pk_1': 9}
+INFO:sqlalchemy.engine.Engine:ROLLBACK
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:39:27] "[35m[1mPOST /api/domain HTTP/1.1[0m" 201 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:40:20] "OPTIONS /api/main/pay/initiate HTTP/1.1" 200 -
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT domain.id AS domain_id, domain.owner_id AS domain_owner_id, domain.domain_name AS domain_domain_name, domain.is_active AS domain_is_active, domain.total_budget AS domain_total_budget, domain.amount_paid AS domain_amount_paid, domain.deposit_amount AS domain_deposit_amount, domain.payment_status AS domain_payment_status, domain.target_goal AS domain_target_goal, domain.is_automated AS domain_is_automated, domain.reference_number AS domain_reference_number, domain.requirements AS domain_requirements 
+FROM domain 
+WHERE domain.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00044s] {'pk_1': 9}
+INFO:sqlalchemy.engine.Engine:UPDATE domain SET is_active=%(is_active)s, amount_paid=%(amount_paid)s, payment_status=%(payment_status)s WHERE domain.id = %(domain_id)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00082s] {'is_active': True, 'amount_paid': 42000.0, 'payment_status': 'Paid', 'domain_id': 9}
+INFO:sqlalchemy.engine.Engine:INSERT INTO payment (domain_id, provider_id, transaction_ref, checkout_request_id, amount, currency, payment_type, phone_number, status, created_at, processed_at, attempts) VALUES (%(domain_id)s, %(provider_id)s, %(transaction_ref)s, %(checkout_request_id)s, %(amount)s, %(currency)s, %(payment_type)s, %(phone_number)s, %(status)s, %(created_at)s, %(processed_at)s, %(attempts)s) RETURNING payment.id
+INFO:sqlalchemy.engine.Engine:[generated in 0.00048s] {'domain_id': 9, 'provider_id': None, 'transaction_ref': 'MOCK-SEMA-9-1772196020', 'checkout_request_id': None, 'amount': 42000.0, 'currency': 'USD', 'payment_type': None, 'phone_number': '0113165657', 'status': 'Success', 'created_at': datetime.datetime(2026, 2, 27, 12, 40, 20, 812107), 'processed_at': datetime.datetime(2026, 2, 27, 12, 40, 20, 801864), 'attempts': 0}
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:40:20] "POST /api/main/pay/initiate HTTP/1.1" 200 -
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT domain.id AS domain_id, domain.owner_id AS domain_owner_id, domain.domain_name AS domain_domain_name, domain.is_active AS domain_is_active, domain.total_budget AS domain_total_budget, domain.amount_paid AS domain_amount_paid, domain.deposit_amount AS domain_deposit_amount, domain.payment_status AS domain_payment_status, domain.target_goal AS domain_target_goal, domain.is_automated AS domain_is_automated, domain.reference_number AS domain_reference_number, domain.requirements AS domain_requirements 
+FROM domain 
+WHERE domain.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 9.526s ago] {'pk_1': 9}
+INFO:sqlalchemy.engine.Engine:ROLLBACK
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:40:30] "GET /api/main/status/9 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:40:35] "OPTIONS /api/my-domains HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:40:35] "OPTIONS /api/my-domains HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:40:35] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:40:35] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:40:43] "OPTIONS /api/my-domains HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:40:43] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [27/Feb/2026 15:40:43] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://192.168.90.128:8000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 145-870-996
+INFO:werkzeug:127.0.0.1 - - [01/Mar/2026 16:43:30] "[31m[1mGET /api/main/collector-stats/1010 HTTP/1.1[0m" 401 -
+INFO:werkzeug:127.0.0.1 - - [01/Mar/2026 16:43:30] "[31m[1mGET /api/main/collector-stats/1010 HTTP/1.1[0m" 401 -
+INFO:werkzeug:127.0.0.1 - - [01/Mar/2026 16:44:40] "OPTIONS /api/Auth/signup HTTP/1.1" 200 -
+INFO:sqlalchemy.engine.Engine:select pg_catalog.version()
+INFO:sqlalchemy.engine.Engine:[raw sql] {}
+INFO:sqlalchemy.engine.Engine:select current_schema()
+INFO:sqlalchemy.engine.Engine:[raw sql] {}
+INFO:sqlalchemy.engine.Engine:show standard_conforming_strings
+INFO:sqlalchemy.engine.Engine:[raw sql] {}
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT "Users".id AS "Users_id", "Users".user_type AS "Users_user_type", "Users".first_name AS "Users_first_name", "Users".second_name AS "Users_second_name", "Users".email AS "Users_email", "Users".is_verified AS "Users_is_verified", "Users".domain_name AS "Users_domain_name", "Users".role AS "Users_role", "Users".reference_number AS "Users_reference_number", "Users".password_hash AS "Users_password_hash" 
+FROM "Users" 
+WHERE "Users".email = %(email_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00096s] {'email_1': 'mourinenyaga@gmail.com', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT "DomainOwner".id AS "DomainOwner_id", "DomainOwner".user_type AS "DomainOwner_user_type", "DomainOwner".first_name AS "DomainOwner_first_name", "DomainOwner".last_name AS "DomainOwner_last_name", "DomainOwner".username AS "DomainOwner_username", "DomainOwner".is_verified AS "DomainOwner_is_verified", "DomainOwner".email AS "DomainOwner_email", "DomainOwner".domain_field AS "DomainOwner_domain_field", "DomainOwner".reference_number AS "DomainOwner_reference_number", "DomainOwner".password_hash AS "DomainOwner_password_hash" 
+FROM "DomainOwner" 
+WHERE "DomainOwner".email = %(email_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00092s] {'email_1': 'mourinenyaga@gmail.com', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT "DomainOwner".id AS "DomainOwner_id", "DomainOwner".user_type AS "DomainOwner_user_type", "DomainOwner".first_name AS "DomainOwner_first_name", "DomainOwner".last_name AS "DomainOwner_last_name", "DomainOwner".username AS "DomainOwner_username", "DomainOwner".is_verified AS "DomainOwner_is_verified", "DomainOwner".email AS "DomainOwner_email", "DomainOwner".domain_field AS "DomainOwner_domain_field", "DomainOwner".reference_number AS "DomainOwner_reference_number", "DomainOwner".password_hash AS "DomainOwner_password_hash" 
+FROM "DomainOwner" 
+WHERE "DomainOwner".username = %(username_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00044s] {'username_1': 'mourine', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:INSERT INTO "DomainOwner" (user_type, first_name, last_name, username, is_verified, email, domain_field, reference_number, password_hash) VALUES (%(user_type)s, %(first_name)s, %(last_name)s, %(username)s, %(is_verified)s, %(email)s, %(domain_field)s, %(reference_number)s, %(password_hash)s) RETURNING "DomainOwner".id
+INFO:sqlalchemy.engine.Engine:[generated in 0.00036s] {'user_type': 'DomainOwner', 'first_name': 'mourine', 'last_name': 'nganga', 'username': 'mourine', 'is_verified': False, 'email': 'mourinenyaga@gmail.com', 'domain_field': 'Health', 'reference_number': None, 'password_hash': 'scrypt:32768:8:1$5VjTCOfqFkB7rrYg$08a0dd2eca20a075b63bd281cffdebb3dd8c99a2fdcdde46403e90e7490b88cd46d21b2f3071e93e8e34654634983fbb7e680242b2a84db954a39838e665539e'}
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT "DomainOwner".id AS "DomainOwner_id", "DomainOwner".user_type AS "DomainOwner_user_type", "DomainOwner".first_name AS "DomainOwner_first_name", "DomainOwner".last_name AS "DomainOwner_last_name", "DomainOwner".username AS "DomainOwner_username", "DomainOwner".is_verified AS "DomainOwner_is_verified", "DomainOwner".email AS "DomainOwner_email", "DomainOwner".domain_field AS "DomainOwner_domain_field", "DomainOwner".reference_number AS "DomainOwner_reference_number", "DomainOwner".password_hash AS "DomainOwner_password_hash" 
+FROM "DomainOwner" 
+WHERE "DomainOwner".id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00033s] {'pk_1': 16}
+INFO:sqlalchemy.engine.Engine:ROLLBACK
+INFO:werkzeug:127.0.0.1 - - [01/Mar/2026 16:44:41] "[35m[1mPOST /api/Auth/signup HTTP/1.1[0m" 201 -
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT "DomainOwner".id AS "DomainOwner_id", "DomainOwner".user_type AS "DomainOwner_user_type", "DomainOwner".first_name AS "DomainOwner_first_name", "DomainOwner".last_name AS "DomainOwner_last_name", "DomainOwner".username AS "DomainOwner_username", "DomainOwner".is_verified AS "DomainOwner_is_verified", "DomainOwner".email AS "DomainOwner_email", "DomainOwner".domain_field AS "DomainOwner_domain_field", "DomainOwner".reference_number AS "DomainOwner_reference_number", "DomainOwner".password_hash AS "DomainOwner_password_hash" 
+FROM "DomainOwner" 
+WHERE "DomainOwner".email = %(email_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 25.63s ago] {'email_1': BadTimeSignature("Signature b'JcGpr7mp2KzAct_FVISN6HbMVZE<' does not match"), 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:ROLLBACK
+INFO:werkzeug:127.0.0.1 - - [01/Mar/2026 16:45:06] "[35m[1mGET /api/Auth/confirm/Im1vdXJpbmVueWFnYUBnbWFpbC5jb20i.aaRCyQ.JcGpr7mp2KzAct_FVISN6HbMVZE< HTTP/1.1[0m" 500 -
+INFO:werkzeug:127.0.0.1 - - [01/Mar/2026 16:45:07] "GET /api/Auth/confirm/Im1vdXJpbmVueWFnYUBnbWFpbC5jb20i.aaRCyQ.JcGpr7mp2KzAct_FVISN6HbMVZE<?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [01/Mar/2026 16:45:07] "GET /api/Auth/confirm/Im1vdXJpbmVueWFnYUBnbWFpbC5jb20i.aaRCyQ.JcGpr7mp2KzAct_FVISN6HbMVZE<?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [01/Mar/2026 16:45:07] "GET /api/Auth/confirm/Im1vdXJpbmVueWFnYUBnbWFpbC5jb20i.aaRCyQ.JcGpr7mp2KzAct_FVISN6HbMVZE<?__debugger__=yes&cmd=resource&f=console.png&s=OJuTW7RT0WJ6QyDtmCMy HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [01/Mar/2026 16:45:07] "GET /api/Auth/confirm/Im1vdXJpbmVueWFnYUBnbWFpbC5jb20i.aaRCyQ.JcGpr7mp2KzAct_FVISN6HbMVZE<?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 200 -
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT "DomainOwner".id AS "DomainOwner_id", "DomainOwner".user_type AS "DomainOwner_user_type", "DomainOwner".first_name AS "DomainOwner_first_name", "DomainOwner".last_name AS "DomainOwner_last_name", "DomainOwner".username AS "DomainOwner_username", "DomainOwner".is_verified AS "DomainOwner_is_verified", "DomainOwner".email AS "DomainOwner_email", "DomainOwner".domain_field AS "DomainOwner_domain_field", "DomainOwner".reference_number AS "DomainOwner_reference_number", "DomainOwner".password_hash AS "DomainOwner_password_hash" 
+FROM "DomainOwner" 
+WHERE "DomainOwner".email = %(email_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 62.16s ago] {'email_1': 'mourinenyaga@gmail.com', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:SELECT "Users".id AS "Users_id", "Users".user_type AS "Users_user_type", "Users".first_name AS "Users_first_name", "Users".second_name AS "Users_second_name", "Users".email AS "Users_email", "Users".is_verified AS "Users_is_verified", "Users".domain_name AS "Users_domain_name", "Users".role AS "Users_role", "Users".reference_number AS "Users_reference_number", "Users".password_hash AS "Users_password_hash" 
+FROM "Users" 
+WHERE "Users".email = %(email_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 62.19s ago] {'email_1': 'mourinenyaga@gmail.com', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:UPDATE "DomainOwner" SET is_verified=%(is_verified)s WHERE "DomainOwner".id = %(DomainOwner_id)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00031s] {'is_verified': True, 'DomainOwner_id': 16}
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT "DomainOwner".id AS "DomainOwner_id", "DomainOwner".user_type AS "DomainOwner_user_type", "DomainOwner".first_name AS "DomainOwner_first_name", "DomainOwner".last_name AS "DomainOwner_last_name", "DomainOwner".username AS "DomainOwner_username", "DomainOwner".is_verified AS "DomainOwner_is_verified", "DomainOwner".email AS "DomainOwner_email", "DomainOwner".domain_field AS "DomainOwner_domain_field", "DomainOwner".reference_number AS "DomainOwner_reference_number", "DomainOwner".password_hash AS "DomainOwner_password_hash" 
+FROM "DomainOwner" 
+WHERE "DomainOwner".id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 62.02s ago] {'pk_1': 16}
+INFO:sqlalchemy.engine.Engine:ROLLBACK
+INFO:werkzeug:127.0.0.1 - - [01/Mar/2026 16:45:43] "[32mGET /api/Auth/confirm/Im1vdXJpbmVueWFnYUBnbWFpbC5jb20i.aaRCyQ.JcGpr7mp2KzAct_FVISN6HbMVZE HTTP/1.1[0m" 302 -
+INFO:werkzeug:127.0.0.1 - - [01/Mar/2026 16:47:04] "OPTIONS /api/domain HTTP/1.1" 200 -
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT "DomainOwner".id AS "DomainOwner_id", "DomainOwner".user_type AS "DomainOwner_user_type", "DomainOwner".first_name AS "DomainOwner_first_name", "DomainOwner".last_name AS "DomainOwner_last_name", "DomainOwner".username AS "DomainOwner_username", "DomainOwner".is_verified AS "DomainOwner_is_verified", "DomainOwner".email AS "DomainOwner_email", "DomainOwner".domain_field AS "DomainOwner_domain_field", "DomainOwner".reference_number AS "DomainOwner_reference_number", "DomainOwner".password_hash AS "DomainOwner_password_hash" 
+FROM "DomainOwner" 
+WHERE "DomainOwner".id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00034s] {'pk_1': '16'}
+INFO:sqlalchemy.engine.Engine:SELECT domain.id AS domain_id, domain.owner_id AS domain_owner_id, domain.domain_name AS domain_domain_name, domain.is_active AS domain_is_active, domain.total_budget AS domain_total_budget, domain.amount_paid AS domain_amount_paid, domain.deposit_amount AS domain_deposit_amount, domain.payment_status AS domain_payment_status, domain.target_goal AS domain_target_goal, domain.is_automated AS domain_is_automated, domain.reference_number AS domain_reference_number, domain.requirements AS domain_requirements 
+FROM domain 
+WHERE domain.domain_name = %(domain_name_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00042s] {'domain_name_1': 'farmers Saccos', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:INSERT INTO domain (owner_id, domain_name, is_active, total_budget, amount_paid, deposit_amount, payment_status, target_goal, is_automated, reference_number, requirements) VALUES (%(owner_id)s, %(domain_name)s, %(is_active)s, %(total_budget)s, %(amount_paid)s, %(deposit_amount)s, %(payment_status)s, %(target_goal)s, %(is_automated)s, %(reference_number)s, %(requirements)s) RETURNING domain.id
+INFO:sqlalchemy.engine.Engine:[generated in 0.00125s] {'owner_id': '16', 'domain_name': 'farmers Saccos', 'is_active': False, 'total_budget': 20000, 'amount_paid': 0.0, 'deposit_amount': 6000.0, 'payment_status': 'Unpaid', 'target_goal': 1000, 'is_automated': False, 'reference_number': 'FARM--0U59RD', 'requirements': 'should be from Elgeyo marakwet'}
+INFO:sqlalchemy.engine.Engine:UPDATE "DomainOwner" SET reference_number=%(reference_number)s WHERE "DomainOwner".id = %(DomainOwner_id)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00089s] {'reference_number': 'FARM--0U59RD', 'DomainOwner_id': 16}
+INFO:sqlalchemy.engine.Engine:INSERT INTO domain_features (name, domain_id) SELECT p0::VARCHAR, p1::INTEGER FROM (VALUES (%(name__0)s, %(domain_id__0)s, 0), (%(name__1)s, %(domain_id__1)s, 1), (%(name__2)s, %(domain_id__2)s, 2), (%(name__3)s, %(domain_id__3)s, 3)) AS imp_sen(p0, p1, sen_counter) ORDER BY sen_counter RETURNING domain_features.id, domain_features.id AS id__1
+INFO:sqlalchemy.engine.Engine:[generated in 0.00015s (insertmanyvalues) 1/1 (ordered)] {'name__0': 'monthly income', 'domain_id__0': 10, 'name__1': 'size of land', 'domain_id__1': 10, 'name__2': 'key partners', 'domain_id__2': 10, 'name__3': 'main crop', 'domain_id__3': 10}
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT domain.id AS domain_id, domain.owner_id AS domain_owner_id, domain.domain_name AS domain_domain_name, domain.is_active AS domain_is_active, domain.total_budget AS domain_total_budget, domain.amount_paid AS domain_amount_paid, domain.deposit_amount AS domain_deposit_amount, domain.payment_status AS domain_payment_status, domain.target_goal AS domain_target_goal, domain.is_automated AS domain_is_automated, domain.reference_number AS domain_reference_number, domain.requirements AS domain_requirements 
+FROM domain 
+WHERE domain.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00088s] {'pk_1': 10}
+INFO:sqlalchemy.engine.Engine:ROLLBACK
+INFO:werkzeug:127.0.0.1 - - [01/Mar/2026 16:47:04] "[35m[1mPOST /api/domain HTTP/1.1[0m" 201 -
+INFO:werkzeug:127.0.0.1 - - [01/Mar/2026 16:47:25] "OPTIONS /api/main/pay/initiate HTTP/1.1" 200 -
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT domain.id AS domain_id, domain.owner_id AS domain_owner_id, domain.domain_name AS domain_domain_name, domain.is_active AS domain_is_active, domain.total_budget AS domain_total_budget, domain.amount_paid AS domain_amount_paid, domain.deposit_amount AS domain_deposit_amount, domain.payment_status AS domain_payment_status, domain.target_goal AS domain_target_goal, domain.is_automated AS domain_is_automated, domain.reference_number AS domain_reference_number, domain.requirements AS domain_requirements 
+FROM domain 
+WHERE domain.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00171s] {'pk_1': 10}
+INFO:sqlalchemy.engine.Engine:UPDATE domain SET is_active=%(is_active)s, amount_paid=%(amount_paid)s, payment_status=%(payment_status)s WHERE domain.id = %(domain_id)s
+INFO:sqlalchemy.engine.Engine:[generated in 0.00086s] {'is_active': True, 'amount_paid': 2100.0, 'payment_status': 'Paid', 'domain_id': 10}
+INFO:sqlalchemy.engine.Engine:INSERT INTO payment (domain_id, provider_id, transaction_ref, checkout_request_id, amount, currency, payment_type, phone_number, status, created_at, processed_at, attempts) VALUES (%(domain_id)s, %(provider_id)s, %(transaction_ref)s, %(checkout_request_id)s, %(amount)s, %(currency)s, %(payment_type)s, %(phone_number)s, %(status)s, %(created_at)s, %(processed_at)s, %(attempts)s) RETURNING payment.id
+INFO:sqlalchemy.engine.Engine:[generated in 0.00113s] {'domain_id': 10, 'provider_id': None, 'transaction_ref': 'MOCK-SEMA-10-1772372845', 'checkout_request_id': None, 'amount': 2100.0, 'currency': 'USD', 'payment_type': None, 'phone_number': '0113165657', 'status': 'Success', 'created_at': datetime.datetime(2026, 3, 1, 13, 47, 25, 633964), 'processed_at': datetime.datetime(2026, 3, 1, 13, 47, 25, 622410), 'attempts': 0}
+INFO:sqlalchemy.engine.Engine:COMMIT
+INFO:werkzeug:127.0.0.1 - - [01/Mar/2026 16:47:25] "POST /api/main/pay/initiate HTTP/1.1" 200 -
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT domain.id AS domain_id, domain.owner_id AS domain_owner_id, domain.domain_name AS domain_domain_name, domain.is_active AS domain_is_active, domain.total_budget AS domain_total_budget, domain.amount_paid AS domain_amount_paid, domain.deposit_amount AS domain_deposit_amount, domain.payment_status AS domain_payment_status, domain.target_goal AS domain_target_goal, domain.is_automated AS domain_is_automated, domain.reference_number AS domain_reference_number, domain.requirements AS domain_requirements 
+FROM domain 
+WHERE domain.id = %(pk_1)s
+INFO:sqlalchemy.engine.Engine:[cached since 9.596s ago] {'pk_1': 10}
+INFO:sqlalchemy.engine.Engine:ROLLBACK
+INFO:werkzeug:127.0.0.1 - - [01/Mar/2026 16:47:35] "GET /api/main/status/10 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [01/Mar/2026 16:47:52] "OPTIONS /api/my-domains HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [01/Mar/2026 16:47:52] "OPTIONS /api/my-domains HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [01/Mar/2026 16:47:52] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [01/Mar/2026 16:47:52] "[31m[1mGET /api/my-domains HTTP/1.1[0m" 422 -

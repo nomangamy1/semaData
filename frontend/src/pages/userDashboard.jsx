@@ -6,115 +6,138 @@ import db from './db';
 const UserDashboard = () => {
   const navigate = useNavigate();
 
-  // --- State Management ---
+  // ✅ Read from localStorage using consistent keys set by login.jsx
+  const token  = localStorage.getItem('token');
+  const userId = localStorage.getItem('ownerId'); // login stores both owner and user id as 'ownerId'
+  const domainId = localStorage.getItem('domainId');
+
   const [isLoading, setIsLoading] = useState(true);
-  const [drafts, setDrafts] = useState([]); // Added to store actual draft objects
+  const [drafts, setDrafts] = useState([]);
   const [isSyncing, setIsSyncing] = useState(false);
-  
+  const [error, setError] = useState('');
+
   const [sessionData, setSessionData] = useState({
-    name: '',
-    email: '',
-    domain: '',
-    refNum: ''
+    name: '', email: '', domain: '', refNum: ''
   });
 
   const [activeTask, setActiveTask] = useState({
-    title: "",
-    language: "",
-    targetCount: 0,
-    currentCount: 0,
-    description: ""
+    title: '', language: '', targetCount: 0, currentCount: 0, description: ''
   });
 
-  // --- Helper Functions ---
   const getCollectorInitials = (name) => {
-    if (!name || name === 'Collector') return "??";
-    const nameParts = name.trim().split(" ");
-    return nameParts.length >= 2 
-      ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
+    if (!name) return '??';
+    const parts = name.trim().split(' ');
+    return parts.length >= 2
+      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
       : name.substring(0, 2).toUpperCase();
   };
 
-  // --- Sync Logic ---
+  // ─── Sync drafts to cloud ───
   const handleSyncData = async () => {
-    const domainId = localStorage.getItem('domainId');
-    if (drafts.length === 0) return;
-    
+    if (drafts.length === 0 || !token) return;
+    setIsSyncing(true);
+
     try {
-      setIsSyncing(true);
-      
       for (const draft of drafts) {
-        if (!draft.ref || draft.ref ==='N/A') {
-          console.warn(`Skipping draft ${draft.id} due to missing reference number.`);
+        if (!draft.refNum || draft.refNum === 'N/A') {
+          console.warn(`Skipping draft ${draft.id} — missing reference number.`);
           continue;
         }
+
         const formData = new FormData();
-        formData.append("id",localStorage.getItem('domainId'));
-        // Append the binary audio blob and metadata
-        formData.append("file", draft.audioBlob, `sync_${draft.timestamp}.webm`);
-        formData.append("referenceNumber", draft.ref);
-        formData.append("task", draft.task);
-        formData.append("user_id", localStorage.getItem('userId'));
+        formData.append('file', draft.audioBlob, `sync_${draft.timestamp}.webm`);
+        formData.append('referenceNumber', draft.refNum);   // ✅ matches engine
+        formData.append('domain_id', draft.domainId || domainId); // ✅ matches engine
 
         const response = await fetch('http://localhost:8000/api/core/transcribe', {
           method: 'POST',
-          body: formData, // Send as FormData, not JSON.stringify
+          headers: {
+            'Authorization': `Bearer ${token}`  // ✅ JWT token — required by engine
+            // ✅ No Content-Type — browser sets it automatically for FormData
+          },
+          body: formData,
         });
-        if (!domainId) {
-          throw new Error("Domain ID is missing. Cannot sync data.");
-        }
 
         if (response.ok) {
           await db.drafts.delete(draft.id);
+        } else {
+          const err = await response.json();
+          console.error(`Draft ${draft.id} sync failed:`, err.error);
         }
       }
-      
-      // Refresh local list after sync attempt
-      const remainingDrafts = await db.drafts.toArray();
-      setDrafts(remainingDrafts);
-      
-      if(remainingDrafts.length === 0) {
-        alert("✅ All local records synced successfully!");
+
+      const remaining = await db.drafts.toArray();
+      setDrafts(remaining);
+
+      if (remaining.length === 0) {
+        alert('✅ All local records synced successfully!');
+      } else {
+        alert(`⚠️ ${remaining.length} drafts still pending. Some may have failed.`);
       }
-    } catch (error) {
-      console.error("Sync failed:", error);
-      alert("Sync encountered an error. Check your connection.");
+    } catch (err) {
+      console.error('Sync error:', err);
+      alert('Sync encountered an error. Check your connection.');
     } finally {
       setIsSyncing(false);
     }
   };
 
-  // --- Effects ---
+  // ─── Initialize dashboard ───
   useEffect(() => {
-    const initializeDashboard = async () => {
-      const userId = localStorage.getItem('userId');
-      
-      if (!userId) {
-        navigate('/login');
-        return;
-      }
+    // ✅ Guard: no token = go to login
+    if (!token || !userId) {
+      navigate('/login');
+      return;
+    }
 
+    const initializeDashboard = async () => {
       try {
-        // 1. Fetch Local Drafts (Full objects to show in UI)
+        // 1. Load local drafts
         const localDrafts = await db.drafts.toArray();
         setDrafts(localDrafts);
 
-        // 2. Fetch Profile from API
-        const response = await fetch(`http://localhost:8000/api/main/collector-stats/${userId}`);
-        if (!response.ok) throw new Error("Failed to fetch profile");
-        
+        // 2. Fetch collector stats with JWT token
+        const response = await fetch(
+          `http://localhost:8000/api/main/collector-stats/${userId}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,  // ✅ JWT — required by @jwt_required()
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        // ✅ Handle auth errors
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem('token');
+          navigate('/login');
+          return;
+        }
+
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.error || 'Failed to fetch profile');
+        }
+
         const data = await response.json();
         setSessionData(data.sessionData);
         setActiveTask(data.activeTask);
-      } catch (error) {
-        console.error("Initialization Error:", error);
+
+        // ✅ Store refNum for CollectorHome to read
+        if (data.sessionData?.refNum) {
+          localStorage.setItem('referenceNumber', data.sessionData.refNum);
+        }
+
+      } catch (err) {
+        console.error('Dashboard init error:', err);
+        setError(err.message || 'Could not load your dashboard.');
       } finally {
         setIsLoading(false);
       }
     };
 
     initializeDashboard();
-  }, [navigate]);
+  }, [token, userId, navigate]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -122,15 +145,16 @@ const UserDashboard = () => {
   };
 
   const handleStartRecording = () => {
-    navigate('/collectorHome', { 
-      state: { task: activeTask.title, ref: sessionData.refNum } 
+    navigate('/collectorHome', {
+      state: { task: activeTask.title, ref: sessionData.refNum }
     });
   };
 
-  const progressPercent = activeTask.targetCount > 0 
-    ? Math.round((activeTask.currentCount / activeTask.targetCount) * 100) 
+  const progressPercent = activeTask.targetCount > 0
+    ? Math.min(Math.round((activeTask.currentCount / activeTask.targetCount) * 100), 100)
     : 0;
 
+  // ─── Loading ───
   if (isLoading) {
     return (
       <div className="dashboard-wrapper">
@@ -141,18 +165,34 @@ const UserDashboard = () => {
     );
   }
 
+  // ─── Error ───
+  if (error) {
+    return (
+      <div className="dashboard-wrapper">
+        <div className="loader-container" style={{ textAlign: 'center' }}>
+          <p style={{ color: '#ef4444', fontWeight: 'bold', marginBottom: '1rem' }}>{error}</p>
+          <button className="start-session-btn" onClick={() => navigate('/login')}>
+            Back to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-wrapper">
+
       {/* Sync Warning Banner */}
       {drafts.length > 0 && (
-        <div className='sync-warning-box'>
-          <span>⚠️ {drafts.length} records are saved locally. Connect to the internet to sync!</span>
+        <div className="sync-warning-box">
+          <span>⚠️ {drafts.length} record{drafts.length > 1 ? 's' : ''} saved locally. Connect to sync.</span>
           <button onClick={handleSyncData} disabled={isSyncing} className="sync-btn">
-            {isSyncing ? "Syncing..." : "Sync Now"}
+            {isSyncing ? 'Syncing...' : 'Sync Now'}
           </button>
         </div>
       )}
 
+      {/* Header */}
       <header className="dashboard-header">
         <div className="profile-intro">
           <div className="collector-avatar">{getCollectorInitials(sessionData.name)}</div>
@@ -161,33 +201,36 @@ const UserDashboard = () => {
             <p className="status-badge">● System Agent: Verified</p>
           </div>
         </div>
-        
+
         <div className="profile-id-shield">
           <div className="id-content">
             <span className="id-label">Official Domain Reference</span>
-            <span className="id-number">{sessionData.refNum}</span>
+            <span className="id-number">{sessionData.refNum || 'N/A'}</span>
           </div>
         </div>
       </header>
 
       <div className="dashboard-grid">
         <div className="main-content-flow">
-          {/* Active Task Section */}
+
+          {/* Active Task */}
           <section className="task-card">
             <h2>Work Allocation</h2>
             <div className="active-assignment-box">
               <div className="assignment-header">
-                <h3>{activeTask.title}</h3>
+                <h3>{activeTask.title || 'No task assigned'}</h3>
                 <span className="domain-pill">{sessionData.domain}</span>
               </div>
-              <p className="task-meta"><strong>Dialect Focus:</strong> {activeTask.language}</p>
+              {activeTask.language && (
+                <p className="task-meta"><strong>Dialect Focus:</strong> {activeTask.language}</p>
+              )}
               <p className="task-desc">{activeTask.description}</p>
-              
+
               <div className="progress-container">
-                <div className="progress-fill" style={{ width: `${progressPercent}%` }}></div>
+                <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
               </div>
               <p className="progress-text">
-                {progressPercent}% Complete — {activeTask.description}
+                {activeTask.currentCount} / {activeTask.targetCount} — {progressPercent}% Complete
               </p>
             </div>
 
@@ -196,7 +239,7 @@ const UserDashboard = () => {
             </button>
           </section>
 
-          {/* NEW: Local Drafts Vault Section */}
+          {/* Local Drafts Vault */}
           {drafts.length > 0 && (
             <section className="drafts-vault-card">
               <h3>Local Vault (Pending Sync)</h3>
@@ -205,7 +248,9 @@ const UserDashboard = () => {
                   <div key={draft.id} className="draft-item">
                     <div className="draft-info">
                       <span className="draft-task">{draft.task}</span>
-                      <span className="draft-meta">{draft.duration} • {new Date(draft.timestamp).toLocaleTimeString()}</span>
+                      <span className="draft-meta">
+                        {draft.duration} • {new Date(draft.timestamp).toLocaleTimeString()}
+                      </span>
                     </div>
                     <span className="draft-status-pill">Pending</span>
                   </div>
@@ -214,23 +259,25 @@ const UserDashboard = () => {
             </section>
           )}
 
+          {/* Account Info */}
           <section className="profile-details-card">
             <h3>Account Metadata</h3>
             <div className="info-grid">
-               <div className="info-item"><label>Full Name</label><p>{sessionData.name}</p></div>
-               <div className="info-item"><label>Email Address</label><p>{sessionData.email}</p></div>
-               <div className="info-item"><label>Role</label><p>Data Collection Agent</p></div>
-               <div className="info-item"><label>Authentication Mode</label><p>Reference-Bound</p></div>
+              <div className="info-item"><label>Full Name</label><p>{sessionData.name}</p></div>
+              <div className="info-item"><label>Domain</label><p>{sessionData.domain}</p></div>
+              <div className="info-item"><label>Role</label><p>Data Collection Agent</p></div>
+              <div className="info-item"><label>Auth Mode</label><p>Reference-Bound JWT</p></div>
             </div>
             <button className="logout-link" onClick={handleLogout}>Sign out of system</button>
           </section>
         </div>
 
+        {/* Sidebar */}
         <aside className="instructions-aside">
           <h4>Operational Guidelines</h4>
           <ul>
-            <li><strong>Environment:</strong> Maintain background noise below 20dB.</li>
-            <li><strong>Hardware:</strong> Calibrate microphone input before starting.</li>
+            <li><strong>Environment:</strong> Background noise below 20dB.</li>
+            <li><strong>Hardware:</strong> Calibrate microphone before starting.</li>
             <li><strong>Integrity:</strong> Cross-verify dialect markers.</li>
             <li><strong>Security:</strong> Do not share your Reference Number.</li>
           </ul>
