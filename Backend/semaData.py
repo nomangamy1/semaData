@@ -36,7 +36,12 @@ def semaData_app():
         semaData.config.from_object(config[config_name])
     # Allow the configured FRONTEND_URL, but fall back to localhost during development
     frontend_origin = os.getenv('FRONTEND_URL') or 'http://localhost:5173'
-    CORS(semaData, resources={r"/api/*": {"origins": frontend_origin}})
+    CORS(semaData, resources={r"/api/*": {"origins": frontend_origin,
+                                           "supports_credentials": True,
+        "allow_headers": ["Content-Type", "Authorization"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+                              }})
+                             
     migrate.init_app(semaData,db)
     mail.init_app(semaData)
 
@@ -57,7 +62,7 @@ def semaData_app():
     semaData.register_blueprint(contact_bp,url_prefix='/api/main')
     semaData.register_blueprint(admin_bp,url_prefix='/api/admin')
     semaData.register_blueprint(careers_bp,url_prefix ='/api/main')
-    semaData.register_blueprint(AdminCareers_bp,url_prefix='/api/AdminCareers')
+    semaData.register_blueprint(AdminCareers_bp,url_prefix='/api/admin/careers')
     
 
     return semaData
