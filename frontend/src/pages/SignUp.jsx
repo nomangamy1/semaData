@@ -61,9 +61,7 @@ const Signup = () => {
           <p>We sent a verification link to</p>
           <p><strong>{formData.email}</strong></p>
           <small>Click the link to verify your account, then log in to continue.</small>
-          <button className="signup-btn" onClick={() => navigate('/login')}>
-            Go to Login
-          </button>
+          <Link to="/login" className="signup-btn">Go to Login</Link>
         </div>
       </div>
     );
@@ -77,9 +75,7 @@ const Signup = () => {
         <p>The bridge between local insights and global standards.</p>
       </div>
 
-      {/* Card */}
       <div className="signup-card">
-        {/* Role Toggle */}
         <div className="signup-role-toggle">
           <button type="button"
             className={`signup-role-btn ${role === 'User' ? 'active' : ''}`}

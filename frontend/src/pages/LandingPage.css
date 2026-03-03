@@ -1,35 +1,184 @@
-/* Custom Animations for the Hero Section */
-@keyframes float {
-  0% {
-    transform: translateY(0px);
-  }
+/* LandingPage.css */
 
-  50% {
-    transform: translateY(-10px);
-  }
-
-  100% {
-    transform: translateY(0px);
-  }
+/* ==========================================
+   CSS Variables (for easy theming)
+========================================== */
+:root {
+  --sema-emerald: #489c8c;
+  --sema-teal-light: #10b981;
+  --sema-teal-dark: #3a8c7c;
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --bg-light: #f9fafb;
+  --white: #ffffff;
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --transition: all 0.3s ease;
 }
 
-/* Applying animation to your floating icons */
-.lg\:block svg {
-  animation: float 4s ease-in-out infinite;
-
-}
-
-/* Custom font if you want that high-end look */
-
-body {
-  font-family: 'Inter', sans-serif;
-}
-
+/* ==========================================
+   Base & Reset
+========================================== */
 html {
   scroll-behavior: smooth;
 }
 
-/* Offset for the sticky navbar so headers aren't covered when scrolling to them */
-#features, #contact {
-  scroll-margin-top: 100px;
+body {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: var(--white);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+/* Scroll offset for sticky navbar */
+#features,
+#contact,
+#why-choose {
+  scroll-margin-top: 100px; /* Adjust based on your navbar height */
+}
+
+/* ==========================================
+   Floating Icons Animation
+========================================== */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-40px) rotate(3deg); }
+}
+
+@keyframes float-medium {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-30px) rotate(-4deg); }
+}
+
+@keyframes float-fast {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-25px) rotate(5deg); }
+}
+
+.floating-icon {
+  position: absolute;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.animate-float-slow   { animation: float-slow 12s ease-in-out infinite; }
+.animate-float-medium { animation: float-medium 9s ease-in-out infinite; }
+.animate-float-fast   { animation: float-fast 7s ease-in-out infinite; }
+
+/* ==========================================
+   Hero Section
+========================================== */
+.hero-section {
+  position: relative;
+  background-color: var(--sema-emerald);
+  padding-top: 8rem;
+  padding-bottom: 10rem;
+  border-bottom-left-radius: 60px;
+  border-bottom-right-radius: 60px;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .hero-section {
+    border-bottom-left-radius: 100px;
+    border-bottom-right-radius: 100px;
+  }
+}
+
+/* Floating icons visibility */
+@media (min-width: 1024px) {
+  .floating-icon {
+    display: block;
+  }
+}
+
+/* ==========================================
+   Buttons & Interactive Elements
+========================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 2.5rem;
+  border-radius: 1rem;
+  font-weight: 700;
+  font-size: 1.125rem;
+  transition: var(--transition);
+}
+
+.btn-primary {
+  background-color: var(--white);
+  color: var(--sema-emerald);
+}
+
+.btn-primary:hover {
+  background-color: #f0fdfa;
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  border: 2px solid var(--white);
+  color: var(--white);
+}
+
+.btn-secondary:hover {
+  background-color: var(--white);
+  color: var(--sema-emerald);
+  transform: translateY(-3px);
+}
+
+/* ==========================================
+   Feature Cards
+========================================== */
+.feature-card {
+  background-color: var(--white);
+  padding: 2.5rem;
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid #e5e7eb;
+  transition: var(--transition);
+}
+
+.feature-card:hover {
+  transform: translateY(-12px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ==========================================
+   Typography & Utilities
+========================================== */
+h1, h2, h3 {
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+}
+
+.text-gradient {
+  background: linear-gradient(90deg, #489c8c, #10b981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ==========================================
+   Responsive Adjustments
+========================================== */
+@media (max-width: 768px) {
+  .hero-section {
+    padding-top: 6rem;
+    padding-bottom: 6rem;
+  }
+
+  h1 {
+    font-size: 3rem;
+  }
+
+  .btn {
+    padding: 0.9rem 2rem;
+    font-size: 1rem;
+  }
 }

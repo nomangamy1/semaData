@@ -12,8 +12,6 @@ const Login = () => {
   const nextPath = params.get('next') || null;
   const isFresh = params.get('fresh') === 'true';
 
-  // ✅ KEY FIX: runs at render time, synchronously, BEFORE useEffect
-  // ?fresh=true clears localStorage here so the useEffect finds no token
   if (isFresh) {
     localStorage.clear();
   }
