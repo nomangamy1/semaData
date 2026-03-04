@@ -1,6 +1,6 @@
 // src/components/ApplicationsTable.jsx
 import React from 'react';
-import { CheckCircle, XCircle, Eye } from 'lucide-react';
+import { Users,CheckCircle, XCircle, Eye } from 'lucide-react';
 
 const ApplicationsTable = ({ data, onView, onApprove, onReject }) => {
   if (!data || data.length === 0) {

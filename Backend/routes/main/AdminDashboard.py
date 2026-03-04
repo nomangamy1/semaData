@@ -8,7 +8,7 @@ from models.domainowner import DomainOwner
 from models.JobApplication import JobApplication
 
 admin_bp = Blueprint('admin', __name__)
-@admin_bp.route('/admin/dashboard-stats', methods=['GET'])
+@admin_bp.route('/dashboard-stats', methods=['GET'])
 @jwt_required()
 def get_dashboard_stats():
     """
@@ -34,7 +34,7 @@ def get_dashboard_stats():
         }
     }), 200
 
-@admin_bp.route('/admin/domain-owners', methods=['GET'])
+@admin_bp.route('/domain-owners', methods=['GET'])
 @jwt_required()
 def get_all_domain_owners():
     # Verify Admin Identity here
@@ -53,7 +53,7 @@ def get_all_domain_owners():
     }), 200
 
 
-@admin_bp.route('/admin/all-domains', methods=['GET'])
+@admin_bp.route('/all-domains', methods=['GET'])
 @jwt_required()
 def get_all_domains():
     # This fetches "OneAcreFund" and all other registered projects

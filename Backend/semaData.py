@@ -36,11 +36,16 @@ def semaData_app():
         semaData.config.from_object(config[config_name])
     # Allow the configured FRONTEND_URL, but fall back to localhost during development
     frontend_origin = os.getenv('FRONTEND_URL') or 'http://localhost:5173'
-    CORS(semaData, resources={r"/api/*": {"origins": frontend_origin,
-                                           "supports_credentials": True,
-        "allow_headers": ["Content-Type", "Authorization"],
-        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-                              }})
+    app = semaData
+    CORS(app, resources={
+    r"/api/*": {
+        "origins": ["http://localhost:5173"],  # add your production domain later
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+        "allow_headers": ["Content-Type", "Authorization", "Accept", "X-Requested-With"],
+        "supports_credentials": True,
+        "max_age": 3600  # cache preflight for 1 hour
+    }
+}, supports_credentials=True)
                              
     migrate.init_app(semaData,db)
     mail.init_app(semaData)
@@ -50,7 +55,6 @@ def semaData_app():
     login_manager.init_app(semaData)
     semaData.register_blueprint(register_bp, url_prefix='/api/Auth')
     semaData.register_blueprint(domain_bp,url_prefix='/api')
-#the domain has issues
     semaData.register_blueprint(login_bp, url_prefix='/api/Auth')
     semaData.register_blueprint(google_login_bp, url_prefix='/api/Auth')
     semaData.register_blueprint(auth_bp, url_prefix='/api/Auth')

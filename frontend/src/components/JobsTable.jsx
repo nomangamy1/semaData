@@ -64,4 +64,5 @@ const JobsTable = ({ jobs, onDelete }) => {
   );
 };
 
+
 export default JobsTable;

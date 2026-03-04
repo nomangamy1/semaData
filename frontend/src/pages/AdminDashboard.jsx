@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
   Users, Briefcase, CheckCircle, XCircle,
-  Plus, Globe, X, Mail, FileText, Award,
+  Plus, Globe, RefreshCw,
+  Mail, FileText, Award,
   Calendar, User, Settings, LayoutGrid, Save,
-  Search, ExternalLink, Trash2
+  Search, ExternalLink, Trash2, Eye, AlertCircle
 } from 'lucide-react';
 
+// Your existing modals
 import ApplicantModal from '../components/ApplicantModal';
 import TemplateManager from '../components/TemplateManager';
 import JobPostModal from '../components/JobPostModal';
-import ApplicationsTable from '../components/ApplicationsTable';
-import JobsTable from '../components/JobsTable';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('applications');
@@ -26,35 +26,29 @@ const AdminDashboard = () => {
   const token = localStorage.getItem('token');
 
   useEffect(() => {
-    fetchInitialData();
-  }, [activeTab]);
-
-  const fetchInitialData = async () => {
     if (!token) {
-      setError("No authentication token found. Please log in again.");
-      setLoading(false);
+      setError("Session expired. Redirecting to login...");
+      setTimeout(() => window.location.href = '/login', 2000);
       return;
     }
+    fetchInitialData();
+  }, [activeTab, token]);
 
+  const fetchInitialData = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // 1. Fetch All Domains
+      // Fetch Domains
       const domRes = await fetch('http://localhost:8000/api/admin/all-domains', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-
-      if (!domRes.ok) {
-        const errData = await domRes.json();
-        throw new Error(errData.error || `HTTP ${domRes.status}`);
-      }
-
+      if (!domRes.ok) throw new Error(await domRes.json().error || `HTTP ${domRes.status}`);
       const domData = await domRes.json();
-      console.log("Domains response:", domData); // ← debug
+      console.log("Domains:", domData);
       setDomains(domData || []);
 
-      // 2. Tab-specific data
+      // Tab-specific data
       if (activeTab === 'applications') {
         const res = await fetch('http://localhost:8000/api/admin/applications', {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -73,7 +67,7 @@ const AdminDashboard = () => {
         setJobs(data.jobs || []);
       }
     } catch (err) {
-      console.error("Dashboard fetch error:", err);
+      console.error("Fetch error:", err);
       setError(err.message || "Failed to load dashboard data");
     } finally {
       setLoading(false);
@@ -176,6 +170,15 @@ const AdminDashboard = () => {
           </h1>
 
           <div className="flex flex-wrap items-center gap-4">
+            <button
+              onClick={fetchInitialData}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 rounded-xl hover:bg-slate-300 transition"
+              disabled={loading}
+            >
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+              Refresh
+            </button>
+
             {activeTab === 'jobs' && (
               <button
                 onClick={() => setIsJobModalOpen(true)}
@@ -203,37 +206,168 @@ const AdminDashboard = () => {
           </div>
         </header>
 
-        {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl">
-            {error}
+          <div className="mb-8 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center gap-3">
+            <AlertCircle size={20} />
+            <span>{error}</span>
           </div>
         )}
 
-        {/* Tab Content */}
         {loading ? (
-          <div className="py-20 text-center animate-pulse text-slate-400 font-medium">
+          <div className="py-32 text-center animate-pulse text-slate-400 font-medium text-lg">
             Loading dashboard data...
           </div>
         ) : (
-          <div className="w-full">
+          <div className="w-full space-y-8">
+            {/* Applications Tab */}
             {activeTab === 'applications' && (
-              <ApplicationsTable
-                data={filteredApplications}
-                onView={setSelectedApp}
-                onApprove={handleApprove}
-                onReject={handleReject}
-              />
+              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                <table className="w-full text-left">
+                  <thead className="bg-slate-50 border-b border-slate-100">
+                    <tr>
+                      <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Applicant</th>
+                      <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Job / Domain</th>
+                      <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {filteredApplications.length === 0 ? (
+                      <tr>
+                        <td colSpan="3" className="py-20 text-center text-slate-500">
+                          No applications yet
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredApplications.map(app => (
+                        <tr key={app.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => setSelectedApp(app)}>
+                          <td className="px-6 py-5">
+                            <p className="font-bold text-slate-800">{app.applicant_name || 'Anonymous'}</p>
+                            <p className="text-xs text-slate-500">{app.applicant_email || 'N/A'}</p>
+                          </td>
+                          <td className="px-6 py-5">
+                            <p className="font-medium text-slate-700">{app.job_title || 'General'}</p>
+                            <p className="text-xs text-emerald-600">{app.domain_name || 'N/A'}</p>
+                          </td>
+                          <td className="px-6 py-5 text-right space-x-3">
+                            <button onClick={(e) => { e.stopPropagation(); setSelectedApp(app); }} className="p-2 text-blue-600" title="View">
+                              <Eye size={18} />
+                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); handleApprove(app.id); }} className="p-2 text-emerald-600" title="Approve">
+                              <CheckCircle size={18} />
+                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); handleReject(app.id); }} className="p-2 text-rose-600" title="Reject">
+                              <XCircle size={18} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             )}
 
+            {/* Jobs Tab */}
             {activeTab === 'jobs' && (
-              <JobsTable jobs={jobs} onDelete={(id) => console.log("Delete job", id)} />
+              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                <table className="w-full text-left">
+                  <thead className="bg-slate-50 border-b border-slate-100">
+                    <tr>
+                      <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Job Title</th>
+                      <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Domain / Field</th>
+                      <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Location / Pay</th>
+                      <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {jobs.length === 0 ? (
+                      <tr>
+                        <td colSpan="4" className="py-20 text-center text-slate-500">
+                          No jobs posted yet
+                        </td>
+                      </tr>
+                    ) : (
+                      jobs.map(job => (
+                        <tr key={job.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-5">
+                            <p className="font-bold text-slate-800">{job.title || 'Untitled'}</p>
+                            <p className="text-xs text-slate-500">{job.field || 'General'}</p>
+                          </td>
+                          <td className="px-6 py-5">
+                            <span className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold uppercase">
+                              {job.domain_name || 'N/A'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5">
+                            <p className="text-sm font-medium text-slate-700">{job.location || 'Remote'}</p>
+                            <p className="text-xs text-emerald-600 font-bold">{job.compensation || 'Negotiable'}</p>
+                          </td>
+                          <td className="px-6 py-5 text-right space-x-3">
+                            <button className="p-2 text-slate-500 hover:text-blue-600" title="View">
+                              <ExternalLink size={18} />
+                            </button>
+                            <button className="p-2 text-rose-600 hover:text-rose-800" title="Delete">
+                              <Trash2 size={18} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             )}
 
+            {/* Domains Tab */}
             {activeTab === 'domains' && (
-              <DomainsTable domains={domains} />
+              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                <table className="w-full text-left">
+                  <thead className="bg-slate-50 border-b border-slate-100">
+                    <tr>
+                      <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Domain Name</th>
+                      <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Reference Code</th>
+                      <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Payment Status</th>
+                      <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider text-right">Target Goal</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {domains.length === 0 ? (
+                      <tr>
+                        <td colSpan="4" className="py-20 text-center text-slate-500">
+                          No domains registered yet
+                        </td>
+                      </tr>
+                    ) : (
+                      domains.map(d => (
+                        <tr key={d.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-5">
+                            <p className="font-bold text-slate-800">{d.name || 'Unnamed Domain'}</p>
+                            <p className="text-xs text-slate-500 mt-1">ID: {d.id}</p>
+                          </td>
+                          <td className="px-6 py-5">
+                            <code className="px-2 py-1 bg-slate-100 rounded text-xs font-mono text-slate-600">
+                              {d.reference_number || 'N/A'}
+                            </code>
+                          </td>
+                          <td className="px-6 py-5">
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                              d.status?.toLowerCase() === 'success' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                            }`}>
+                              {d.status || 'Unknown'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5 text-right font-bold text-slate-700">
+                            {d.target || 0} <span className="text-xs text-slate-500 font-normal">submissions</span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             )}
 
+            {/* Templates Tab */}
             {activeTab === 'templates' && <TemplateManager />}
           </div>
         )}
@@ -259,74 +393,16 @@ const AdminDashboard = () => {
   );
 };
 
-// ─── Nav Button Component ───
+// NavBtn component
 const NavBtn = ({ active, icon, label, onClick }) => (
   <button
     onClick={onClick}
     className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-xl font-medium transition-all ${
-      active
-        ? 'bg-emerald-500 text-white shadow-lg'
-        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+      active ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
     }`}
   >
     {icon} {label}
   </button>
 );
-
-// ─── Domains Table ───
-const DomainsTable = ({ domains }) => {
-  if (domains.length === 0) {
-    return (
-      <div className="py-20 text-center bg-white rounded-3xl border border-dashed border-slate-200">
-        <Globe className="mx-auto text-slate-300 mb-4" size={64} />
-        <h3 className="text-xl font-bold text-slate-600 mb-2">No Domains Registered Yet</h3>
-        <p className="text-slate-500">Domain owners will appear here once they complete registration and payment.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-      <table className="w-full text-left">
-        <thead className="bg-slate-50 border-b border-slate-100">
-          <tr>
-            <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Domain Name</th>
-            <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Reference Code</th>
-            <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Payment Status</th>
-            <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider text-right">Target Goal</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-50">
-          {domains.map(d => (
-            <tr key={d.id} className="hover:bg-slate-50 transition-colors">
-              <td className="px-6 py-5">
-                <p className="font-bold text-slate-800">{d.name || 'Unnamed Domain'}</p>
-                <p className="text-xs text-slate-500 mt-1">ID: {d.id}</p>
-              </td>
-              <td className="px-6 py-5">
-                <code className="px-2 py-1 bg-slate-100 rounded text-xs font-mono text-slate-600">
-                  {d.reference_number || 'N/A'}
-                </code>
-              </td>
-              <td className="px-6 py-5">
-                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                  d.status?.toLowerCase() === 'success' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                }`}>
-                  {d.status || 'Unknown'}
-                </span>
-              </td>
-              <td className="px-6 py-5 text-right font-bold text-slate-700">
-                {d.target || 0} <span className="text-xs text-slate-500 font-normal">submissions</span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
-
-// Keep your existing ApplicationsTable, JobsTable, NavBtn components as-is
-// ... (or add similar improvements if needed)
 
 export default AdminDashboard;
