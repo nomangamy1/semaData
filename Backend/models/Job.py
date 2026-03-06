@@ -14,16 +14,16 @@ class Job(db.Model):
     title = db.Column(db.String(255), nullable=False)  # e.g., "Agrovet Sellers - Farm Input Study"
     description = db.Column(db.Text, nullable=False)
     field = db.Column(db.String(100), nullable=False)  # e.g., "Agriculture", "Health", "Education"
-    
     # Domain Association
     domain_id = db.Column(db.Integer, db.ForeignKey('domain.id'), nullable=True)  # Link to domain if pre-created
+    domain_name = db.Column(db.String(255),nullable = True)
     domain_owner_id = db.Column(db.Integer, db.ForeignKey('DomainOwner.id'), nullable=True)
     
     # Requirements & Specialization
-    specialization_required = db.Column(db.String(255), nullable=False)  # e.g., "Agrovet Seller", "Veterinarian"
-    required_skills = db.Column(db.JSON)  # e.g., ["Agricultural knowledge", "Customer interaction"]
+    specialization_required = db.Column(db.String(255), nullable=True)  # e.g., "Agrovet Seller", "Veterinarian"
+    required_skills = db.Column(db.JSON,default=list)  # e.g., ["Agricultural knowledge", "Customer interaction"]
     min_experience_years = db.Column(db.Integer, default=0)
-    languages = db.Column(db.JSON)  # e.g., ["Swahili", "English"]
+    languages = db.Column(db.JSON,default=list)  # e.g., ["Swahili", "English"]
     
     # Job Details
     location = db.Column(db.String(255), nullable=False)  # Geographic scope
@@ -42,6 +42,7 @@ class Job(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
+            'domain_name':self.domain_name,
             'title': self.title,
             'description': self.description,
             'field': self.field,

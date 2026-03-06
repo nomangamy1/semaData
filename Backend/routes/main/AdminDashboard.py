@@ -63,5 +63,6 @@ def get_all_domains():
         "name": d.domain_name,
         "status": d.payment_status,
         "owner_id": d.owner_id,
-        "target": d.target_goal
+        "target": d.target_goal,
+        "reference_number": d.reference_number
     } for d in domains]), 200

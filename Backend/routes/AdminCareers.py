@@ -13,34 +13,37 @@ import string
 
 AdminCareers_bp = Blueprint('adminCareers', __name__)
 
-#THIS IS THE ADMIN DASHBOARD AND JOB MANAGEMENT ENDPOINTS FOR THE CAREERS PAGE. IT INCLUDES:
 
-@AdminCareers_bp.route('/admin/jobs', methods=['POST'])
+@AdminCareers_bp.route('/jobs', methods=['POST'])
 @jwt_required()
 def create_job():
-    """
-    ADMIN ONLY: Create a new data collection job posting
-    """
     admin_id = get_jwt_identity()
-    # Allow either a DomainOwner or a User with role 'admin'
-    domain_owner = DomainOwner.query.get(admin_id)
-    user_admin = None
-    if not domain_owner:
-        user_admin = User.query.get(admin_id)
-        if not user_admin or getattr(user_admin, 'role', None) != 'admin':
-            return jsonify({"error": "Only admins can create jobs"}), 403
-    
-    data = request.json
+    user = User.query.get(admin_id)
+    if not user or user.role != 'admin':
+        return jsonify({"error": "Only admins can create jobs"}), 403
+    data = request.get_json()
+    required = ['title', 'description', 'field']
+    missing = [f for f in required if f not in data or not data[f]]
+    if missing:
+        return jsonify({"error": f"Missing fields: {', '.join(missing)}"}), 400
     domain_id = data.get('domain_id')
-
+    domain_owner_id = None
+    if domain_id:
+        domain = Domain.query.get(domain_id)
+        if not domain:
+            return jsonify({"error": "Domain not found"}), 404
+        domain_owner_id = domain.owner_id
+    
     try:
         job = Job(
-            title=data.get('title'),
-            domain_id=domain_id,
-            description=data.get('description'),
-            field=data.get('field'),  # e.g., 'Agriculture', 'Health'
-            specialization_required=data.get('specialization_required'),  # e.g., 'Agrovet Seller'
-            required_skills=data.get('required_skills', []),  # List of skills
+            title=data['title'],
+            domain_id=data.get('domain_id'), 
+            domain_owner_id=domain_owner_id,
+            domain_name=data.get('domain_name'),       # custom name if no domain_id
+            description=data['description'],
+            field=data['field'],
+            specialization_required=data.get('specialization_required'),
+            required_skills=data.get('required_skills', []),
             min_experience_years=data.get('min_experience_years', 0),
             languages=data.get('languages', ['Swahili', 'English']),
             location=data.get('location'),
@@ -48,25 +51,25 @@ def create_job():
             compensation=data.get('compensation'),
             duration=data.get('duration'),
             status='published',
-            posted_at=datetime.now(),
+            posted_at=datetime.utcnow(),
         )
-        
+
         db.session.add(job)
         db.session.commit()
-        
+
         return jsonify({
-            "message": "Job Deployed successfully",
+            "message": "Job deployed successfully",
             "job_id": job.id,
+            "title": job.title
         }), 201
-    
+
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 400
 
 
 
-
-@AdminCareers_bp.route('/admin/jobs', methods=['GET'])
+@AdminCareers_bp.route('/jobs', methods=['GET'])
 @jwt_required()
 def list_admin_jobs():
     """
@@ -124,7 +127,7 @@ def list_applications_for_review():
     }), 200
 
 
-@AdminCareers_bp.route('/admin/applications/<int:app_id>/approve', methods=['POST'])
+@AdminCareers_bp.route('/applications/<int:app_id>/approve', methods=['POST'])
 @jwt_required()
 def approve_application(app_id):
     """
@@ -143,12 +146,8 @@ def approve_application(app_id):
     random_code = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     reference_number = f"{field_prefix}--{random_code}"
     
-    # Update collector's reference_number in Users table
-     # Auto-verify since they passed screening
     
-    # Update application status
     application.status = 'approved'
-    # Record reviewer: if DomainOwner approved, set reviewed_by_id; if User admin approved, set reviewed_by_user_id
     if domain_owner:
         application.reviewed_by_id = domain_owner.id
         application.reviewed_by_user_id = None
@@ -183,7 +182,7 @@ def approve_application(app_id):
     }), 200
 
 
-@AdminCareers_bp.route('/admin/applications/<int:app_id>/reject', methods=['POST'])
+@AdminCareers_bp.route('/applications/<int:app_id>/reject', methods=['POST'])
 @jwt_required()
 def reject_application(app_id):
     admin_id = get_jwt_identity()
@@ -207,3 +206,18 @@ def reject_application(app_id):
     return jsonify({
         "message": "Application rejected",
     }), 200
+
+
+
+@AdminCareers_bp.route('/jobs', methods=['OPTIONS'])
+@AdminCareers_bp.route('/applications', methods=['OPTIONS'])
+def admin_careers_options():
+    return '', 204  
+
+
+
+
+
+
+
+

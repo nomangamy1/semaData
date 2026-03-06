@@ -1,4 +1,6 @@
-from flask import Flask 
+from urllib import response
+
+from flask import Flask, request 
 from extensions import db,login_manager,migrate, mail
 from models import User,Domain,DomainOwner
 from flask_jwt_extended import JWTManager 
@@ -36,8 +38,7 @@ def semaData_app():
         semaData.config.from_object(config[config_name])
     # Allow the configured FRONTEND_URL, but fall back to localhost during development
     frontend_origin = os.getenv('FRONTEND_URL') or 'http://localhost:5173'
-    app = semaData
-    CORS(app, resources={
+    CORS(semaData, resources={
     r"/api/*": {
         "origins": ["http://localhost:5173"],  # add your production domain later
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
@@ -65,12 +66,41 @@ def semaData_app():
     semaData.register_blueprint(UserAnalytics_bp,url_prefix='/api/main')
     semaData.register_blueprint(contact_bp,url_prefix='/api/main')
     semaData.register_blueprint(admin_bp,url_prefix='/api/admin')
-    semaData.register_blueprint(careers_bp,url_prefix ='/api/main')
-    semaData.register_blueprint(AdminCareers_bp,url_prefix='/api/admin/careers')
-    
+    semaData.register_blueprint(careers_bp,url_prefix ='/api')
+    semaData.register_blueprint(AdminCareers_bp,url_prefix='/api/admin')
 
+    @login_manager.user_loader
+    def load_user(user_id):
+        if user_id is None:
+            return None
+        
+        try:
+            user_id = int(user_id)  # only try int conversion if it's a number-like string
+        except (ValueError, TypeError):
+            print(f"Invalid user_id passed to load_user: {user_id} (type: {type(user_id)})")
+            return None
+        
+        user = User.query.get(user_id)
+        if user:
+            return user
+        
+        domain_owner = DomainOwner.query.get(user_id)
+        if domain_owner:
+            return domain_owner
+        
+        print(f"No user or domain owner found for ID: {user_id}")
+        return None
+
+
+
+    @semaData.after_request
+    def add_cors_headers(response):
+        if request.method == 'OPTIONS':
+            response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Accept'
+            response.headers['Access-Control-Max-Age'] = '3600'
+        
+
+        return response
     return semaData
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id)) or DomainOwner.query.get(int(user_id))

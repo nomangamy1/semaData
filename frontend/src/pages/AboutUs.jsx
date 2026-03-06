@@ -36,11 +36,9 @@ const AboutUs = () => {
             SemaData Platform
           </h1>
           <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-            The next generation of linguistic data ingestion, bridging the gap between Innovative problem solving ideas and Local Data.
+            The next generation of linguistic data ingestion,bridging the gap between Innovative problem solving ideas and Local Data.
           </p>
         </div>
-
-        {/* Mission & Vision Section */}
         <div className="grid md:grid-cols-2 gap-12 items-start mb-24">
           <div className="space-y-6">
             <h2 className="text-3xl font-semibold flex items-center gap-2">
@@ -130,7 +128,6 @@ const AboutUs = () => {
   </div>
 </div>
 
-{/* --- SECTION 4: THE FOUNDER (THE VISION LAYER) --- */}
 <div className="mt-32 p-1 border-t border-slate-800">
    {/* Your Founder code follows here... */}
 </div>    
