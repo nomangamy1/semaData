@@ -66,3 +66,8 @@ def get_all_domains():
         "target": d.target_goal,
         "reference_number": d.reference_number
     } for d in domains]), 200
+
+
+
+
+

@@ -18,7 +18,7 @@ const JobDescriptionView = () => {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    fetch(`http://localhost:8000/api/careers/careers/${id}`)
+    fetch(`http://localhost:8000/api/careers/${id}`)
       .then(res => res.json())
       .then(data => setJob(data));
   }, [id]);
@@ -34,22 +34,20 @@ const JobDescriptionView = () => {
     dataToSend.append('email', formData.email);
     dataToSend.append('relevant_experience', formData.relevant_experience);
     if (resume) {
-      dataToSend.append('resume', resume); // The PDF file
+      dataToSend.append('cv_file_path', resume); // The PDF file
     }
     dataToSend.append('job_id', id);
 
     try {
-      const res = await fetch(`http://localhost:8000/api/careers/apply/${id}`, {
+      const res = await fetch(`http://localhost:8000/api/apply/${id}`, {
         method: 'POST',
-        // Note: Do NOT set Content-Type header when sending FormData; 
-        // the browser will set it automatically with the correct boundary.
         body: dataToSend
       });
-      
       if (res.ok) setSuccess(true);
       else {
         const errorData = await res.json();
         alert(errorData.message || "Submission failed.");
+        
       }
     } catch (err) {
       alert("Network error. Please check your connection.");
@@ -57,9 +55,7 @@ const JobDescriptionView = () => {
       setSubmitting(false);
     }
   };
-
   if (!job) return <div className="p-20 text-center font-bold text-emerald-600 animate-pulse">Loading Project Details...</div>;
-
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-6">
       <div className="max-w-6xl mx-auto">

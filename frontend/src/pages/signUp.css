@@ -1,4 +1,37 @@
 /* Signup.css */
+/* ── Additions to signUp.css for community role ── */
+
+/* Role hint under the tabs */
+.signup-role-hint {
+  font-size: 0.8rem;
+  color: #6b8f89;
+  text-align: center;
+  padding: 9px 14px;
+  background: rgba(72,156,140,0.06);
+  border-radius: 10px;
+  line-height: 1.55;
+  margin: -4px 0 4px;
+}
+
+/* Inline error message */
+.signup-error {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Small hint text under inputs */
+.signup-hint {
+  font-size: 0.74rem;
+  color: #6b8f89;
+  margin-top: 4px;
+  display: block;
+  line-height: 1.5;
+}
 :root {
   --primary: #489c8c;
   --primary-dark: #367a6d;

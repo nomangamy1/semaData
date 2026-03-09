@@ -90,7 +90,7 @@ def list_admin_jobs():
     }), 200
 
 
-@AdminCareers_bp.route('/admin/applications', methods=['GET'])
+@AdminCareers_bp.route('/applications', methods=['GET'])
 @jwt_required()
 def list_applications_for_review():
     """
@@ -145,6 +145,9 @@ def approve_application(app_id):
     field_prefix = application.job.field[:4].upper()  if application.job.field else "SEMA"
     random_code = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     reference_number = f"{field_prefix}--{random_code}"
+
+    job = Job.query.get(application.job_id)
+    job_title = job.title if job else "Unknown Job"
     
     
     application.status = 'approved'
@@ -156,9 +159,20 @@ def approve_application(app_id):
         application.reviewed_by_id = None
     application.reviewed_at = datetime.now()
     application.reference_number_assigned = reference_number
+    collector = User.query.filter_by(email = application.email).first()
+    collector_name = "Unknown Applicant"
+    if collector:
+        collector_name = f"{collector.first_name or ''} {collector.second_name or ''}".strip()
+    elif application.first_name and application.second_name:
+        collector_name = f"{application.first_name} {application.second_name}".strip()
+    else:
+        collector_name = application.email
+
+  
     
     # If there's a domain linked to this job, create the assignment
-    collector = User.query.filter_by(email = application.email).first()
+
+    
     if collector:
         collector.reference_number = reference_number
         collector.is_verified =True 
@@ -166,18 +180,20 @@ def approve_application(app_id):
     email_was_sent = send_approval_email(
         recipient_email=application.email,
         first_name=application.first_name,
-        job_title = application.Job.title,
+        job_title = job_title,
         ref_number = reference_number
     )
 
     db.session.commit()
+
+
     
     
     return jsonify({
         "message": "Application approved successfully",
-        "collector_name": f"{collector.first_name} {collector.second_name}",
+        "collector_name": collector_name,
         "reference_number": reference_number,
-        "job_title": application.job.title,
+        "job_title": job_title,
         "email_sent": email_was_sent
     }), 200
 

@@ -1,32 +1,64 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { User, Briefcase, ArrowRight, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { User, Briefcase, Globe, ArrowRight, CheckCircle2 } from 'lucide-react';
 import './signUp.css';
+
+const INTERESTS = [
+  'Machine Learning', 'Natural Language Processing', 'AI Research',
+  'Data Science', 'African Languages & Linguistics',
+  'Speech Recognition', 'Academic Research', 'Other',
+];
+
+const ROLE_HINTS = {
+  community:   'For data scientists, ML engineers, researchers and linguists. Free, no vetting, instant access.',
+  User:        'For field agents and local language speakers. Requires an approved application and a reference number from a domain owner.',
+  domainowner: 'For researchers, NGOs and organisations that need African language datasets. Requires payment after signup.',
+};
 
 const Signup = () => {
   const navigate = useNavigate();
-  const [role, setRole] = useState('User');
+  const [searchParams] = useSearchParams();
+
+  // ── Pre-select role from URL param (?role=community / collector / domainowner)
+  const paramRole = searchParams.get('role');
+  const initialRole = paramRole === 'collector' ? 'User'
+    : paramRole === 'domainowner' ? 'domainowner'
+    : 'community'; // default to community — lowest friction
+
+  const [role, setRole] = useState(initialRole);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     first_name: '', last_name: '', email: '', username: '',
-    password: '', reference_number: '', domain_name: '', field_name: 'Health',
+    password: '', reference_number: '', domain_name: '',
+    field_name: 'Health', area_of_interest: '',
   });
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const payload = {
+    setError('');
+
+    let payload = {
       role,
       first_name: formData.first_name,
-      [role === 'domainowner' ? 'last_name' : 'second_name']: formData.last_name,
       email: formData.email,
       password: formData.password,
-      ...(role === 'domainowner'
-        ? { username: formData.username, domain_field: formData.field_name }
-        : { reference_number: formData.reference_number, domain_name: formData.domain_name }
-      )
     };
+
+    if (role === 'community') {
+      payload.last_name = formData.last_name;
+      payload.area_of_interest = formData.area_of_interest;
+    } else if (role === 'User') {
+      payload.second_name = formData.last_name;
+      payload.reference_number = formData.reference_number;
+      payload.domain_name = formData.domain_name;
+    } else if (role === 'domainowner') {
+      payload.last_name = formData.last_name;
+      payload.username = formData.username;
+      payload.domain_field = formData.field_name;
+    }
 
     try {
       const response = await fetch('http://localhost:8000/api/Auth/signup', {
@@ -37,19 +69,24 @@ const Signup = () => {
       const data = await response.json();
 
       if (response.ok) {
+        localStorage.clear();
         if (data.token) localStorage.setItem('token', data.token);
         if (data.ownerId) localStorage.setItem('ownerId', String(data.ownerId));
         else if (data.userId) localStorage.setItem('ownerId', String(data.userId));
+        localStorage.setItem('userRole', data.role || role);
+        localStorage.setItem('username', formData.first_name);
         setSubmitted(true);
       } else {
-        alert(`Error: ${data.error}`);
+        setError(data.error || 'Signup failed. Please try again.');
       }
     } catch {
-      alert('Server is down. Please try again later.');
+      setError('Server is down. Please try again later.');
     }
   };
 
-  // ─── Success Screen ───
+  const roleLabel = { community: 'Community', User: 'Collector', domainowner: 'Domain Owner' }[role];
+
+  // ── Success screen ──
   if (submitted) {
     return (
       <div className="signup-success">
@@ -60,8 +97,14 @@ const Signup = () => {
           <h2>Check Your Email</h2>
           <p>We sent a verification link to</p>
           <p><strong>{formData.email}</strong></p>
-          <small>Click the link to verify your account, then log in to continue.</small>
-          <Link to="/login" className="signup-btn">Go to Login</Link>
+          <small>
+            {role === 'community'
+              ? 'Verify your email to start posting in the community.'
+              : 'Click the link to verify your account, then log in to continue.'}
+          </small>
+          <button className="signup-btn" onClick={() => navigate('/login')}>
+            Go to Login
+          </button>
         </div>
       </div>
     );
@@ -69,61 +112,92 @@ const Signup = () => {
 
   return (
     <div className="signup-page">
-      {/* Hero */}
       <div className="signup-hero">
         <h2>Join <span>semaData</span></h2>
         <p>The bridge between local insights and global standards.</p>
       </div>
 
       <div className="signup-card">
+
+        {/* ── Role tabs ── */}
         <div className="signup-role-toggle">
+          <button type="button"
+            className={`signup-role-btn ${role === 'community' ? 'active' : ''}`}
+            onClick={() => setRole('community')}>
+            <Globe size={16} /> Community
+          </button>
           <button type="button"
             className={`signup-role-btn ${role === 'User' ? 'active' : ''}`}
             onClick={() => setRole('User')}>
-            <User size={17} /> Data Collector
+            <User size={16} /> Collector
           </button>
           <button type="button"
             className={`signup-role-btn ${role === 'domainowner' ? 'active' : ''}`}
             onClick={() => setRole('domainowner')}>
-            <Briefcase size={17} /> Domain Owner
+            <Briefcase size={16} /> Domain Owner
           </button>
         </div>
 
+        {/* Role description */}
+        <p className="signup-role-hint">{ROLE_HINTS[role]}</p>
+
+        {error && <div className="signup-error">{error}</div>}
+
         <form className="signup-form" onSubmit={handleSubmit}>
-          {/* Name row */}
+
+          {/* Name row — all roles */}
           <div className="signup-grid">
             <div className="signup-field">
               <label className="signup-label">First Name</label>
               <input className="signup-input" name="first_name" type="text" required
-                placeholder="e.g. Jane" onChange={handleChange} />
+                placeholder="e.g. Amina" onChange={handleChange} />
             </div>
             <div className="signup-field">
-              <label className="signup-label">{role === 'domainowner' ? 'Last Name' : 'Second Name'}</label>
-              <input className="signup-input" name="last_name" type="text" required
-                placeholder="e.g. Doe" onChange={handleChange} />
+              <label className="signup-label">Last Name</label>
+              <input className="signup-input" name="last_name" type="text"
+                required={role !== 'User'}
+                placeholder="e.g. Wanjiku" onChange={handleChange} />
             </div>
           </div>
 
+          {/* Username — domain owner only */}
           {role === 'domainowner' && (
             <div className="signup-field">
               <label className="signup-label">Username</label>
               <input className="signup-input" name="username" type="text" required
-                placeholder="e.g. janedoe" onChange={handleChange} />
+                placeholder="e.g. aminaw" onChange={handleChange} />
             </div>
           )}
 
+          {/* Email — all roles */}
           <div className="signup-field">
             <label className="signup-label">Email Address</label>
             <input className="signup-input" name="email" type="email" required
               placeholder="you@example.com" onChange={handleChange} />
           </div>
 
-          {role === 'User' ? (
+          {/* Community: area of interest */}
+          {role === 'community' && (
+            <div className="signup-field">
+              <label className="signup-label">Area of Interest</label>
+              <select className="signup-select" name="area_of_interest"
+                value={formData.area_of_interest} onChange={handleChange} required>
+                <option value="">Select your focus area...</option>
+                {INTERESTS.map(i => <option key={i} value={i}>{i}</option>)}
+              </select>
+            </div>
+          )}
+
+          {/* Collector: reference number + domain */}
+          {role === 'User' && (
             <>
               <div className="signup-field">
                 <label className="signup-label">Invite Reference Number</label>
-                <input className="signup-input" name="reference_number"
+                <input className="signup-input" name="reference_number" required
                   placeholder="e.g. AGRI--ABC123" onChange={handleChange} />
+                <small className="signup-hint">
+                  Issued by your domain owner after your application is approved.
+                </small>
               </div>
               <div className="signup-field">
                 <label className="signup-label">Domain Name</label>
@@ -131,7 +205,10 @@ const Signup = () => {
                   placeholder="The name of the project" onChange={handleChange} />
               </div>
             </>
-          ) : (
+          )}
+
+          {/* Domain owner: category */}
+          {role === 'domainowner' && (
             <div className="signup-field">
               <label className="signup-label">Domain Category</label>
               <select className="signup-select" name="field_name" onChange={handleChange}>
@@ -143,14 +220,15 @@ const Signup = () => {
             </div>
           )}
 
+          {/* Password — all roles */}
           <div className="signup-field">
             <label className="signup-label">Password</label>
             <input className="signup-input" name="password" type="password" required
-              placeholder="••••••••" onChange={handleChange} />
+              placeholder="Min. 8 characters" onChange={handleChange} />
           </div>
 
           <button type="submit" className="signup-btn">
-            Create {role === 'domainowner' ? 'Admin' : 'Collector'} Account <ArrowRight size={18} />
+            Create {roleLabel} Account <ArrowRight size={18} />
           </button>
         </form>
 

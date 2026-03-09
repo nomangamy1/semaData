@@ -13,7 +13,7 @@ import traceback
 register_bp = Blueprint("register", __name__)
 
 
-@register_bp.route('/signup', methods=['POST'])  # ✅ Remove 'GET' — GET has no body
+@register_bp.route('/signup', methods=['POST'])
 def signUp():
     try:
         data = request.get_json()
@@ -21,8 +21,7 @@ def signUp():
         email = data.get('email', '').strip()
 
         # ─────────────────────────────────────────────────────
-        # DUPLICATE CHECK — must happen BEFORE any db.session.add()
-        # This is what prevents the UniqueViolation crash
+        # DUPLICATE CHECK — before any db.session.add()
         # ─────────────────────────────────────────────────────
         existing_user = User.query.filter_by(email=email).first()
         existing_owner = DomainOwner.query.filter_by(email=email).first()
@@ -36,9 +35,62 @@ def signUp():
                 return jsonify({"error": "Username already taken"}), 400
 
         # ─────────────────────────────────────────────────────
-        # CREATE USER BASED ON ROLE
+        # ROLE: COMMUNITY MEMBER
+        # Free signup — email + password + area_of_interest
+        # No reference_number, no vetting, no payment
         # ─────────────────────────────────────────────────────
-        if role == 'user':
+        if role == 'community':
+            area_of_interest = data.get('area_of_interest', '').strip()
+            first_name = data.get('first_name', '').strip()
+            last_name = data.get('last_name', '').strip()
+
+            if not first_name or not email or not data.get('password'):
+                return jsonify({"error": "First name, email and password are required"}), 400
+
+            new_member = User(
+                first_name=first_name,
+                second_name=last_name,
+                email=email,
+                password_hash=generate_password_hash(data['password']),
+                role='community',
+                user_type='community',
+                area_of_interest=area_of_interest,   # store their ML/AI/research interest
+                reference_number=None,                # community members have no domain link
+                is_verified=False,
+            )
+            db.session.add(new_member)
+            db.session.commit()
+
+            # Send verification email
+            token = generate_verification_token(new_member.email)
+            confirm_url = url_for('register.email_verification', token=token, _external=True)
+            send_email(
+                new_member.email,
+                "Welcome to semaData — please verify your email",
+                f"""<h3>Welcome, {new_member.first_name}!</h3>
+                    <p>You've joined the semaData community. Please verify your email to start posting:</p>
+                    <p><a href="{confirm_url}">{confirm_url}</a></p>
+                    <p>Once verified you can post discussions, comment on datasets, and ask questions about African language AI.</p>"""
+            )
+
+            access_token = create_access_token(
+                identity=str(new_member.id),
+                additional_claims={"role": "community"}
+            )
+            return jsonify({
+                "status": "success",
+                "message": "Welcome! Please verify your email to unlock posting.",
+                "token": access_token,
+                "userId": new_member.id,
+                "role": "community",
+                "requires_verification": True,
+            }), 201
+
+        # ─────────────────────────────────────────────────────
+        # ROLE: COLLECTOR (User)
+        # Vetted — requires approved JobApplication + reference_number
+        # ─────────────────────────────────────────────────────
+        elif role == 'user':
             ref_number = data.get('reference_number')
             domain = Domain.query.filter_by(reference_number=ref_number).first()
             if not domain:
@@ -57,17 +109,35 @@ def signUp():
                 second_name=data.get('second_name'),
                 email=email,
                 password_hash=generate_password_hash(data['password']),
-                role=role,
+                role='user',
+                user_type='User',
                 reference_number=ref_number
             )
             db.session.add(new_user)
-            db.session.commit()  # ✅ Commit before using new_user.id
+            db.session.commit()
 
             application.assigned_user_id = new_user.id
             db.session.commit()
 
-            subject_obj = new_user
+            token = generate_verification_token(new_user.email)
+            confirm_url = url_for('register.email_verification', token=token, _external=True)
+            send_email(
+                new_user.email,
+                "You've been added to the team",
+                f"""<h3>Welcome, {new_user.first_name}</h3>
+                    <p>Please verify your email: <a href="{confirm_url}">{confirm_url}</a></p>"""
+            )
 
+            access_token = create_access_token(identity=str(new_user.id))
+            return jsonify({
+                "message": "Registered! Please check your email to verify your account.",
+                "token": access_token,
+                "userId": new_user.id
+            }), 201
+
+        # ─────────────────────────────────────────────────────
+        # ROLE: DOMAIN OWNER
+        # ─────────────────────────────────────────────────────
         else:
             new_owner = DomainOwner(
                 first_name=data.get('first_name'),
@@ -78,50 +148,26 @@ def signUp():
                 domain_field=data.get('domain_field')
             )
             db.session.add(new_owner)
-            db.session.commit()  # ✅ Single commit — no double insert possible
+            db.session.commit()
 
-            subject_obj = new_owner
+            token = generate_verification_token(new_owner.email)
+            confirm_url = url_for('register.email_verification', token=token, _external=True)
+            send_email(
+                new_owner.email,
+                "Please confirm your domain owner email",
+                f"""<h3>Welcome, {new_owner.first_name}</h3>
+                    <p>Thanks for signing up as a Domain Owner.</p>
+                    <p>Please verify your email: <a href="{confirm_url}">{confirm_url}</a></p>"""
+            )
 
-        # ─────────────────────────────────────────────────────
-        # GENERATE JWT TOKEN
-        # ─────────────────────────────────────────────────────
-        access_token = create_access_token(identity=str(subject_obj.id))
-
-        # ─────────────────────────────────────────────────────
-        # SEND VERIFICATION EMAIL
-        # ─────────────────────────────────────────────────────
-        token = generate_verification_token(subject_obj.email)
-        confirm_url = url_for('register.email_verification', token=token, _external=True)
-
-        if role == 'domainowner':
-            subject = "Please confirm your domain owner email"
-            html = f"""<h3>Welcome, {subject_obj.first_name}</h3>
-                       <p>Thanks for signing up as a Domain Owner.</p>
-                       <p>Please verify your email: <a href="{confirm_url}">{confirm_url}</a></p>"""
-        else:
-            subject = "You've been added to the team"
-            html = f"""<h3>Welcome, {subject_obj.first_name}</h3>
-                       <p>Please verify your email: <a href="{confirm_url}">{confirm_url}</a></p>"""
-
-        send_email(subject_obj.email, subject, html)
-
-        # ─────────────────────────────────────────────────────
-        # RESPONSE
-        # ─────────────────────────────────────────────────────
-        if role == 'domainowner':
+            access_token = create_access_token(identity=str(new_owner.id))
             return jsonify({
                 "status": "success",
                 "message": "Account created! Please verify your email, then log in to continue.",
-                "token": access_token,       # ✅ Return token immediately
-                "ownerId": subject_obj.id,   # ✅ Consistent key
+                "token": access_token,
+                "ownerId": new_owner.id,
                 "requires_verification": True,
             }), 201
-
-        return jsonify({
-            "message": "Registered! Please check your email to verify your account.",
-            "token": access_token,
-            "userId": subject_obj.id
-        }), 201
 
     except Exception as e:
         db.session.rollback()
@@ -147,15 +193,14 @@ def email_verification(token):
         return redirect(f"{frontend_base}/signup?error=not_found")
 
     subject_obj = owner if owner else user
-    was_verified = subject_obj.is_verified
-
-    if not was_verified:
+    if not subject_obj.is_verified:
         subject_obj.is_verified = True
         db.session.commit()
 
     if owner:
-        # ✅ Redirect to login with ?verified=true&next=/DomainDefinition
-        # Frontend reads ?next= and navigates there after successful login
         return redirect(f"{frontend_base}/login?verified=true&next=/DomainDefinition")
+    elif user and getattr(user, 'user_type', '') == 'community':
+        # Community members go straight to the feed after verification
+        return redirect(f"{frontend_base}/login?verified=true&next=/community")
     else:
         return redirect(f"{frontend_base}/login?verified=true&next=/userDashboard")

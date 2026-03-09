@@ -21,7 +21,7 @@ const CareersPage = () => {
   // 2. Fetch Jobs (Reacts to filter changes)
   useEffect(() => {
     setLoading(true);
-    let url = 'http://localhost:8000/api/careers/careers';
+    let url = 'http://localhost:8000/api/careers';
     if (selectedField) url += `?field=${selectedField}`;
 
     fetch(url)

@@ -1,122 +1,229 @@
-// src/pages/LandingPage.jsx
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Mic, ArrowRight, ShieldCheck, Database, PlayCircle } from 'lucide-react';
 import './LandingPage.css';
 
 const LandingPage = () => {
+  const observerRef = useRef(null);
+
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => entries.forEach(e => {
+        if (e.isIntersecting) e.target.classList.add('visible');
+      }),
+      { threshold: 0.1 }
+    );
+    document.querySelectorAll('.reveal').forEach(el => observerRef.current.observe(el));
+    return () => observerRef.current?.disconnect();
+  }, []);
+
   return (
-    <div className="bg-white font-sans text-gray-900 min-h-screen">
-      {/* HERO SECTION */}
-      <section className="relative bg-[#489c8c] pt-32 pb-40 px-6 md:px-12 rounded-b-[60px] md:rounded-b-[100px] overflow-hidden">
-        <div className="max-w-6xl mx-auto text-center text-white relative z-10">
-          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight tracking-tight">
-            Data Collection <br />
-            <span className="text-teal-200">Made Simple & Powerful</span>
+    <div className="lp">
+
+      {/* ── NAV ── */}
+      <nav className="lp-nav">
+        <div className="lp-nav-brand">
+          <span className="lp-nav-dot" />
+          semaData
+        </div>
+        <div className="lp-nav-links">
+          <a href="#how">How it works</a>
+          <a href="#roles">Who it's for</a>
+          <a href="#community">Community</a>
+        </div>
+        <div className="lp-nav-actions">
+          <Link to="/login?fresh=true" className="lp-nav-login">Sign in</Link>
+          <Link to="/signup" className="lp-nav-cta">Get started</Link>
+        </div>
+      </nav>
+
+      {/* ── HERO ── */}
+      <section className="lp-hero">
+        <div className="lp-hero-bg">
+          <div className="lp-hero-orb lp-hero-orb--1" />
+          <div className="lp-hero-orb lp-hero-orb--2" />
+          <div className="lp-hero-grid" />
+        </div>
+        <div className="lp-hero-content">
+          <div className="lp-hero-tag reveal">
+            Africa's Language Intelligence Platform
+          </div>
+          <h1 className="lp-hero-h1 reveal">
+            The infrastructure<br />
+            behind <em>African</em><br />
+            language AI
           </h1>
-
-          <p className="text-xl md:text-2xl text-teal-50/90 mb-12 max-w-3xl mx-auto">
-            Connect collectors and domain owners with secure, real-time data workflows — from local voices to global insights.
+          <p className="lp-hero-p reveal">
+            semaData connects field collectors, domain researchers, and the global data science community — building the datasets that will power the next generation of African language models.
           </p>
-
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-5 md:gap-8">
-            {/* New users */}
-            <Link
-              to="/signup"
-              className="group bg-white text-[#489c8c] px-10 py-5 rounded-2xl font-bold text-lg flex items-center gap-3 hover:bg-teal-50 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
-            >
-              Get Started – Sign Up
-              <ArrowRight className="group-hover:translate-x-1 transition-transform" size={22} />
+          <div className="lp-hero-actions reveal">
+            <Link to="/signup" className="lp-btn lp-btn--primary">
+              Start building →
             </Link>
-
-            {/* Existing users */}
-            <Link
-              to="/login"
-              className="group bg-transparent border-2 border-white text-white px-10 py-5 rounded-2xl font-bold text-lg flex items-center gap-3 hover:bg-white hover:text-[#489c8c] transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:-translate-y-1"
-            >
-              Already have an account? Log In
-              <ArrowRight className="group-hover:translate-x-1 transition-transform" size={22} />
+            <Link to="/community" className="lp-btn lp-btn--ghost">
+              Explore community
             </Link>
           </div>
-        </div>
-
-        {/* Floating icons with animation */}
-        <div className="absolute -bottom-10 left-10 opacity-20 hidden lg:block animate-float-slow">
-          <Mic size={140} />
-        </div>
-        <div className="absolute top-20 right-16 opacity-20 hidden lg:block animate-float-medium">
-          <Database size={100} />
-        </div>
-        <div className="absolute bottom-20 right-40 opacity-15 hidden lg:block animate-float-fast">
-          <ShieldCheck size={80} />
-        </div>
-      </section>
-
-      {/* FEATURES SECTION */}
-      <section id="features" className="py-24 px-6 md:px-12 max-w-7xl mx-auto">
-        <h2 className="text-4xl md:text-5xl font-bold text-center mb-16 text-gray-800">
-          Why Choose semaData?
-        </h2>
-
-        <div className="grid md:grid-cols-3 gap-10 md:gap-12 text-center">
-          <div className="feature-card bg-white p-10 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100">
-            <div className="w-20 h-20 bg-[#489c8c]/10 text-[#489c8c] rounded-3xl flex items-center justify-center mx-auto mb-8">
-              <ShieldCheck size={40} />
+          <div className="lp-hero-stats reveal">
+            <div className="lp-stat">
+              <strong>8+</strong><span>African languages</span>
             </div>
-            <h3 className="text-2xl font-bold mb-5 text-gray-800">Enterprise-Grade Security</h3>
-            <p className="text-gray-600 text-lg leading-relaxed">
-              Full control, granular permissions, encrypted data, and compliance-ready workflows.
-            </p>
+            <div className="lp-stat-divider" />
+            <div className="lp-stat">
+              <strong>1,500+</strong><span>Verified recordings</span>
+            </div>
+            <div className="lp-stat-divider" />
+            <div className="lp-stat">
+              <strong>3</strong><span>Active research domains</span>
+            </div>
           </div>
-
-          <div className="feature-card bg-white p-10 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100">
-            <div className="w-20 h-20 bg-[#489c8c]/10 text-[#489c8c] rounded-3xl flex items-center justify-center mx-auto mb-8">
-              <Database size={40} />
-            </div>
-            <h3 className="text-2xl font-bold mb-5 text-gray-800">Seamless Data Export</h3>
-            <p className="text-gray-600 text-lg leading-relaxed">
-              Download in CSV, JSON, Excel — ready for analysis in seconds.
-            </p>
+        </div>
+        <div className="lp-hero-visual reveal">
+          <div className="lp-hero-card lp-hero-card--1">
+            <div className="lp-hero-card-dot lp-hero-card-dot--green" />
+            <span>Audio submitted</span>
+            <strong>+1 verified</strong>
           </div>
-
-          <div className="feature-card bg-white p-10 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100">
-            <div className="w-20 h-20 bg-[#489c8c]/10 text-[#489c8c] rounded-3xl flex items-center justify-center mx-auto mb-8">
-              <Mic size={40} />
-            </div>
-            <h3 className="text-2xl font-bold mb-5 text-gray-800">Dialect & Voice Intelligence</h3>
-            <p className="text-gray-600 text-lg leading-relaxed">
-              Advanced speech-to-text and NLP tuned for local languages and rare dialects.
-            </p>
+          <div className="lp-hero-card lp-hero-card--2">
+            <div className="lp-hero-card-dot lp-hero-card-dot--blue" />
+            <span>New domain live</span>
+            <strong>Agriculture · KE</strong>
+          </div>
+          <div className="lp-hero-card lp-hero-card--3">
+            <div className="lp-hero-card-dot lp-hero-card-dot--amber" />
+            <span>Community post</span>
+            <strong>Kikuyu phonetics guide</strong>
+          </div>
+          <div className="lp-hero-waveform">
+            {Array.from({length: 28}).map((_, i) => (
+              <div key={i} className="lp-waveform-bar"
+                style={{'--h': `${20 + Math.sin(i * 0.8) * 40 + Math.random() * 20}%`, '--d': `${i * 0.06}s`}} />
+            ))}
           </div>
         </div>
       </section>
 
-      {/* FINAL CTA SECTION */}
-      <section className="bg-gray-50 py-20 px-6 md:px-12 text-center">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold mb-8 text-gray-800">
-            Ready to Start Collecting?
-          </h2>
-          <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto">
-            Whether you're a collector or domain owner, semaData makes it fast, secure, and scalable.
-          </p>
-
-          <div className="flex flex-col sm:flex-row justify-center gap-6">
-            <Link
-              to="/signup"
-              className="bg-[#489c8c] text-white px-12 py-5 rounded-2xl font-bold text-lg hover:bg-[#3a8c7c] transition shadow-xl"
-            >
-              Sign Up Now
-            </Link>
-            <Link
-              to="/login"
-              className="bg-transparent border-2 border-[#489c8c] text-[#489c8c] px-12 py-5 rounded-2xl font-bold text-lg hover:bg-[#489c8c] hover:text-white transition"
-            >
-              Log In
-            </Link>
-          </div>
+      {/* ── HOW IT WORKS ── */}
+      <section id="how" className="lp-how">
+        <div className="lp-section-label reveal">How it works</div>
+        <h2 className="lp-section-h2 reveal">From field recording<br />to published dataset</h2>
+        <div className="lp-steps">
+          {[
+            { n: '01', title: 'Domain owners define research',    body: 'Researchers and organisations specify data requirements, set target goals, and recruit vetted field collectors through semaData.' },
+            { n: '02', title: 'Collectors capture real-world data', body: 'Approved collectors record audio, transcribe speech, and submit structured datasets from the field — in local languages and dialects.' },
+            { n: '03', title: 'AI verifies and segments',          body: 'Our inference engine processes submissions, segments by linguistic features, and flags quality issues for human review.' },
+            { n: '04', title: 'Community enriches the data',       body: 'Data scientists, linguists, and ML researchers discuss findings, flag issues, and contribute insights that improve dataset quality.' },
+          ].map((s, i) => (
+            <div key={i} className="lp-step reveal" style={{'--delay': `${i * 0.1}s`}}>
+              <div className="lp-step-n">{s.n}</div>
+              <div className="lp-step-body">
+                <h3>{s.title}</h3>
+                <p>{s.body}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
+
+      {/* ── ROLES ── */}
+      <section id="roles" className="lp-roles">
+        <div className="lp-section-label reveal">Who it's for</div>
+        <h2 className="lp-section-h2 reveal">Three paths into semaData</h2>
+        <p className="lp-section-sub reveal">
+          Each role is distinct. Choose the one that matches how you want to contribute.
+        </p>
+
+        <div className="lp-role-cards">
+
+          <div className="lp-role-card lp-role-card--community reveal">
+            <div className="lp-role-icon">◎</div>
+            <div className="lp-role-tag">Free · Instant access</div>
+            <h3>Community Member</h3>
+            <p>You are a data scientist, ML researcher, student, or linguist interested in African language AI. You want to explore datasets, ask questions, and contribute knowledge — without committing to field work.</p>
+            <ul>
+              <li>Browse and discuss published datasets</li>
+              <li>Post ML/AI/linguistics insights</li>
+              <li>Comment and flag data quality issues</li>
+              <li>Connect with domain owners and collectors</li>
+            </ul>
+            <Link to="/signup?role=community" className="lp-role-btn">
+              Join the community →
+            </Link>
+          </div>
+
+          <div className="lp-role-card lp-role-card--collector reveal" style={{'--delay': '0.1s'}}>
+            <div className="lp-role-icon">◈</div>
+            <div className="lp-role-tag">Vetted · Paid work</div>
+            <h3>Data Collector</h3>
+            <p>You are a field agent, community researcher, or local language speaker who wants to record, transcribe, and submit real-world data — and get compensated for verified contributions.</p>
+            <ul>
+              <li>Receive a reference number after approval</li>
+              <li>Submit audio and structured field data</li>
+              <li>Earn per verified submission</li>
+              <li>Build a public contributor profile</li>
+            </ul>
+            <Link to="/signup?role=collector" className="lp-role-btn">
+              Apply as collector →
+            </Link>
+          </div>
+
+          <div className="lp-role-card lp-role-card--owner reveal" style={{'--delay': '0.2s'}}>
+            <div className="lp-role-icon">◇</div>
+            <div className="lp-role-tag">Paid · Full platform access</div>
+            <h3>Domain Owner</h3>
+            <p>You are a researcher, NGO, university, or organisation that needs high-quality African language datasets. You define what data gets collected and manage a team of verified collectors.</p>
+            <ul>
+              <li>Define custom data collection domains</li>
+              <li>Set target goals and feature schemas</li>
+              <li>Recruit and manage collectors</li>
+              <li>Download and publish final datasets</li>
+            </ul>
+            <Link to="/signup?role=domainowner" className="lp-role-btn">
+              Register your organisation →
+            </Link>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ── COMMUNITY STRIP ── */}
+      <section id="community" className="lp-community reveal">
+        <div className="lp-community-content">
+          <div className="lp-section-label">Community</div>
+          <h2>Africa's language data network — open to everyone</h2>
+          <p>The semaData community is where data scientists, linguists, and AI researchers meet the people who collected the data. Discuss methods, share findings, flag quality issues, and help shape the future of African language AI.</p>
+          <Link to="/community" className="lp-btn lp-btn--primary">Explore the community →</Link>
+        </div>
+        <div className="lp-community-posts">
+          {[
+            { init: 'AW', name: 'Amina W.', text: 'Tips for recording clean Kikuyu speech in noisy markets', tag: 'Linguistics' },
+            { init: 'KM', name: 'Kofi M.',  text: 'Quality flag: duplicate recordings in HLTH-KE-0042',   tag: 'Quality' },
+            { init: 'ND', name: 'Naledi D.', text: 'Zulu click consonants — guide for non-native transcribers', tag: 'Linguistics' },
+          ].map((p, i) => (
+            <div key={i} className="lp-community-post" style={{'--delay': `${i * 0.12}s`}}>
+              <div className="lp-community-post-avatar">{p.init}</div>
+              <div className="lp-community-post-body">
+                <strong>{p.name}</strong>
+                <span>{p.text}</span>
+              </div>
+              <div className="lp-community-post-tag">{p.tag}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer className="lp-footer">
+        <div className="lp-footer-brand">
+          <span className="lp-nav-dot" /> semaData
+        </div>
+        <p>Building the datasets that will power African language AI.</p>
+        <div className="lp-footer-links">
+          <Link to="/community">Community</Link>
+          <Link to="/signup">Sign up</Link>
+          <Link to="/login">Sign in</Link>
+        </div>
+      </footer>
+
     </div>
   );
 };

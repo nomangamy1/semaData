@@ -1,40 +1,63 @@
 from extensions import db
 from flask_login import UserMixin
-from werkzeug.security import generate_password_hash,check_password_hash
-import uuid
-class User(db.Model,UserMixin):
+from werkzeug.security import generate_password_hash, check_password_hash
+
+
+class User(db.Model, UserMixin):
     __tablename__ = 'Users'
-    id = db.Column(db.Integer, primary_key=True)
-    user_type = db.Column(db.String(50), nullable=False, default='User')
-    first_name = db.Column(db.String(64), unique=False, index=True)
-    second_name = db.Column(db.String(64), unique=False, index=True)
-    email = db.Column(db.String(120), unique=True, index=True, nullable=False)
-    is_verified = db.Column(db.Boolean, nullable=False, default=False)
-    domain_name = db.Column(db.String(64))
-    role = db.Column(db.String(80))
-    reference_number = db.Column(db.String(64), db.ForeignKey('domain.reference_number'))
-    password_hash = db.Column(db.String(256), nullable=False)
+
+    id               = db.Column(db.Integer, primary_key=True)
+    user_type        = db.Column(db.String(50), nullable=False, default='User')
+    # user_type values:
+    #   'User'      → vetted field collector
+    #   'community' → free community member (ML/AI/research audience)
+    #   'admin'     → platform administrator
+
+    first_name       = db.Column(db.String(64), index=True)
+    second_name      = db.Column(db.String(64), index=True)
+    email            = db.Column(db.String(120), unique=True, index=True, nullable=False)
+    password_hash    = db.Column(db.String(256), nullable=False)
+
+    is_verified      = db.Column(db.Boolean, nullable=False, default=False)
+    role             = db.Column(db.String(80))
+    # role mirrors user_type for JWT claims: 'user' | 'community' | 'admin'
+
+    domain_name      = db.Column(db.String(64), nullable=True)
+    area_of_interest = db.Column(db.String(100), nullable=True)
+    # area_of_interest is only populated for community members
+
+    reference_number = db.Column(
+        db.String(64),
+        db.ForeignKey('domain.reference_number'),
+        nullable=True   # ← must be True: community members have no domain link
+    )
+
+    # ── Relationships ──────────────────────────────────────
+    domain = db.relationship('Domain', foreign_keys=[reference_number], backref='collectors')
+
+    # ── Instance methods ───────────────────────────────────
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
     def create(self):
         db.session.add(self)
         db.session.commit()
         return self
-    
+
+    # ── Class methods ──────────────────────────────────────
     @classmethod
     def find_by_email(cls, email):
         return cls.query.filter_by(email=email).first()
-    
-    @classmethod
-    def find_by_username(cls, username):
-        return cls.query.filter_by(username=username).first()
-    
 
-    def set_password(self, password):
-        self.password_hash =generate_password_hash(password)
-    
-    def check_password(self,password):
-        return check_password_hash(self.password_hash,password)
-    
-    
-    
- 
+    @classmethod
+    def find_by_id(cls, user_id):
+        return cls.query.get(user_id)
+
+    # NOTE: find_by_username removed — User has no username column.
+    # Username belongs to DomainOwner. Call DomainOwner.find_by_username() instead.
+
+    def __repr__(self):
+        return f"<User {self.id} [{self.user_type}] {self.email}>"

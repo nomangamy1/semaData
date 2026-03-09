@@ -19,6 +19,7 @@ import CareersPage from './pages/careersPublic';
 import AdminDashboard from './pages/AdminDashboard';
 import GuestOnlyRoute from './components/GuestOnlyRoute';
 import AdminRoute from './components/AdminRoute';
+import Community from './pages/Community';
 
 // Optional: ProtectedRoute for logged-in users only
 const ProtectedRoute = ({ children }) => {
@@ -43,6 +44,7 @@ function SemaData_App() {
           <Route path="/ContactUs" element={<ContactUs />} />
           <Route path="/careerPublic" element={<CareersPage />} />
           <Route path="/careers/:id" element={<JobDescriptionView />} />
+          <Route path="/community" element={<Community />} />
 
           {/* Guest-only (redirect to dashboard if logged in) */}
           <Route

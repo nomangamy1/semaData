@@ -7,6 +7,8 @@ class JobApplication(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'), nullable=False)
     email = db.Column(db.String(120), nullable=False)
+    first_name = db.Column(db.String(100), nullable=True)
+    second_name = db.Column(db.String(100), nullable=True)
     applicant_id = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=True)
     cover_letter = db.Column(db.Text)
     cv_file_path = db.Column(db.String(500))  # Path to uploaded CV
@@ -14,7 +16,6 @@ class JobApplication(db.Model):
     self_assessment_skills = db.Column(db.JSON)  # Skills they claim to have
     status = db.Column(db.String(50), default='submitted')  # 'submitted', 'under_review', 'approved', 'rejected'
     applied_at = db.Column(db.DateTime, default=datetime.now)
-
     reviewed_at = db.Column(db.DateTime, nullable=True)
     
     # Admin Review
