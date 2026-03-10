@@ -3,6 +3,8 @@ from werkzeug.security import check_password_hash
 from utils.tokens import generate_verification_token
 from utils.email import send_email
 from models import User, Domain, DomainOwner
+from models.JobApplication import JobApplication
+from models.Job import Job
 from flask_jwt_extended import create_access_token
 import logging
 
@@ -12,16 +14,6 @@ login_bp = Blueprint("login", __name__)
 
 @login_bp.route('/login', methods=['POST'])
 def login():
-    """
-    Four login types, checked in this exact order:
-
-    1. ADMIN        → role='admin' in Users table,  email + password
-    2. DOMAIN OWNER → DomainOwner table,             email + password
-    3. COMMUNITY    → user_type='community',         email + password only
-                      ↑ checked BEFORE collector so they never hit the
-                        "please provide a reference number" error
-    4. COLLECTOR    → user_type='User',              email + password + reference_number
-    """
     try:
         data       = request.get_json()
         email      = data.get('email', '').strip()
@@ -36,7 +28,6 @@ def login():
         if admin:
             if not check_password_hash(admin.password_hash, password):
                 return jsonify({"error": "Invalid admin credentials"}), 401
-
             token = create_access_token(
                 identity=str(admin.id),
                 additional_claims={"role": "admin"}
@@ -53,12 +44,8 @@ def login():
         if owner:
             if not check_password_hash(owner.password_hash, password):
                 return jsonify({"error": "Invalid email or password"}), 401
-
             if not owner.is_verified:
-                return jsonify({
-                    "error": "Email not verified. Please check your inbox."
-                }), 403
-
+                return jsonify({"error": "Email not verified. Please check your inbox."}), 403
             token = create_access_token(
                 identity=str(owner.id),
                 additional_claims={"role": "domain_owner"}
@@ -72,64 +59,47 @@ def login():
                 "fullName": f"{owner.first_name} {owner.last_name or ''}".strip(),
             }), 200
 
-        # ── 3. COMMUNITY MEMBER ──────────────────────────────────────
-        # Must come BEFORE the collector branch — community members have
-        # no reference_number, so they'd otherwise get a confusing error.
+        # ── 3. COMMUNITY ─────────────────────────────────────────────
         community = User.query.filter_by(email=email, user_type='community').first()
         if community:
             if not check_password_hash(community.password_hash, password):
                 return jsonify({"error": "Invalid email or password"}), 401
-
             if not community.is_verified:
-                # Resend verification link
                 try:
                     verify_token = generate_verification_token(community.email)
                     confirm_url  = url_for('register.email_verification',
                                           token=verify_token, _external=True)
-                    send_email(
-                        community.email,
-                        "Verify your semaData community account",
-                        f"<p>Please verify your email: "
-                        f"<a href='{confirm_url}'>{confirm_url}</a></p>"
-                    )
+                    send_email(community.email, "Verify your semaData community account",
+                        f"<p>Please verify: <a href='{confirm_url}'>{confirm_url}</a></p>")
                 except Exception:
-                    pass  # Don't crash login if email fails
-                return jsonify({
-                    "error": "Email not verified. A new verification link has been sent."
-                }), 403
-
+                    pass
+                return jsonify({"error": "Email not verified. A new link has been sent."}), 403
             token = create_access_token(
                 identity=str(community.id),
                 additional_claims={"role": "community"}
             )
             return jsonify({
-                "token":           token,
-                "role":            "community",
-                "userId":          community.id,
-                "email":           community.email,
-                "fullName":        f"{community.first_name} {community.second_name or ''}".strip(),
+                "token":            token,
+                "role":             "community",
+                "userId":           community.id,
+                "email":            community.email,
+                "fullName":         f"{community.first_name} {community.second_name or ''}".strip(),
                 "area_of_interest": getattr(community, 'area_of_interest', ''),
             }), 200
 
         # ── 4. COLLECTOR ─────────────────────────────────────────────
-        # At this point we know: not admin, not owner, not community.
-        # Collectors MUST provide a reference_number — it is their
-        # domain invite code and the only way to identify which domain
-        # they belong to.
         if not ref_number:
             return jsonify({
-                "error": "No account found. "
-                         "Collectors must provide their domain reference number."
+                "error": "No account found. Collectors must provide their reference number."
             }), 401
 
-        domain = Domain.query.filter_by(reference_number=ref_number).first()
-        if not domain:
-            return jsonify({"error": "Invalid reference number"}), 401
-
+        # ✅ ref_number is the APPLICATION ref (e.g. AGRI--DNFOHBKV)
+        # Find the collector by email + application ref number
         collector = User.query.filter_by(
             email=email,
             reference_number=ref_number
         ).first()
+
         if not collector:
             return jsonify({"error": "Invalid credentials or reference number"}), 401
 
@@ -141,17 +111,28 @@ def login():
                 verify_token = generate_verification_token(collector.email)
                 confirm_url  = url_for('register.email_verification',
                                       token=verify_token, _external=True)
-                send_email(
-                    collector.email,
-                    "Please verify your account",
-                    f"<p>Please verify your email: "
-                    f"<a href='{confirm_url}'>{confirm_url}</a></p>"
-                )
+                send_email(collector.email, "Please verify your account",
+                    f"<p>Please verify: <a href='{confirm_url}'>{confirm_url}</a></p>")
             except Exception:
                 pass
-            return jsonify({
-                "error": "Email not verified. A new verification link has been sent."
-            }), 403
+            return jsonify({"error": "Email not verified. A new link has been sent."}), 403
+
+        # ✅ Resolve domain via application → job → domain
+        application = JobApplication.query.filter_by(
+            reference_number_assigned=ref_number,
+            status='approved'
+        ).first()
+
+        domain_name = collector.domain_name  # fallback: stored at signup
+        domain_id   = None
+
+        if application:
+            job = Job.query.get(application.job_id)
+            if job:
+                domain = Domain.query.get(job.domain_id)
+                if domain:
+                    domain_name = domain.domain_name
+                    domain_id   = domain.id
 
         token = create_access_token(
             identity=str(collector.id),
@@ -162,13 +143,11 @@ def login():
             "role":     "user",
             "userId":   collector.id,
             "email":    collector.email,
-            "domain":   domain.domain_name,
-            "domainId": domain.id,
+            "domain":   domain_name,
+            "domainId": domain_id,
             "fullName": f"{collector.first_name} {collector.second_name or ''}".strip(),
         }), 200
 
     except Exception as e:
         logger.exception("Login failed for email: %s", email)
-        return jsonify({
-            "error": "An unexpected error occurred. Please try again later."
-        }), 500
+        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500

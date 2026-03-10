@@ -6,22 +6,22 @@ import {
   Calendar, User, Settings, LayoutGrid, Save,
   Search, ExternalLink, Trash2, Eye, AlertCircle
 } from 'lucide-react';
+import './AdminDashboard.css'; // ✅ scoped via .admin-root
 
-// Your existing modals
-import ApplicantModal from '../components/ApplicantModal';
+import ApplicantModal  from '../components/ApplicantModal';
 import TemplateManager from '../components/TemplateManager';
-import JobPostModal from '../components/JobPostModal';
+import JobPostModal    from '../components/JobPostModal';
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('applications');
-  const [applications, setApplications] = useState([]);
-  const [jobs, setJobs] = useState([]);
-  const [domains, setDomains] = useState([]);
-  const [selectedDomain, setSelectedDomain] = useState('all');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [selectedApp, setSelectedApp] = useState(null);
-  const [isJobModalOpen, setIsJobModalOpen] = useState(false);
+  const [activeTab,       setActiveTab]       = useState('applications');
+  const [applications,    setApplications]    = useState([]);
+  const [jobs,            setJobs]            = useState([]);
+  const [domains,         setDomains]         = useState([]);
+  const [selectedDomain,  setSelectedDomain]  = useState('all');
+  const [loading,         setLoading]         = useState(true);
+  const [error,           setError]           = useState(null);
+  const [selectedApp,     setSelectedApp]     = useState(null);
+  const [isJobModalOpen,  setIsJobModalOpen]  = useState(false);
 
   const token = localStorage.getItem('token');
 
@@ -37,37 +37,31 @@ const AdminDashboard = () => {
   const fetchInitialData = async () => {
     setLoading(true);
     setError(null);
-
     try {
-      // Fetch Domains
-      const domRes = await fetch('http://localhost:8000/api/admin/all-domains', {
+      const domRes  = await fetch('http://localhost:8000/api/admin/all-domains', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (!domRes.ok) throw new Error(await domRes.json().error || `HTTP ${domRes.status}`);
-      const domData = await domRes.json();
-      console.log("Domains:", domData);
-      setDomains(domData || []);
+      if (!domRes.ok) throw new Error(`HTTP ${domRes.status}`);
+      setDomains(await domRes.json() || []);
 
-      // Tab-specific data
       if (activeTab === 'applications') {
-        const res = await fetch('http://localhost:8000/api/admin/applications', {
+        const res  = await fetch('http://localhost:8000/api/admin/applications', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (!res.ok) throw new Error(await res.json().error || 'Failed to load applications');
+        if (!res.ok) throw new Error('Failed to load applications');
         const data = await res.json();
         setApplications(data.applications || []);
       }
 
       if (activeTab === 'jobs') {
-        const res = await fetch('http://localhost:8000/api/admin/jobs', {
+        const res  = await fetch('http://localhost:8000/api/admin/jobs', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (!res.ok) throw new Error(await res.json().error || 'Failed to load jobs');
+        if (!res.ok) throw new Error('Failed to load jobs');
         const data = await res.json();
         setJobs(data.jobs || []);
       }
     } catch (err) {
-      console.error("Fetch error:", err);
       setError(err.message || "Failed to load dashboard data");
     } finally {
       setLoading(false);
@@ -78,44 +72,28 @@ const AdminDashboard = () => {
     try {
       const res = await fetch('http://localhost:8000/api/admin/jobs', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(jobData)
       });
-
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || 'Failed to publish job');
-      }
-
-      alert("Job successfully posted to the public portal!");
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Failed'); }
+      alert("Job successfully posted!");
       setIsJobModalOpen(false);
       fetchInitialData();
-    } catch (err) {
-      alert(`Failed to publish job: ${err.message}`);
-    }
+    } catch (err) { alert(`Failed: ${err.message}`); }
   };
 
   const handleApprove = async (appId) => {
     try {
       const res = await fetch(`http://localhost:8000/api/admin/applications/${appId}/approve`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ approval_notes: "Approved via Admin Dashboard" })
       });
-
       if (!res.ok) throw new Error('Failed to approve');
       alert("Application approved!");
       setSelectedApp(null);
       fetchInitialData();
-    } catch (err) {
-      alert(`Approval failed: ${err.message}`);
-    }
+    } catch (err) { alert(`Approval failed: ${err.message}`); }
   };
 
   const handleReject = async (appId) => {
@@ -123,41 +101,36 @@ const AdminDashboard = () => {
     try {
       const res = await fetch(`http://localhost:8000/api/admin/applications/${appId}/reject`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
-
       if (!res.ok) throw new Error('Failed to reject');
       alert("Application rejected.");
       setSelectedApp(null);
       fetchInitialData();
-    } catch (err) {
-      alert(`Rejection failed: ${err.message}`);
-    }
+    } catch (err) { alert(`Rejection failed: ${err.message}`); }
   };
 
   const filteredApplications = selectedDomain === 'all'
     ? applications
     : applications.filter(app => app.domain_id === parseInt(selectedDomain));
 
+  // ✅ Entire component wrapped in admin-root — scopes all CSS
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="admin-root min-h-screen bg-gray-50 flex">
+
       {/* Sidebar */}
       <aside className="w-64 bg-slate-900 text-white p-6 flex flex-col fixed h-full z-40 overflow-y-auto">
         <div className="mb-10 px-4">
-          <h2 className="text-2xl font-black text-emerald-400 tracking-tighter italic">SemaAdmin</h2>
+          <h2 className="sidebar-logo-text text-2xl font-black tracking-tighter italic">SemaAdmin</h2>
           <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">SuperAdmin Panel</p>
         </div>
-
         <nav className="space-y-1 flex-1">
-          <NavBtn active={activeTab === 'applications'} icon={<Users size={18}/>} label="Review Queue" onClick={() => setActiveTab('applications')} />
-          <NavBtn active={activeTab === 'jobs'} icon={<Briefcase size={18}/>} label="Job Postings" onClick={() => setActiveTab('jobs')} />
-          <NavBtn active={activeTab === 'domains'} icon={<Globe size={18}/>} label="Domain Clients" onClick={() => setActiveTab('domains')} />
+          <NavBtn active={activeTab === 'applications'} icon={<Users size={18}/>}    label="Review Queue"    onClick={() => setActiveTab('applications')} />
+          <NavBtn active={activeTab === 'jobs'}         icon={<Briefcase size={18}/>} label="Job Postings"    onClick={() => setActiveTab('jobs')} />
+          <NavBtn active={activeTab === 'domains'}      icon={<Globe size={18}/>}     label="Domain Clients"  onClick={() => setActiveTab('domains')} />
           <div className="pt-8">
             <p className="text-xs font-black text-slate-500 uppercase px-4 mb-2 tracking-widest">System</p>
-            <NavBtn active={activeTab === 'templates'} icon={<Mail size={18}/>} label="Email Templates" onClick={() => setActiveTab('templates')} />
+            <NavBtn active={activeTab === 'templates'}  icon={<Mail size={18}/>}      label="Email Templates" onClick={() => setActiveTab('templates')} />
           </div>
         </nav>
       </aside>
@@ -168,22 +141,15 @@ const AdminDashboard = () => {
           <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight capitalize">
             {activeTab.replace('-', ' ')}
           </h1>
-
           <div className="flex flex-wrap items-center gap-4">
-            <button
-              onClick={fetchInitialData}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 rounded-xl hover:bg-slate-300 transition"
-              disabled={loading}
-            >
-              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-              Refresh
+            <button onClick={fetchInitialData} disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 rounded-xl hover:bg-slate-300 transition">
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} /> Refresh
             </button>
 
             {activeTab === 'jobs' && (
-              <button
-                onClick={() => setIsJobModalOpen(true)}
-                className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl font-bold hover:bg-emerald-600 transition-all shadow-lg"
-              >
+              <button onClick={() => setIsJobModalOpen(true)}
+                className="btn-action flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl font-bold shadow-lg">
                 <Plus size={18} /> New Job Posting
               </button>
             )}
@@ -191,15 +157,10 @@ const AdminDashboard = () => {
             {(activeTab === 'applications' || activeTab === 'jobs') && domains.length > 0 && (
               <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-slate-200 shadow-sm">
                 <Globe size={16} className="text-slate-500" />
-                <select
-                  className="bg-transparent font-medium text-slate-700 outline-none text-sm cursor-pointer"
-                  value={selectedDomain}
-                  onChange={(e) => setSelectedDomain(e.target.value)}
-                >
+                <select className="bg-transparent font-medium text-slate-700 outline-none text-sm cursor-pointer"
+                  value={selectedDomain} onChange={e => setSelectedDomain(e.target.value)}>
                   <option value="all">All Domains</option>
-                  {domains.map(d => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
-                  ))}
+                  {domains.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
               </div>
             )}
@@ -208,8 +169,7 @@ const AdminDashboard = () => {
 
         {error && (
           <div className="mb-8 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center gap-3">
-            <AlertCircle size={20} />
-            <span>{error}</span>
+            <AlertCircle size={20} /> <span>{error}</span>
           </div>
         )}
 
@@ -219,7 +179,8 @@ const AdminDashboard = () => {
           </div>
         ) : (
           <div className="w-full space-y-8">
-            {/* Applications Tab */}
+
+            {/* ── Applications Tab ── */}
             {activeTab === 'applications' && (
               <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
                 <table className="w-full text-left">
@@ -232,42 +193,40 @@ const AdminDashboard = () => {
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {filteredApplications.length === 0 ? (
-                      <tr>
-                        <td colSpan="3" className="py-20 text-center text-slate-500">
-                          No applications yet
+                      <tr><td colSpan="3" className="py-20 text-center text-slate-500">No applications yet</td></tr>
+                    ) : filteredApplications.map(app => (
+                      <tr key={app.id} className="hover:bg-slate-50 transition-colors cursor-pointer group"
+                        onClick={() => setSelectedApp(app)}>
+                        <td className="px-6 py-5">
+                          <p className="font-bold text-slate-800">{app.applicant_name || 'Anonymous'}</p>
+                          <p className="text-xs text-slate-500">{app.applicant_email || 'N/A'}</p>
+                        </td>
+                        <td className="px-6 py-5">
+                          <p className="font-medium text-slate-700">{app.job_title || 'General'}</p>
+                          <span className="jobs-domain-badge">{app.domain_name || 'N/A'}</span>
+                        </td>
+                        <td className="px-6 py-5 text-right space-x-2">
+                          <button className="btn-action p-2 text-blue-600 rounded-lg hover:bg-blue-50"
+                            onClick={e => { e.stopPropagation(); setSelectedApp(app); }} title="View">
+                            <Eye size={18} />
+                          </button>
+                          <button className="btn-action p-2 text-emerald-600 rounded-lg hover:bg-emerald-50"
+                            onClick={e => { e.stopPropagation(); handleApprove(app.id); }} title="Approve">
+                            <CheckCircle size={18} />
+                          </button>
+                          <button className="btn-action p-2 text-rose-600 rounded-lg hover:bg-rose-50"
+                            onClick={e => { e.stopPropagation(); handleReject(app.id); }} title="Reject">
+                            <XCircle size={18} />
+                          </button>
                         </td>
                       </tr>
-                    ) : (
-                      filteredApplications.map(app => (
-                        <tr key={app.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => setSelectedApp(app)}>
-                          <td className="px-6 py-5">
-                            <p className="font-bold text-slate-800">{app.applicant_name || 'Anonymous'}</p>
-                            <p className="text-xs text-slate-500">{app.applicant_email || 'N/A'}</p>
-                          </td>
-                          <td className="px-6 py-5">
-                            <p className="font-medium text-slate-700">{app.job_title || 'General'}</p>
-                            <p className="text-xs text-emerald-600">{app.domain_name || 'N/A'}</p>
-                          </td>
-                          <td className="px-6 py-5 text-right space-x-3">
-                            <button onClick={(e) => { e.stopPropagation(); setSelectedApp(app); }} className="p-2 text-blue-600" title="View">
-                              <Eye size={18} />
-                            </button>
-                            <button onClick={(e) => { e.stopPropagation(); handleApprove(app.id); }} className="p-2 text-emerald-600" title="Approve">
-                              <CheckCircle size={18} />
-                            </button>
-                            <button onClick={(e) => { e.stopPropagation(); handleReject(app.id); }} className="p-2 text-rose-600" title="Reject">
-                              <XCircle size={18} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
+                    ))}
                   </tbody>
                 </table>
               </div>
             )}
 
-            {/* Jobs Tab */}
+            {/* ── Jobs Tab ── */}
             {activeTab === 'jobs' && (
               <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
                 <table className="w-full text-left">
@@ -281,44 +240,36 @@ const AdminDashboard = () => {
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {jobs.length === 0 ? (
-                      <tr>
-                        <td colSpan="4" className="py-20 text-center text-slate-500">
-                          No jobs posted yet
+                      <tr><td colSpan="4" className="py-20 text-center text-slate-500">No jobs posted yet</td></tr>
+                    ) : jobs.map(job => (
+                      <tr key={job.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-5">
+                          <p className="font-bold text-slate-800">{job.title || 'Untitled'}</p>
+                          <p className="text-xs text-slate-500">{job.field || 'General'}</p>
+                        </td>
+                        <td className="px-6 py-5">
+                          <span className="jobs-domain-badge">{job.domain_name || 'N/A'}</span>
+                        </td>
+                        <td className="px-6 py-5">
+                          <p className="text-sm font-medium text-slate-700">{job.location || 'Remote'}</p>
+                          <p className="text-xs text-emerald-600 font-bold">{job.compensation || 'Negotiable'}</p>
+                        </td>
+                        <td className="px-6 py-5 text-right space-x-2">
+                          <button className="btn-action p-2 text-slate-500 rounded-lg hover:bg-slate-100" title="View">
+                            <ExternalLink size={18} />
+                          </button>
+                          <button className="btn-action p-2 text-rose-600 rounded-lg hover:bg-rose-50" title="Delete">
+                            <Trash2 size={18} />
+                          </button>
                         </td>
                       </tr>
-                    ) : (
-                      jobs.map(job => (
-                        <tr key={job.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-6 py-5">
-                            <p className="font-bold text-slate-800">{job.title || 'Untitled'}</p>
-                            <p className="text-xs text-slate-500">{job.field || 'General'}</p>
-                          </td>
-                          <td className="px-6 py-5">
-                            <span className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold uppercase">
-                              {job.domain_name || 'N/A'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-5">
-                            <p className="text-sm font-medium text-slate-700">{job.location || 'Remote'}</p>
-                            <p className="text-xs text-emerald-600 font-bold">{job.compensation || 'Negotiable'}</p>
-                          </td>
-                          <td className="px-6 py-5 text-right space-x-3">
-                            <button className="p-2 text-slate-500 hover:text-blue-600" title="View">
-                              <ExternalLink size={18} />
-                            </button>
-                            <button className="p-2 text-rose-600 hover:text-rose-800" title="Delete">
-                              <Trash2 size={18} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
+                    ))}
                   </tbody>
                 </table>
               </div>
             )}
 
-            {/* Domains Tab */}
+            {/* ── Domains Tab ── */}
             {activeTab === 'domains' && (
               <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
                 <table className="w-full text-left">
@@ -332,54 +283,49 @@ const AdminDashboard = () => {
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {domains.length === 0 ? (
-                      <tr>
-                        <td colSpan="4" className="py-20 text-center text-slate-500">
-                          No domains registered yet
+                      <tr><td colSpan="4" className="py-20 text-center text-slate-500">No domains registered yet</td></tr>
+                    ) : domains.map(d => (
+                      <tr key={d.id} className="hover:bg-slate-50 transition-colors group">
+                        <td className="px-6 py-5">
+                          <p className="font-bold text-slate-800">{d.name || 'Unnamed Domain'}</p>
+                          <p className="text-xs text-slate-500 mt-1">ID: {d.id}</p>
+                        </td>
+                        <td className="px-6 py-5">
+                          <code className="px-2 py-1 bg-slate-100 rounded text-xs font-mono text-slate-600">
+                            {d.reference_number || 'N/A'}
+                          </code>
+                        </td>
+                        <td className="px-6 py-5">
+                          <span className={`badge-status px-3 py-1 rounded-full text-xs uppercase tracking-wider ${
+                            d.status?.toLowerCase() === 'success'
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'bg-amber-100 text-amber-700'
+                          }`}>
+                            {d.status || 'Unknown'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-5 text-right font-bold text-slate-700">
+                          {d.target || 0} <span className="text-xs text-slate-500 font-normal">submissions</span>
                         </td>
                       </tr>
-                    ) : (
-                      domains.map(d => (
-                        <tr key={d.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-6 py-5">
-                            <p className="font-bold text-slate-800">{d.name || 'Unnamed Domain'}</p>
-                            <p className="text-xs text-slate-500 mt-1">ID: {d.id}</p>
-                          </td>
-                          <td className="px-6 py-5">
-                            <code className="px-2 py-1 bg-slate-100 rounded text-xs font-mono text-slate-600">
-                              {d.reference_number || 'N/A'}
-                            </code>
-                          </td>
-                          <td className="px-6 py-5">
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                              d.status?.toLowerCase() === 'success' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                            }`}>
-                              {d.status || 'Unknown'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-5 text-right font-bold text-slate-700">
-                            {d.target || 0} <span className="text-xs text-slate-500 font-normal">submissions</span>
-                          </td>
-                        </tr>
-                      ))
-                    )}
+                    ))}
                   </tbody>
                 </table>
               </div>
             )}
 
-            {/* Templates Tab */}
+            {/* ── Templates Tab ── */}
             {activeTab === 'templates' && <TemplateManager />}
           </div>
         )}
 
-        {/* Modals */}
+        {/* ── Modals ── */}
         <JobPostModal
           isOpen={isJobModalOpen}
           onClose={() => setIsJobModalOpen(false)}
           domains={domains}
           onPublish={handlePublishJob}
         />
-
         {selectedApp && (
           <ApplicantModal
             applicant={selectedApp}
@@ -393,14 +339,11 @@ const AdminDashboard = () => {
   );
 };
 
-// NavBtn component
 const NavBtn = ({ active, icon, label, onClick }) => (
-  <button
-    onClick={onClick}
+  <button onClick={onClick}
     className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-xl font-medium transition-all ${
       active ? 'bg-emerald-500 text-white shadow-lg' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-    }`}
-  >
+    }`}>
     {icon} {label}
   </button>
 );

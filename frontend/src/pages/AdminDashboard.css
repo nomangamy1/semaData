@@ -1,59 +1,48 @@
-/* AdminDashboard.css - Definitive SuperAdmin Stylesheet */
+/* AdminDashboard.css - Scoped to .admin-root to prevent global bleed */
 
-:root {
-  --admin-sidebar: #0f172a;
-  --admin-accent: #10b981; 
-  --admin-danger: #f43f5e;
-  --admin-bg: #f8fafc;
-  --admin-text-main: #1e293b;
+/* ── Variables scoped to admin only ── */
+.admin-root {
+  --admin-sidebar:    #0f172a;
+  --admin-accent:     #10b981;
+  --admin-danger:     #f43f5e;
+  --admin-bg:         #f8fafc;
+  --admin-text-main:  #1e293b;
   --admin-text-muted: #64748b;
-  --glass-border: rgba(226, 232, 240, 0.8);
-}
+  --glass-border:     rgba(226, 232, 240, 0.8);
 
-/* 1. LAYOUT & CORE */
-body {
   background-color: var(--admin-bg);
   color: var(--admin-text-main);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  margin: 0;
+  min-height: 100vh;
 }
 
 /* 2. MODAL & ANIMATIONS */
-.animate-in {
+.admin-root .animate-in {
   animation: modalScaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes modalScaleUp {
   from { opacity: 0; transform: scale(0.95) translateY(10px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
 }
 
-.backdrop-blur-sm {
+.admin-root .backdrop-blur-sm {
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
 
 /* 3. CUSTOM SCROLLBARS */
-.admin-scroll::-webkit-scrollbar {
-  width: 6px;
-}
+.admin-root .admin-scroll::-webkit-scrollbar       { width: 6px; }
+.admin-root .admin-scroll::-webkit-scrollbar-track  { background: transparent; }
+.admin-root .admin-scroll::-webkit-scrollbar-thumb  { background: #cbd5e1; border-radius: 20px; }
 
-.admin-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.admin-scroll::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 20px;
-}
-
-/* 4. TABLE STYLING */
-table {
+/* 4. TABLE STYLING — scoped, won't touch other pages */
+.admin-root table {
   border-collapse: separate;
   border-spacing: 0;
 }
 
-thead th {
+.admin-root thead th {
   position: sticky;
   top: 0;
   z-index: 10;
@@ -61,12 +50,12 @@ thead th {
   backdrop-filter: blur(4px);
 }
 
-tr.group:hover td {
+.admin-root tr.group:hover td {
   background-color: #f1f5f9;
 }
 
-/* 5. FILTER & SELECTS */
-select {
+/* 5. FILTER & SELECTS — scoped, won't inject chevron everywhere */
+.admin-root select {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -76,36 +65,30 @@ select {
 }
 
 /* 6. STATUS BADGES */
-.badge-status {
+.admin-root .badge-status {
   letter-spacing: 0.05em;
   font-family: 'JetBrains Mono', monospace;
   font-weight: 800;
 }
 
-/* 7. ACTION BUTTONS (RESTORED) */
-.btn-action {
+/* 7. ACTION BUTTONS */
+.admin-root .btn-action {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
-
-.btn-action:hover {
-  transform: scale(1.1) translateY(-2px);
-}
-
-.btn-action:active {
-  transform: scale(0.95);
-}
+.admin-root .btn-action:hover  { transform: scale(1.1) translateY(-2px); }
+.admin-root .btn-action:active { transform: scale(0.95); }
 
 /* 8. TEMPLATE MANAGER GRID */
-.template-grid {
+.admin-root .template-grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   gap: 2rem;
 }
 
-.template-card {
+.admin-root .template-card {
   padding: 1.5rem;
   border-radius: 1.5rem;
   border: 2px solid transparent;
@@ -115,14 +98,14 @@ select {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
-.template-card.active {
+.admin-root .template-card.active {
   border-color: var(--admin-accent);
   background: #f0fdf4;
   transform: translateX(8px);
 }
 
-/* 9. EMAIL EDITOR AREA */
-.editor-container {
+/* 9. EMAIL EDITOR */
+.admin-root .editor-container {
   background: white;
   border-radius: 2.5rem;
   padding: 2.5rem;
@@ -130,7 +113,7 @@ select {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
 }
 
-.editor-textarea {
+.admin-root .editor-textarea {
   width: 100%;
   min-height: 400px;
   background-color: #f8fafc;
@@ -143,9 +126,10 @@ select {
   resize: none;
   transition: all 0.2s;
   box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.03);
+  box-sizing: border-box;
 }
 
-.editor-textarea:focus {
+.admin-root .editor-textarea:focus {
   outline: none;
   border-color: var(--admin-accent);
   background-color: white;
@@ -153,7 +137,7 @@ select {
 }
 
 /* 10. DYNAMIC TAGS */
-.tag-badge {
+.admin-root .tag-badge {
   display: inline-flex;
   align-items: center;
   padding: 0.4rem 0.8rem;
@@ -168,29 +152,24 @@ select {
   text-transform: uppercase;
   user-select: none;
 }
-
-.tag-badge:hover {
+.admin-root .tag-badge:hover {
   background: var(--admin-sidebar);
   color: white;
   transform: translateY(-2px);
 }
 
-/* 11. SIDEBAR LOGO & NAV */
-.sidebar-logo-text {
+/* 11. SIDEBAR LOGO */
+.admin-root .sidebar-logo-text {
   background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.tracking-widest {
-  letter-spacing: 0.15em;
-}
+.admin-root .tracking-widest { letter-spacing: 0.15em; }
 
-/* --- 12. PROJECT & JOBS MANAGEMENT --- */
-
-/* Specific styling for the Jobs Table status and domain labels */
-.jobs-domain-badge {
+/* 12. JOBS TABLE */
+.admin-root .jobs-domain-badge {
   background: rgba(16, 185, 129, 0.1);
   color: #059669;
   padding: 4px 10px;
@@ -201,21 +180,18 @@ select {
   border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
-/* Hover effect for the "New Posting" button to match emerald branding */
-button.bg-slate-900:hover {
+.admin-root button.bg-slate-900:hover {
   background-color: var(--admin-accent) !important;
   color: var(--admin-sidebar);
   transform: translateY(-2px);
   box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.2);
 }
 
-/* --- 13. MODAL OVERLAY & LAYOUT REFINEMENTS --- */
-
-/* Ensures the job post modal feels like a heavy-duty admin tool */
-.modal-overlay {
+/* 13. MODAL — renamed to .admin-modal-overlay to avoid conflicts */
+.admin-modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(15, 23, 42, 0.8); /* Slate-900 with opacity */
+  background-color: rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(8px);
   z-index: 50;
   display: flex;
@@ -224,24 +200,23 @@ button.bg-slate-900:hover {
   padding: 2rem;
 }
 
-.modal-container {
+.admin-root .modal-container {
   background: white;
   width: 100%;
-  max-width: 850px; /* Wider for job posting details */
+  max-width: 850px;
   border-radius: 2.5rem;
   overflow: hidden;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
-.modal-header {
+.admin-root .modal-header {
   background: var(--admin-sidebar);
   padding: 2rem 2.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* --- 14. FORM INPUTS WITHIN MODALS --- */
-
-.admin-input-field {
+/* 14. FORM INPUTS */
+.admin-root .admin-input-field {
   width: 100%;
   background-color: #f8fafc;
   border: 2px solid #f1f5f9;
@@ -251,36 +226,35 @@ button.bg-slate-900:hover {
   font-weight: 600;
   color: var(--admin-text-main);
   transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
-.admin-input-field:focus {
+.admin-root .admin-input-field:focus {
   outline: none;
   background-color: white;
   border-color: var(--admin-accent);
   box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
 }
 
-/* Special styling for Select dropdowns in Admin forms */
-select.admin-input-field {
+.admin-root select.admin-input-field {
   cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 9l4-4 4 4m0 6l-4 4-4-4'%3E%3C/path%3E%3C/svg%3E");
   background-position: right 1rem center;
   background-size: 1.2rem;
 }
 
-/* --- 15. DELETE & DANGER ACTIONS --- */
-
-.text-rose-500:hover {
+/* 15. DANGER ACTIONS */
+.admin-root .text-rose-500:hover {
   background-color: rgba(244, 63, 94, 0.1);
   border-radius: 0.75rem;
 }
 
-/* Animation for the "Syncing" pulses */
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+/* 16. PULSE ANIMATION */
+.admin-root .animate-pulse {
+  animation: adminPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-@keyframes pulse {
+@keyframes adminPulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: .5; }
+  50%       { opacity: .5; }
 }

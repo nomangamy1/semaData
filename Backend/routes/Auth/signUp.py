@@ -20,12 +20,9 @@ def signUp():
         role = data.get('role', '').lower()
         email = data.get('email', '').strip()
 
-        # ─────────────────────────────────────────────────────
-        # DUPLICATE CHECK — before any db.session.add()
-        # ─────────────────────────────────────────────────────
-        existing_user = User.query.filter_by(email=email).first()
+        # ── Duplicate check ──
+        existing_user  = User.query.filter_by(email=email).first()
         existing_owner = DomainOwner.query.filter_by(email=email).first()
-
         if existing_user or existing_owner:
             return jsonify({"error": "An account with this email already exists"}), 400
 
@@ -35,14 +32,12 @@ def signUp():
                 return jsonify({"error": "Username already taken"}), 400
 
         # ─────────────────────────────────────────────────────
-        # ROLE: COMMUNITY MEMBER
-        # Free signup — email + password + area_of_interest
-        # No reference_number, no vetting, no payment
+        # ROLE: COMMUNITY
         # ─────────────────────────────────────────────────────
         if role == 'community':
             area_of_interest = data.get('area_of_interest', '').strip()
             first_name = data.get('first_name', '').strip()
-            last_name = data.get('last_name', '').strip()
+            last_name  = data.get('last_name', '').strip()
 
             if not first_name or not email or not data.get('password'):
                 return jsonify({"error": "First name, email and password are required"}), 400
@@ -54,14 +49,13 @@ def signUp():
                 password_hash=generate_password_hash(data['password']),
                 role='community',
                 user_type='community',
-                area_of_interest=area_of_interest,   # store their ML/AI/research interest
-                reference_number=None,                # community members have no domain link
+                area_of_interest=area_of_interest,
+                reference_number=None,
                 is_verified=False,
             )
             db.session.add(new_member)
             db.session.commit()
 
-            # Send verification email
             token = generate_verification_token(new_member.email)
             confirm_url = url_for('register.email_verification', token=token, _external=True)
             send_email(
@@ -69,8 +63,7 @@ def signUp():
                 "Welcome to semaData — please verify your email",
                 f"""<h3>Welcome, {new_member.first_name}!</h3>
                     <p>You've joined the semaData community. Please verify your email to start posting:</p>
-                    <p><a href="{confirm_url}">{confirm_url}</a></p>
-                    <p>Once verified you can post discussions, comment on datasets, and ask questions about African language AI.</p>"""
+                    <p><a href="{confirm_url}">{confirm_url}</a></p>"""
             )
 
             access_token = create_access_token(
@@ -88,34 +81,49 @@ def signUp():
 
         # ─────────────────────────────────────────────────────
         # ROLE: COLLECTOR (User)
-        # Vetted — requires approved JobApplication + reference_number
+        # ref_number here is the APPLICATION reference number
+        # e.g. 'AGRI--DNFOHBKV' — NOT the domain reference number
         # ─────────────────────────────────────────────────────
         elif role == 'user':
-            ref_number = data.get('reference_number')
-            domain = Domain.query.filter_by(reference_number=ref_number).first()
-            if not domain:
-                return jsonify({"error": "Invalid domain reference number"}), 400
+            ref_number = data.get('reference_number', '').strip()
 
+            # ✅ Step 1: Find the approved application by email + ref number
             application = JobApplication.query.filter_by(
                 email=email,
                 reference_number_assigned=ref_number,
                 status='approved'
             ).first()
-            if not application:
-                return jsonify({"error": "Application not approved or does not exist"}), 400
 
+            if not application:
+                return jsonify({
+                    "error": "No approved application found for this email and reference number"
+                }), 400
+
+            # ✅ Step 2: Get domain via the job linked to this application
+            from models.Job import Job  # local import avoids circular
+            job = Job.query.get(application.job_id)
+            if not job:
+                return jsonify({"error": "Associated job not found"}), 400
+
+            domain = Domain.query.get(job.domain_id)
+            if not domain:
+                return jsonify({"error": "Associated domain not found"}), 400
+
+            # ✅ Step 3: Create the collector User
             new_user = User(
-                first_name=data.get('first_name'),
-                second_name=data.get('second_name'),
+                first_name=data.get('first_name', '').strip(),
+                second_name=data.get('second_name', '').strip(),
                 email=email,
                 password_hash=generate_password_hash(data['password']),
                 role='user',
                 user_type='User',
-                reference_number=ref_number
+                reference_number=ref_number,       # store the APPLICATION ref
+                domain_name=domain.domain_name,    # resolved from the job → domain
             )
             db.session.add(new_user)
             db.session.commit()
 
+            # Link application to the new user
             application.assigned_user_id = new_user.id
             db.session.commit()
 
@@ -124,7 +132,8 @@ def signUp():
             send_email(
                 new_user.email,
                 "You've been added to the team",
-                f"""<h3>Welcome, {new_user.first_name}</h3>
+                f"""<h3>Welcome, {new_user.first_name}!</h3>
+                    <p>You've been approved as a data collector for <strong>{domain.domain_name}</strong>.</p>
                     <p>Please verify your email: <a href="{confirm_url}">{confirm_url}</a></p>"""
             )
 
@@ -132,7 +141,8 @@ def signUp():
             return jsonify({
                 "message": "Registered! Please check your email to verify your account.",
                 "token": access_token,
-                "userId": new_user.id
+                "userId": new_user.id,
+                "domain": domain.domain_name,
             }), 201
 
         # ─────────────────────────────────────────────────────
@@ -155,7 +165,7 @@ def signUp():
             send_email(
                 new_owner.email,
                 "Please confirm your domain owner email",
-                f"""<h3>Welcome, {new_owner.first_name}</h3>
+                f"""<h3>Welcome, {new_owner.first_name}!</h3>
                     <p>Thanks for signing up as a Domain Owner.</p>
                     <p>Please verify your email: <a href="{confirm_url}">{confirm_url}</a></p>"""
             )
@@ -187,7 +197,7 @@ def email_verification(token):
         return redirect(f"{frontend_base}/login?error=expired")
 
     owner = DomainOwner.query.filter_by(email=email).first()
-    user = User.query.filter_by(email=email).first()
+    user  = User.query.filter_by(email=email).first()
 
     if not owner and not user:
         return redirect(f"{frontend_base}/signup?error=not_found")
@@ -200,7 +210,6 @@ def email_verification(token):
     if owner:
         return redirect(f"{frontend_base}/login?verified=true&next=/DomainDefinition")
     elif user and getattr(user, 'user_type', '') == 'community':
-        # Community members go straight to the feed after verification
         return redirect(f"{frontend_base}/login?verified=true&next=/community")
     else:
         return redirect(f"{frontend_base}/login?verified=true&next=/userDashboard")

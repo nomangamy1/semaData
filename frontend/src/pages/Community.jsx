@@ -267,55 +267,8 @@ const Community = () => {
 
   const handleRequireAuth = () => setAuthPrompt(true);
 
-  // Dashboard link based on role
-  const dashboardPath = role === 'domain_owner' || role === 'domainowner' ? '/Dashboard'
-    : role === 'user' ? '/userDashboard'
-    : null;
-
   return (
     <div className="community-page">
-
-      {/* ── NAV ── */}
-      <nav className="comm-nav">
-        <div className="comm-nav-brand" onClick={() => navigate('/')}>
-          <IcGlobe size={20} /> semaData
-        </div>
-        <div className="comm-nav-links">
-          <button className={tab === 'leaderboard' ? 'active' : ''} onClick={() => setTab('leaderboard')}>
-            <IcTrophy /> Leaderboard
-          </button>
-          <button className={tab === 'feed' ? 'active' : ''} onClick={() => setTab('feed')}>
-            <IcChat /> Community Feed
-          </button>
-        </div>
-        <div className="comm-nav-actions">
-          {loggedIn ? (
-            <>
-              {dashboardPath && (
-                <button className="comm-nav-btn comm-nav-btn--ghost"
-                  onClick={() => navigate(dashboardPath)}>
-                  My Dashboard
-                </button>
-              )}
-              <button className="comm-nav-btn"
-                onClick={() => { localStorage.clear(); navigate('/login?fresh=true'); }}>
-                Sign out
-              </button>
-            </>
-          ) : (
-            <>
-              <button className="comm-nav-btn comm-nav-btn--ghost"
-                onClick={() => navigate('/login?fresh=true')}>
-                Sign in
-              </button>
-              <button className="comm-nav-btn"
-                onClick={() => navigate('/signup?role=community')}>
-                Join free
-              </button>
-            </>
-          )}
-        </div>
-      </nav>
 
       {/* ── HERO ── */}
       <header className="comm-hero">

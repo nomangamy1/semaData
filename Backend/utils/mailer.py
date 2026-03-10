@@ -1,51 +1,95 @@
 from flask_mail import Message
-from extensions import mail # Ensure mail = Mail() is in your extensions.py
-from flask import render_template
+from extensions import mail
 
-def send_approval_email(recipient_email, first_name, job_title, ref_number):
+
+def send_approval_email(recipient_email, first_name, job_title,
+                        ref_number, domain_name=None, signup_link=None):
+    if not signup_link:
+        signup_link = f"http://localhost:5173/signup?role=collector&ref={ref_number}"
+
+    name        = first_name or "Applicant"
+    domain_text = f"under {domain_name}" if domain_name else ""
+    domain_html = f"under <strong>{domain_name}</strong>" if domain_name else ""
+
     try:
         msg = Message(
             subject="Your SemaData Application Has Been Approved!",
             recipients=[recipient_email],
             body=f"""
-            Dear {first_name or 'Applicant'},
+Dear {name},
 
-            Congratulations! Your application for the position "{job_title}" has been approved.
+Congratulations! Your application for "{job_title}" {domain_text} has been approved.
 
-            Your assigned reference number is: **{ref_number}**
+Your Reference Number: {ref_number}
 
-            Use this number for all future communication and when logging into the platform.
+Keep this safe — you need it to sign up and log in every time.
 
-            Next steps:
-            1. Log in to https://semadata.app/login using your email: {recipient_email}
-            2. Complete any required onboarding steps
-            3. You will receive further instructions via email or dashboard
+Create your account here:
+{signup_link}
 
-            If you have any questions, reply to this email or contact support@semadata.com.
+Steps:
+1. Click the link above (or copy it into your browser)
+2. Select the Collector tab on the signup page
+3. Enter your email, reference number, and create a password
+4. Verify your email and you are in
 
-            Welcome to the team!
+Questions? Contact support@semadata.com
 
-            Best regards,
-            SemaData Admin Team
+Welcome aboard,
+SemaData Admin Team
             """,
             html=f"""
-            <h2>Congratulations!</h2>
-            <p>Dear {first_name or 'Applicant'},</p>
-            <p>Your application for <strong>{job_title}</strong> has been approved.</p>
-            <p><strong>Your Reference Number:</strong> <code>{ref_number}</code></p>
-            <p>Use this number for all future communication and login.</p>
-            <h3>Next Steps:</h3>
-            <ol>
-                <li>Log in at <a href="https://semadata.app/login">https://semadata.app/login</a> with your email: {recipient_email}</li>
-                <li>Complete onboarding</li>
-                <li>Watch for further instructions</li>
-            </ol>
-            <p>Questions? Reply to this email or contact <a href="mailto:support@semadata.com">support@semadata.com</a></p>
-            <p>Welcome aboard!<br>SemaData Admin Team</p>
+<div style="font-family: Inter, sans-serif; max-width: 560px; margin: 0 auto;">
+  <div style="background:#0f172a; padding:32px; border-radius:16px 16px 0 0; text-align:center;">
+    <h1 style="color:#10b981; margin:0;">SemaData</h1>
+    <p style="color:#94a3b8; margin:8px 0 0;">Data Collection Platform</p>
+  </div>
+
+  <div style="background:#fff; padding:40px 32px; border:1px solid #e2e8f0;">
+    <h2 style="color:#0f172a; margin:0 0 8px;">Congratulations, {name}! 🎉</h2>
+    <p style="color:#475569;">
+      Your application for <strong>{job_title}</strong> {domain_html} has been
+      <span style="color:#10b981; font-weight:700;">approved</span>.
+    </p>
+
+    <div style="background:#f0fdf4; border:1px solid #bbf7d0;
+                border-radius:12px; padding:20px 24px; margin:24px 0;">
+      <p style="margin:0 0 6px; color:#64748b; font-size:0.8rem;
+                text-transform:uppercase; letter-spacing:0.1em; font-weight:700;">
+        Your Reference Number
+      </p>
+      <p style="margin:0; font-size:1.5rem; font-weight:900;
+                color:#059669; letter-spacing:0.05em;">
+        {ref_number}
+      </p>
+      <p style="margin:8px 0 0; color:#64748b; font-size:0.85rem;">
+        Keep this safe — you need it to sign up and log in every time.
+      </p>
+    </div>
+
+    <a href="{signup_link}"
+       style="display:inline-block; background:#10b981; color:white;
+              padding:14px 32px; border-radius:10px; font-weight:700;
+              text-decoration:none; font-size:1rem;">
+      Create My Account →
+    </a>
+
+    <p style="color:#94a3b8; font-size:0.8rem; margin:20px 0 0;">
+      Or copy: <a href="{signup_link}" style="color:#10b981;">{signup_link}</a>
+    </p>
+  </div>
+
+  <div style="background:#f8fafc; padding:20px 32px; text-align:center;
+              border-radius:0 0 16px 16px; border:1px solid #e2e8f0; border-top:none;">
+    <p style="color:#94a3b8; font-size:0.8rem; margin:0;">
+      Questions? <a href="mailto:support@semadata.com" style="color:#10b981;">support@semadata.com</a>
+    </p>
+  </div>
+</div>
             """
         )
         mail.send(msg)
         return True
     except Exception as e:
-        print(f"Email failed: {str(e)}")
+        print(f"[mailer] Email failed for {recipient_email}: {e}")
         return False

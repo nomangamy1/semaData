@@ -1,92 +1,54 @@
-/* --- Background & Layout --- */
-.min-h-screen {
-  background-color: #fcfcfd;
-}
+/* careersPublic.css
+   This page uses Tailwind for layout/colors.
+   This file only adds things Tailwind can't do:
+   scoped animations, shimmer, and input overrides. */
 
-/* --- Hero Section --- */
-.bg-slate-900 {
-  background: radial-gradient(circle at top right, #1e293b 0%, #0f172a 100%);
-}
-
-/* Custom blur for the decorative light in the hero */
-.blur-\[120px\] {
-  filter: blur(120px);
-}
-
-/* --- Sticky Filter Bar --- */
-.sticky {
-  transition: all 0.3s ease;
-}
-
-/* Glassmorphism effect for the filter bar when scrolling */
-.bg-white.p-4.rounded-\[32px\] {
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  background: rgba(255, 255, 255, 0.95);
-}
-
-/* Custom Focus for Search Input */
-input:focus {
-  outline: none;
-  background-color: #ffffff !important;
-}
-
-/* --- Job Cards --- */
-.JobCard {
-  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: transform;
-}
-
-.JobCard:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.08);
-  border-color: #489c8c;
-}
-
-/* Smooth transition for the Arrow button in the card */
-.group:hover .bg-slate-900 {
-  background-color: #10b981; /* Emerald-500 */
-}
-
-/* --- Animations --- */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.grid > div {
-  animation: fadeInUp 0.6s ease forwards;
-}
-
-/* Skeleton Loading Animation */
-.animate-pulse {
-  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
+/* ── Skeleton shimmer — replaces animate-pulse on skeleton divs ── */
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
+  0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
 
-/* --- Mobile Fixes --- */
+.animate-pulse {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) !important;
+  background-size: 200% 100% !important;
+  animation: shimmer 1.5s infinite !important;
+}
+
+/* ── Card fade-in on load ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Stagger job cards as they appear */
+.grid > .group {
+  animation: fadeInUp 0.5s ease forwards;
+}
+.grid > .group:nth-child(1) { animation-delay: 0.05s; }
+.grid > .group:nth-child(2) { animation-delay: 0.10s; }
+.grid > .group:nth-child(3) { animation-delay: 0.15s; }
+.grid > .group:nth-child(4) { animation-delay: 0.20s; }
+.grid > .group:nth-child(5) { animation-delay: 0.25s; }
+.grid > .group:nth-child(6) { animation-delay: 0.30s; }
+
+/* ── Search input — remove browser default outline ── */
+.bg-slate-50 input:focus {
+  outline: none;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+/* ── Select — remove default arrow so Filter icon shows cleanly ── */
+.bg-slate-50 select {
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  cursor: pointer;
+}
+
+/* ── Mobile tweaks ── */
 @media (max-width: 768px) {
-  .text-5xl {
-    font-size: 2.75rem;
-  }
-  
-  .rounded-\[40px\], .rounded-\[32px\] {
-    border-radius: 1.5rem !important;
-  }
-  
-  .-mt-12 {
-    margin-top: -2rem;
-  }
+  .text-5xl { font-size: 2.75rem; }
+  .-mt-12   { margin-top: -2rem !important; }
 }

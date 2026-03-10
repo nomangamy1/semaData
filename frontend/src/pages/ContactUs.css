@@ -1,228 +1,73 @@
-/* --- Brand Variables --- */
-:root {
-  --sema-primary: #489c8c;
-  --sema-dark: #111827;
-  --sema-accent: #367a6d;
-  --sema-muted: #6b7280;
-  --sema-success: #16a34a;
-  --sema-error: #dc2626;
-  --radius-lg: 20px;
-}
+/* ContactUs.css
+   This page uses Tailwind for layout/colors.
+   This file only adds scoped enhancements Tailwind can't do. */
 
-/* --- Form Input Polishing --- */
-input:focus,
-select:focus,
-textarea:focus {
-  background-color: #ffffff !important;
-  box-shadow: 0 0 0 4px rgba(72, 156, 140, 0.1);
-  transform: translateY(-1px);
-}
-
-/* --- Base helpers --- */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Smooth, subtle transitions for interactive elements */
-button,
-input,
-select,
-textarea {
+/* ── Smooth transitions on form elements ── */
+.contact-form input,
+.contact-form select,
+.contact-form textarea {
   transition: all 180ms cubic-bezier(.2, .8, .2, 1);
 }
 
-/* Improved input/textarea default styles */
-input,
-select,
-textarea {
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  background: #fbfbfb;
-  padding: 1rem 1.25rem;
-  border-radius: var(--radius-lg);
-  color: var(--sema-dark);
-  font-size: 0.95rem;
+/* ── Focus lift effect ── */
+.contact-form input:focus,
+.contact-form select:focus,
+.contact-form textarea:focus {
+  transform: translateY(-1px);
 }
 
-/* Error state */
-.input-error {
-  border-color: rgba(220, 38, 38, 0.25) !important;
-  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.05);
-}
-
-.error-text {
-  color: var(--sema-error);
-  font-size: 0.85rem;
-  margin-top: .25rem;
-}
-
-/* Primary button */
-.btn-primary {
-  background: linear-gradient(180deg, var(--sema-primary), var(--sema-accent));
-  color: #fff;
-  padding: .9rem 1.25rem;
-  border-radius: 14px;
-  font-weight: 800;
-  box-shadow: 0 12px 30px rgba(72, 156, 140, 0.12);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: .6rem;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-}
-
-.btn-primary:disabled {
-  opacity: .6;
-  transform: none;
-  cursor: not-allowed;
-}
-
-/* Alerts */
-.alert {
-  border-radius: 14px;
-  padding: .85rem;
-}
-
-.alert-success {
-  background: #ecfdf5;
-  border: 1px solid rgba(16, 185, 129, 0.12);
-}
-
-.alert-error {
-  background: #fff1f2;
-  border: 1px solid rgba(220, 38, 38, 0.08);
-}
-
-/* HQ card subtle glow helper */
-.hq-card-glow {
-  border-radius: 20px;
-}
-
-/* Custom dropdown arrow for the Subject select */
-select {
+/* ── Scoped select chevron — only inside the contact form ── */
+.contact-form select {
+  appearance: none;
+  -webkit-appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23489c8c' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 1.25rem center;
   background-size: 1.25rem;
+  cursor: pointer;
 }
 
-/* --- HQ Card Effects --- */
-.hq-card-glow {
+/* ── HQ card glow on hover ── */
+.hq-card {
   position: relative;
   overflow: hidden;
 }
-
-.hq-card-glow::after {
+.hq-card::after {
   content: '';
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(72, 156, 140, 0.1) 0%, transparent 70%);
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(circle, rgba(72,156,140,0.08) 0%, transparent 70%);
   opacity: 0;
   transition: opacity 0.5s ease;
+  pointer-events: none;
 }
+.hq-card:hover::after { opacity: 1; }
 
-.hq-card-glow:hover::after {
-  opacity: 1;
-}
-
-/* --- Animations --- */
+/* ── Floating globe animation ── */
 @keyframes float-subtle {
-  0% {
-    transform: translateY(0px) rotate(12deg);
-  }
-
-  50% {
-    transform: translateY(-15px) rotate(15deg);
-  }
-
-  100% {
-    transform: translateY(0px) rotate(12deg);
-  }
+  0%   { transform: translateY(0px) rotate(12deg); }
+  50%  { transform: translateY(-15px) rotate(15deg); }
+  100% { transform: translateY(0px) rotate(12deg); }
 }
+.floating-globe { animation: float-subtle 6s ease-in-out infinite; }
 
-.floating-globe {
-  animation: float-subtle 6s ease-in-out infinite;
+/* ── Fade in for success/error alerts ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
+.animate-fade-in { animation: fadeIn 0.3s ease forwards; }
 
-/* --- Form Card Shadow --- */
-.contact-form-shadow {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.03),
-    0 0 40px rgba(72, 156, 140, 0.05);
-}
-
-/* --- Responsive Adjustments --- */
+/* ── Mobile ── */
 @media (max-width: 640px) {
-  .max-w-7xl {
-    padding-top: 5rem;
-  }
+  .contact-form { padding: 1.25rem !important; }
 }
 
-/* Layout: ensure two-column grid collapses cleanly */
-@media (max-width: 1024px) {
-  .grid.lg\:grid-cols-2 {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-@media (max-width: 640px) {
-  .contact-form-shadow {
-    padding: 1.25rem !important;
-  }
-
-  .max-w-7xl {
-    padding-left: 1.25rem;
-    padding-right: 1.25rem;
-  }
-}
-
-/* Reduced motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
-
   .floating-globe,
-  .hq-card-glow,
-  * {
+  .contact-form * {
     animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
-}
-
-/* Social buttons */
-.social-btn {
-  padding: .5rem 1rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  background: white;
-}
-
-.social-btn:hover {
-  color: var(--sema-primary);
-  border-color: rgba(72, 156, 140, 0.15);
-  box-shadow: 0 6px 18px rgba(72, 156, 140, 0.06);
-}
-
-/* Utility: visually hidden for accessibility */
-.sr-only {
-  position: absolute !important;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
 }

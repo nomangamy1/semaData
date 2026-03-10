@@ -1,118 +1,293 @@
-/* Core Styling */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+/* ── Page wrapper ── */
 .about-container {
-    background-color: #ffffff; /* Pure White Background */
-    min-height: 100vh;
-    color: #2d8a2d; 
-    padding: 80px 20px;
-    font-family: 'Inter', sans-serif;
+  background-color: #ffffff;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+  color: #1e293b;
+  padding: 80px 24px;
 }
 
-/* Gradients & Headers */
+.about-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ── Header ── */
+.about-header {
+  text-align: center;
+  margin-bottom: 72px;
+}
+
 .main-title {
-    font-size: 3.5rem;
-    font-weight: 800;
-    margin-bottom: 1rem;
-    /* Brand Green Gradient */
-    background: linear-gradient(90deg, #059669, #10b981); 
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 900;
+  margin-bottom: 1rem;
+  background: linear-gradient(90deg, #059669, #10b981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.03em;
 }
 
-/* Custom Float Animation */
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+.about-subtitle {
+  font-size: 1.125rem;
+  color: #64748b;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.7;
 }
 
-.floating-icon {
-    animation: float 4s ease-in-out infinite;
+/* ── Mission / Vision ── */
+.mv-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  margin-bottom: 72px;
 }
 
-/* Mission & Vision Styling */
+.mv-card { display: flex; flex-direction: column; gap: 16px; }
+
 .section-heading {
-    color: #064e3b; /* Deep Brand Green */
-    font-size: 2rem;
-    font-weight: 700;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #064e3b;
+}
+
+.mv-text {
+  color: #475569;
+  line-height: 1.75;
+  font-size: 1rem;
 }
 
 .quote-border {
-    border-left: 4px solid #10b981;
-    padding-left: 1rem;
-    color: #4b5563;
-    font-style: italic;
+  border-left: 4px solid #10b981;
+  padding-left: 1rem;
+  color: #64748b;
+  font-style: italic;
+  margin: 0;
+  line-height: 1.6;
 }
 
-/* Feature Cards (White with subtle Green hover) */
+/* ── Feature Cards ── */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-bottom: 80px;
+}
+
 .feature-card {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 16px;
-    padding: 24px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .feature-card:hover {
-    border-color: #10b981;
-    transform: translateY(-8px);
-    box-shadow: 0 20px 25px -5px rgba(16, 185, 129, 0.1), 0 10px 10px -5px rgba(16, 185, 129, 0.04);
+  border-color: #10b981;
+  transform: translateY(-8px);
+  box-shadow: 0 20px 25px -5px rgba(16,185,129,0.1),
+              0 10px 10px -5px rgba(16,185,129,0.04);
 }
 
-/* --- FOUNDER SECTION STYLING --- */
+.feature-icon-wrap { margin-bottom: 16px; }
+
+/* Icon color variants */
+.feature-icon { width: 24px; height: 24px; }
+.feature-icon--blue   { color: #60a5fa; }
+.feature-icon--green  { color: #34d399; }
+.feature-icon--purple { color: #a78bfa; }
+.feature-icon--orange { color: #fb923c; }
+
+.feature-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.feature-desc {
+  font-size: 0.85rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Partners ── */
+.partners-section {
+  text-align: center;
+  margin-bottom: 80px;
+}
+
+.partners-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #10b981;
+  margin-bottom: 32px;
+}
+
+.partner-card {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 40px 56px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.partner-card:hover {
+  border-color: rgba(16,185,129,0.4);
+  box-shadow: 0 0 0 4px rgba(16,185,129,0.06);
+}
+
+.partner-logo {
+  height: 80px;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+.partner-card:hover .partner-logo { transform: scale(1.08); }
+
+.partner-name {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.partner-role {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* ── Founder ── */
 .founder-section {
-    border-top: 1px solid #f3f4f6;
-    margin-top: 100px;
-    padding-top: 60px;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 72px;
+}
+
+.founder-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 64px;
+  align-items: start;
 }
 
 .founder-image-wrapper {
-    position: relative;
-    width: 280px;
-    height: 280px;
+  position: relative;
+  width: 280px;
+  height: 280px;
+  flex-shrink: 0;
 }
 
 .image-accent-bg {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to top right, #059669, #34d399);
-    border-radius: 24px;
-    transform: rotate(6deg);
-    opacity: 0.15;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top right, #059669, #34d399);
+  border-radius: 24px;
+  transform: rotate(6deg);
+  opacity: 0.15;
 }
 
 .founder-photo {
-    position: relative;
-    z-index: 10;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 24px;
-    border: 1px solid #e5e7eb;
-    background: white;
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 24px;
+  border: 1px solid #e5e7eb;
+  background: white;
+}
+
+.founder-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .founder-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background-color: #ecfdf5; /* Light Green Tint */
-    color: #059669; /* Bold Green */
-    padding: 6px 16px;
-    border-radius: 9999px;
-    font-size: 0.875rem;
-    font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ecfdf5;
+  color: #059669;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.founder-name {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.03em;
+}
+
+.founder-role-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #10b981;
+  margin: 0;
+}
+
+.founder-bio {
+  color: #475569;
+  line-height: 1.8;
+  font-size: 1rem;
+  margin: 0;
 }
 
 .linkedin-btn {
-    background-color: #1a2e1a; /* Dark contrast */
-    color: white;
-    padding: 12px 28px;
-    border-radius: 12px;
-    font-weight: 600;
-    transition: background 0.2s;
+  background-color: #0f172a;
+  color: white;
+  padding: 12px 28px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: fit-content;
+}
+.linkedin-btn:hover { background-color: #065f46; }
+
+/* ── Animations ── */
+@keyframes float {
+  0%   { transform: translateY(0px); }
+  50%  { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+.floating-icon { animation: float 4s ease-in-out infinite; }
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .features-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-.linkedin-btn:hover {
-    background-color: #065f46;
+@media (max-width: 768px) {
+  .about-container { padding: 60px 20px; }
+  .mv-grid         { grid-template-columns: 1fr; gap: 32px; }
+  .features-grid   { grid-template-columns: 1fr 1fr; }
+  .founder-grid    { grid-template-columns: 1fr; }
+  .founder-image-wrapper { width: 200px; height: 200px; margin: 0 auto; }
+  .partner-card    { padding: 28px 32px; }
 }
-  
+
+@media (max-width: 480px) {
+  .features-grid { grid-template-columns: 1fr; }
+  .main-title    { font-size: 2rem; }
+}
