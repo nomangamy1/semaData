@@ -1,54 +1,154 @@
-/* careersPublic.css
-   This page uses Tailwind for layout/colors.
-   This file only adds things Tailwind can't do:
-   scoped animations, shimmer, and input overrides. */
-
-/* ── Skeleton shimmer — replaces animate-pulse on skeleton divs ── */
-@keyframes shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+.careers-container {
+  background-color: #fcfcfd;
+  min-height: 100vh;
 }
 
-.animate-pulse {
-  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%) !important;
-  background-size: 200% 100% !important;
-  animation: shimmer 1.5s infinite !important;
+.careers-hero {
+  background: #0f172a;
+  padding: 100px 20px 140px;
+  text-align: center;
+  color: white;
+  position: relative;
 }
 
-/* ── Card fade-in on load ── */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
+.hero-content h1 {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 900;
+  margin: 20px 0;
 }
 
-/* Stagger job cards as they appear */
-.grid > .group {
-  animation: fadeInUp 0.5s ease forwards;
+.hero-content .highlight {
+  color: #34d399;
 }
-.grid > .group:nth-child(1) { animation-delay: 0.05s; }
-.grid > .group:nth-child(2) { animation-delay: 0.10s; }
-.grid > .group:nth-child(3) { animation-delay: 0.15s; }
-.grid > .group:nth-child(4) { animation-delay: 0.20s; }
-.grid > .group:nth-child(5) { animation-delay: 0.25s; }
-.grid > .group:nth-child(6) { animation-delay: 0.30s; }
 
-/* ── Search input — remove browser default outline ── */
-.bg-slate-50 input:focus {
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(52, 211, 153, 0.15);
+  color: #34d399;
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* Floating Search Bar */
+.search-wrapper {
+  max-width: 1100px;
+  margin: -45px auto 0;
+  padding: 0 20px;
+  position: relative;
+  z-index: 100;
+}
+
+.search-card {
+  background: white;
+  padding: 15px;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.search-input-group {
+  flex: 2;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-group .icon {
+  position: absolute;
+  left: 15px;
+  color: #94a3b8;
+}
+
+.search-input-group input {
+  width: 100%;
+  padding: 15px 15px 15px 45px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
   outline: none;
-  background-color: transparent;
-  box-shadow: none;
 }
 
-/* ── Select — remove default arrow so Filter icon shows cleanly ── */
-.bg-slate-50 select {
-  appearance: none;
-  -webkit-appearance: none;
-  outline: none;
+.category-select {
+  flex: 1;
+  padding: 15px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+/* Job Cards */
+.jobs-grid-container {
+  max-width: 1100px;
+  margin: 60px auto;
+  padding: 0 20px;
+}
+
+.jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 30px;
+}
+
+.job-card {
+  background: white;
+  padding: 30px;
+  border-radius: 24px;
+  border: 1px solid #f1f5f9;
   cursor: pointer;
+  transition: transform 0.3s ease, border-color 0.3s ease;
 }
 
-/* ── Mobile tweaks ── */
-@media (max-width: 768px) {
-  .text-5xl { font-size: 2.75rem; }
-  .-mt-12   { margin-top: -2rem !important; }
+.job-card:hover {
+  transform: translateY(-8px);
+  border-color: #34d399;
+}
+
+.icon-box {
+  background: #ecfdf5;
+  color: #10b981;
+  padding: 12px;
+  border-radius: 12px;
+  display: inline-block;
+}
+
+.apply-btn {
+  width: 100%;
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8fafc;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s;
+}
+
+.job-card:hover .apply-btn {
+  background: #10b981;
+  color: white;
+}
+
+.loader-box {
+  text-align: center;
+  padding: 50px;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+  color: #10b981;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

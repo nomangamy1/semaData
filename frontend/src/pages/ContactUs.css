@@ -1,73 +1,109 @@
-/* ContactUs.css
-   This page uses Tailwind for layout/colors.
-   This file only adds scoped enhancements Tailwind can't do. */
-
-/* ── Smooth transitions on form elements ── */
-.contact-form input,
-.contact-form select,
-.contact-form textarea {
-  transition: all 180ms cubic-bezier(.2, .8, .2, 1);
+.contact-page-wrapper {
+  background-color: #f8fafc;
+  background-image: radial-gradient(at 0% 0%, rgba(72, 156, 140, 0.15) 0, transparent 50%), 
+                    radial-gradient(at 50% 0%, rgba(54, 122, 109, 0.1) 0, transparent 50%);
+  min-height: 100vh;
+  padding: 80px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* ── Focus lift effect ── */
-.contact-form input:focus,
-.contact-form select:focus,
-.contact-form textarea:focus {
-  transform: translateY(-1px);
-}
-
-/* ── Scoped select chevron — only inside the contact form ── */
-.contact-form select {
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23489c8c' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 1.25rem center;
-  background-size: 1.25rem;
-  cursor: pointer;
-}
-
-/* ── HQ card glow on hover ── */
-.hq-card {
-  position: relative;
+.contact-main-card {
+  display: flex;
+  width: 100%;
+  max-width: 1200px;
+  min-height: 700px;
+  background: white;
+  border-radius: 40px;
+  box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.12), 0 30px 60px -30px rgba(72, 156, 140, 0.3);
   overflow: hidden;
 }
-.hq-card::after {
-  content: '';
-  position: absolute;
-  top: -50%; left: -50%;
-  width: 200%; height: 200%;
-  background: radial-gradient(circle, rgba(72,156,140,0.08) 0%, transparent 70%);
-  opacity: 0;
-  transition: opacity 0.5s ease;
-  pointer-events: none;
-}
-.hq-card:hover::after { opacity: 1; }
 
-/* ── Floating globe animation ── */
-@keyframes float-subtle {
-  0%   { transform: translateY(0px) rotate(12deg); }
-  50%  { transform: translateY(-15px) rotate(15deg); }
-  100% { transform: translateY(0px) rotate(12deg); }
-}
-.floating-globe { animation: float-subtle 6s ease-in-out infinite; }
-
-/* ── Fade in for success/error alerts ── */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in { animation: fadeIn 0.3s ease forwards; }
-
-/* ── Mobile ── */
-@media (max-width: 640px) {
-  .contact-form { padding: 1.25rem !important; }
+/* THE INFO SIDE - DARK LUXURY */
+.contact-info-panel {
+  flex: 0 0 40%;
+  background: #1e293b;
+  background-image: linear-gradient(160deg, #2d6359 0%, #111827 100%);
+  padding: 60px;
+  color: white;
+  display: flex;
+  flex-direction: column;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .floating-globe,
-  .contact-form * {
-    animation-duration: 0.001ms !important;
-    transition-duration: 0.001ms !important;
-  }
+.glam-title { font-size: 3rem; font-weight: 900; letter-spacing: -2px; margin-bottom: 20px; }
+.glam-subtitle { font-size: 1.1rem; opacity: 0.7; line-height: 1.6; margin-bottom: 50px; }
+
+.info-list { flex-grow: 1; }
+.glam-info-item { display: flex; gap: 20px; margin-bottom: 40px; align-items: flex-start; }
+.icon-box { background: rgba(72, 156, 140, 0.2); padding: 15px; border-radius: 20px; color: #489c8c; }
+.info-content span { display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.5; margin-bottom: 5px; }
+.info-content p { font-size: 1.1rem; font-weight: 600; }
+
+.social-footer { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 30px; }
+.social-icons { display: flex; gap: 20px; margin-top: 15px; cursor: pointer; }
+
+/* THE FORM SIDE - CLEAN LUXURY */
+.contact-form-panel { flex: 0 0 60%; padding: 60px; background: white; }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+.glam-group { margin-bottom: 25px; }
+.glam-group label { display: block; font-size: 0.85rem; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 10px; }
+
+.glam-input {
+  width: 100%;
+  padding: 16px 20px;
+  border-radius: 16px;
+  border: 2px solid #f1f5f9;
+  background: #f8fafc;
+  font-size: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glam-input:focus {
+  border-color: #489c8c;
+  background: white;
+  box-shadow: 0 10px 25px -5px rgba(72, 156, 140, 0.2);
+  outline: none;
+}
+
+.glam-submit-btn {
+  width: 100%;
+  background: #489c8c;
+  color: white;
+  padding: 20px;
+  border-radius: 18px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  transition: all 0.4s;
+}
+
+.glam-submit-btn:hover {
+  background: #3a7e71;
+  transform: scale(1.02);
+  box-shadow: 0 20px 40px rgba(72, 156, 140, 0.3);
+}
+
+.success-banner {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f0fdf4;
+  color: #166534;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+@media (max-width: 1000px) {
+  .contact-main-card { flex-direction: column; }
+  .contact-info-panel, .contact-form-panel { flex: 0 0 100%; }
 }

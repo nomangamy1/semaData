@@ -12,12 +12,12 @@ services:
     env_file: ./Backend/.env
 
   frontend:
-    build: ./Frontend
+    build: ./frontend
     container_name: sema_frontend
     ports:
       - "3000:3000"
     volumes:
-      - ./Frontend:/app
+      - ./frontend:/app
       # This optimization prevents the container's node_modules 
       # from being overwritten by your host machine
       - /app/node_modules

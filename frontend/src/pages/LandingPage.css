@@ -450,4 +450,13 @@ html { scroll-behavior: smooth; }
   .lp-how, .lp-roles { padding: 4rem 1.5rem; }
   .lp-nav { padding: 0 1.5rem; }
   .lp-nav-links { display: none; }
+}.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s ease-out;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
 }

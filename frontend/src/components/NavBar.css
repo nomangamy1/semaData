@@ -1,145 +1,92 @@
-/* NavBar.css — clean, no duplicates, no global bleed */
-
-/* ── Core nav ── */
-.glass-nav {
-  background: rgba(255, 255, 255, 0.95);
+.master-nav {
+  width: 100% !important;
+  background: rgba(255, 255, 255, 0.7) !important;
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(209, 213, 219, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
+  border-bottom: 1px solid rgba(72, 156, 140, 0.2);
+  position: sticky;
+  top: 0;
+  z-index: 9999;
 }
 
-/* Subtle green gradient line at bottom */
-.glass-nav::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(16,185,129,0.1), transparent);
-  pointer-events: none;
+.nav-container {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  height: 80px;
+  padding: 0 60px !important;
 }
 
-/* ── Logo ── */
-.glass-nav a[href="/"] {
-  font-size: clamp(1.5rem, 3vw, 1.75rem);
+.nav-links-wrapper {
+  display: flex;
+  gap: 30px;
+}
+
+.logo-text {
+  font-size: 1.7rem;
   font-weight: 900;
-  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: -0.02em;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.glass-nav a[href="/"]:hover { transform: scale(1.02); }
-
-/* ── Nav links ── */
-.nav-link {
-  position: relative;
-  padding: 0.5rem 0.75rem;
-  color: #475569;
-  font-weight: 500;
-  font-size: 0.95rem;
-  transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #111827;
   text-decoration: none;
-  letter-spacing: 0.01em;
+  letter-spacing: -1px;
 }
-.nav-link:hover         { color: #14b8a6; }
-.nav-link.active        { color: #489c8c; font-weight: 600; }
 
-/* Animated underline */
-.nav-link::before {
+.text-teal { color: #489c8c; }
+
+/* GLAMOROUS LINKS */
+.nav-item {
+  font-weight: 600;
+  color: #4b5563;
+  text-decoration: none;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.nav-item:hover { color: #489c8c; }
+
+.nav-item::after {
   content: '';
   position: absolute;
-  width: 0; height: 2.5px;
-  bottom: -2px; left: 0;
-  background: linear-gradient(90deg, #14b8a6, #10b981);
-  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 2px;
+  width: 0;
+  height: 2px;
+  bottom: -4px;
+  left: 0;
+  background: #489c8c;
+  transition: width 0.3s ease;
 }
-.nav-link:hover::before,
-.nav-link.active::before { width: 100%; }
 
-/* ── Join Now button ── */
-.btn-primary-glow {
-  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+.nav-item:hover::after { width: 100%; }
+
+/* GLAMOROUS BUTTON */
+.join-btn {
+  background: linear-gradient(135deg, #489c8c 0%, #2d6359 100%);
   color: white;
-  padding: 0.625rem 1.5rem;
-  border-radius: 0.625rem;
+  padding: 12px 28px;
+  border-radius: 50px;
   font-weight: 700;
-  font-size: 0.95rem;
-  letter-spacing: 0.01em;
-  box-shadow: 0 4px 15px rgba(20,184,166,0.35), 0 2px 8px rgba(20,184,166,0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
-  border: none;
+  text-decoration: none;
+  box-shadow: 0 10px 20px rgba(72, 156, 140, 0.3);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
   overflow: hidden;
-  display: inline-block;
-  text-decoration: none;
 }
-/* Shine sweep */
-.btn-primary-glow::before {
+
+.join-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px rgba(72, 156, 140, 0.4);
+}
+
+/* The "Glamour" Shine Effect */
+.join-btn::before {
   content: '';
   position: absolute;
-  top: 0; left: -100%;
-  width: 100%; height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.btn-primary-glow:hover::before { left: 100%; }
-.btn-primary-glow:hover {
-  background: linear-gradient(135deg, #0d9488 0%, #047857 100%);
-  box-shadow: 0 8px 25px rgba(20,184,166,0.45), 0 4px 12px rgba(20,184,166,0.3);
-  transform: translateY(-2px);
-}
-.btn-primary-glow:active {
-  transform: translateY(0);
-  box-shadow: 0 4px 12px rgba(20,184,166,0.25);
-}
-.btn-primary-glow:focus-visible {
-  outline: 2px solid white;
-  outline-offset: 2px;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.4), transparent);
+  transition: all 0.5s;
 }
 
-/* ── Mobile menu animation ── */
-.mobile-menu-enter {
-  animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-15px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ── Responsive ── */
-@media (max-width: 768px) {
-  .glass-nav { padding: 1rem 1.5rem; }
-}
-@media (max-width: 480px) {
-  .glass-nav { padding: 0.75rem 1rem; }
-  .glass-nav a[href="/"] { font-size: 1.35rem; }
-}
-
-/* ── Dark mode ── */
-@media (prefers-color-scheme: dark) {
-  .glass-nav {
-    background: rgba(15, 23, 42, 0.95);
-    border-bottom-color: rgba(71, 85, 105, 0.2);
-  }
-  .nav-link { color: #cbd5e1; }
-  .nav-link:hover, .nav-link.active { color: #14b8a6; }
-}
-
-/* ── Accessibility ── */
-@media (prefers-reduced-motion: reduce) {
-  .glass-nav, .glass-nav * {
-    animation: none !important;
-    transition: none !important;
-  }
-}
-.nav-link:focus-visible {
-  outline: 2px solid #14b8a6;
-  outline-offset: 2px;
-  border-radius: 0.25rem;
+.join-btn:hover::before {
+  left: 100%;
 }

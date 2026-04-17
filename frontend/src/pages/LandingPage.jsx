@@ -20,24 +20,9 @@ const LandingPage = () => {
     <div className="lp">
 
       {/* ── NAV ── */}
-      <nav className="lp-nav">
-        <div className="lp-nav-brand">
-          <span className="lp-nav-dot" />
-          semaData
-        </div>
-        <div className="lp-nav-links">
-          <a href="#how">How it works</a>
-          <a href="#roles">Who it's for</a>
-          <a href="#community">Community</a>
-        </div>
-        <div className="lp-nav-actions">
-          <Link to="/login?fresh=true" className="lp-nav-login">Sign in</Link>
-          <Link to="/signup" className="lp-nav-cta">Get started</Link>
-        </div>
-      </nav>
 
       {/* ── HERO ── */}
-      <section className="lp-hero">
+      <section className="lp-hero reveal">
         <div className="lp-hero-bg">
           <div className="lp-hero-orb lp-hero-orb--1" />
           <div className="lp-hero-orb lp-hero-orb--2" />
