@@ -66,6 +66,7 @@ const Login = () => {
         if (data.userId)   localStorage.setItem('ownerId',   String(data.userId));
         if (data.domainId) localStorage.setItem('domainId',  String(data.domainId));
         if (data.domain)   localStorage.setItem('domain',    data.domain);
+        if (data.referenceNumber) localStorage.setItem('referenceNumber', data.referenceNumber);
 
         // nextPath comes from email verification link e.g. ?next=/community
         if (nextPath) { navigate(nextPath, { replace: true }); return; }

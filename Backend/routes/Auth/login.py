@@ -145,6 +145,7 @@ def login():
             "email":    collector.email,
             "domain":   domain_name,
             "domainId": domain_id,
+            "referenceNumber": collector.reference_number,
             "fullName": f"{collector.first_name} {collector.second_name or ''}".strip(),
         }), 200
 

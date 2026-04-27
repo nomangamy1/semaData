@@ -1,31 +1,54 @@
+/* --- SEMADATA GLOBAL CORE --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 :root {
-  --sema-green: #489c8c;
-  --sema-bg: #f9fafb;
+  --primary-emerald: #10b981;
+  --bg-main: #ffffff;
+  --text-main: #1f2937;
+}
+
+/* Global Reset - Safe for all pages */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-  margin: 0;
-  padding: 0;
-  background-color: var(--sema-bg);
-  background-image: 
-    radial-gradient(at 100% 0%, rgba(72, 156, 140, 0.08) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(72, 156, 140, 0.08) 0px, transparent 50%);
-  background-attachment: fixed;
-  min-height: 100vh;
   font-family: 'Inter', sans-serif;
-  color: #1f2937;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: radial-gradient(rgba(72, 156, 140, 0.05) 1px, transparent 1px);
-  background-size: 30px 30px;
-  z-index: -1;
-  pointer-events: none;
+/* Base Link Styles */
+a {
+  text-decoration: none;
+  color: inherit;
 }
+
+/* Scrollbar Styling (Optional but keeps it professional) */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* --- TAILWIND UTILITIES (If applicable) --- */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

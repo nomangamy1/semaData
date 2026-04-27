@@ -242,3 +242,76 @@
   50% { opacity: 0.4; }
   100% { opacity: 1; }
 }
+/* Progress Bar */
+.progress-section {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+}
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #475569;
+  margin-bottom: 8px;
+}
+.progress-bar-track {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: #489c8c;
+  border-radius: 9999px;
+  transition: width 0.5s ease;
+}
+
+/* Extracted Features */
+.segments-preview {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+.segments-preview label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+.segments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+.segment-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+.segment-key {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+}
+.segment-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+.null-value { color: #cbd5e1; font-style: italic; font-weight: 400; }
+.syncing { opacity: 0.7; cursor: not-allowed; }

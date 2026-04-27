@@ -62,13 +62,14 @@ def semaData_app():
     semaData.register_blueprint(semaData_engine_bp, url_prefix='/api/core')
     semaData.register_blueprint(dashboard_bp, url_prefix ='/api/main')
     semaData.register_blueprint(UserDashboard_bp,url_prefix='/api/main')
+    semaData.register_blueprint(UserDashboard_bp,url_prefix='/api/collector', name='collector_dashboard')
     semaData.register_blueprint(payment_bp,url_prefix='/api/main')
     semaData.register_blueprint(UserAnalytics_bp,url_prefix='/api/main')
     semaData.register_blueprint(contact_bp,url_prefix='/api/main')
     semaData.register_blueprint(admin_bp,url_prefix='/api/admin')
     semaData.register_blueprint(careers_bp,url_prefix ='/api')
     semaData.register_blueprint(AdminCareers_bp,url_prefix='/api/admin')
-    semaData.register_blueprint(community_bp,url_prefix='/api/main')
+    semaData.register_blueprint(community_bp,url_prefix='/api/community')
 
     @login_manager.user_loader
     def load_user(user_id):

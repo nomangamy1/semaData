@@ -3,51 +3,44 @@ import os
 import json
 from datetime import datetime
 from flask import request, jsonify, Blueprint
-
 try:
     import torch
 except ImportError:
     torch = None
     print("[Warning] torch not available; semantic features disabled")
-
 try:
     import librosa
 except ImportError:
     librosa = None
     print("[Warning] librosa not available; audio validation disabled")
-
 try:
     import numpy as np
 except ImportError:
     np = None
     print("[Warning] numpy not available; processing disabled")
-
 try:
     from faster_whisper import WhisperModel
 except Exception as e:
     WhisperModel = None
     print(f"[Warning] faster_whisper import failed ({e})")
-
 import ollama
-
 try:
     from sentence_transformers import SentenceTransformer, util
 except ImportError:
     SentenceTransformer = None
     util = None
     print("[Warning] sentence_transformers not available")
-
 from werkzeug.utils import secure_filename
-from flask_jwt_extended import jwt_required, get_jwt_identity  # ✅ ADD
-
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.Transcription import Transcription
 from models.user import User
 from extensions import db
 from models.dataset import Dataset
 from models.domain import Domain
+from models.JobApplication import JobApplication
+from models.Job import Job
 from .nlp_matcher import segment_data
 
-# --- Model Initialization ---
 semantic_model = None
 semaData_model = None
 
@@ -58,7 +51,6 @@ if os.environ.get('FLASK_ENV') != 'migration':
             semantic_model = SentenceTransformer('all-MiniLM-L6-v2')
         except Exception as e:
             print(f"Failed to load semantic model: {e}")
-
     if WhisperModel:
         try:
             MODEL_NAME = os.environ.get('MODEL_NAME', 'small')
@@ -76,39 +68,32 @@ os.makedirs(SECURE_STORAGE, exist_ok=True)
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
-# ─────────────────────────────────────────────────────────────
-# HELPERS
-# ─────────────────────────────────────────────────────────────
-
 def process_semantic_segmentation(text, features):
     swahili_hints = {
-        "age": "age miaka years niko na miaka",
-        "gender": "gender jinsia mimi ni mwanamume mwanamke male female",
+        "age":      "age miaka years niko na miaka",
+        "gender":   "gender jinsia mimi ni mwanamume mwanamke male female",
         "location": "location mahali ninaishi mtaa kaunti county",
-        "name": "name jina naitwa jina langu"
+        "name":     "name jina naitwa jina langu"
     }
     segmented_results = {}
     sentences = [s.strip() for s in text.replace('.', '. ').split('.') if len(s.strip()) > 2]
-
     if not sentences:
         return {f.name: "Not Mentioned" for f in features}
 
-    enhanced_feature_names = [swahili_hints.get(f.name.lower(), f.name) for f in features]
-
+    enhanced_feature_names = [
+        swahili_hints.get(f.name.lower(), f.name) for f in features
+    ]
     sentence_embeddings = semantic_model.encode(sentences, convert_to_tensor=True)
-    feature_embeddings = semantic_model.encode(enhanced_feature_names, convert_to_tensor=True)
+    feature_embeddings  = semantic_model.encode(enhanced_feature_names, convert_to_tensor=True)
     cosine_scores = util.cos_sim(feature_embeddings, sentence_embeddings)
 
     for i, feature in enumerate(features):
         best_match_idx = torch.argmax(cosine_scores[i]).item()
-        confidence = cosine_scores[i][best_match_idx].item()
-
+        confidence     = cosine_scores[i][best_match_idx].item()
         if confidence > 0.30:
             segmented_results[feature.name] = sentences[best_match_idx]
         else:
             segmented_results[feature.name] = "Not Mentioned"
-
-        # Digit fallback for age
         if segmented_results[feature.name] == "Not Mentioned" and feature.name.lower() == "age":
             digit_match = re.search(r'(\d+)', text)
             if digit_match:
@@ -131,14 +116,21 @@ def is_audible_valid(file_path):
         return False, str(e)
 
 
-def refine_with_llm(transcribed_text, segmented_text):
-    prompt = f"""
-    You are a data extraction bot. Based on this Kenyan transcript: "{transcribed_text}"
-    And these potential matches: {segmented_text}
+def refine_with_llm(transcribed_text, segmented_text, features):
+    feature_names = [f.name for f in features]
+    prompt = f"""You are a data extraction assistant for African field interviews.
 
-    Return a valid JSON object extracting the relevant fields.
-    Return ONLY JSON, no explanation.
-    """
+Extract the following specific fields from the transcript below.
+Return ONLY a valid JSON object with exactly these keys: {feature_names}
+If a value is not mentioned in the transcript, use null for that key.
+Do not add any explanation, markdown, or extra text — just the raw JSON object.
+
+Transcript:
+"{transcribed_text}"
+
+Example return format:
+{json.dumps({k: "extracted value or null" for k in feature_names})}
+"""
     try:
         response = ollama.chat(
             model='llama3.2:1b',
@@ -146,17 +138,18 @@ def refine_with_llm(transcribed_text, segmented_text):
             messages=[{'role': 'user', 'content': prompt}]
         )
         result = response['message']['content']
+        json.loads(result)
         return result, {'status': 'LLM_SUCCESS', 'model': 'llama3.2:1b'}
-    except ConnectionError as e:
-        return segmented_text, {'status': 'OLLAMA_OFFLINE', 'error': str(e)}
-    except json.JSONDecodeError as e:
-        return segmented_text, {'status': 'LLM_PARSE_ERROR', 'error': str(e)}
     except Exception as e:
-        return segmented_text, {'status': 'LLM_ERROR', 'error': str(e)}
+        error_str = str(e).lower()
+        if any(word in error_str for word in ['connect', 'refused', 'offline', 'timeout']):
+            print(f"[Engine] Ollama offline — using semantic fallback")
+            return json.dumps(segmented_text), {'status': 'OLLAMA_OFFLINE', 'error': str(e)}
+        print(f"[Engine] LLM error — using semantic fallback: {e}")
+        return json.dumps(segmented_text), {'status': 'LLM_ERROR', 'error': str(e)}
 
 
 def _cleanup(path):
-    """Safely delete a file if it exists."""
     try:
         if path and os.path.exists(path):
             os.remove(path)
@@ -164,25 +157,18 @@ def _cleanup(path):
         pass
 
 
-# ─────────────────────────────────────────────────────────────
-# TRANSCRIBE ROUTE
-# ─────────────────────────────────────────────────────────────
-
 @semaData_engine_bp.route('/transcribe', methods=['POST'])
-@jwt_required()  # ✅ Protected — collector must be logged in
+@jwt_required()
 def semaData_transcribe():
-    audio_path = None  # track for cleanup on error
-
+    audio_path = None
     try:
-        # ✅ Collector identity comes from JWT — not from form body
         current_user_id = get_jwt_identity()
         try:
             collector_id = int(current_user_id)
         except (TypeError, ValueError):
             return jsonify({"error": "Invalid token identity"}), 401
 
-        # Form fields
-        ref_number = request.form.get('referenceNumber')
+        ref_number = request.form.get('referenceNumber', '').strip()
         try:
             domain_id = int(request.form.get('domain_id'))
         except (TypeError, ValueError):
@@ -195,12 +181,10 @@ def semaData_transcribe():
         if not file or file.filename == '':
             return jsonify({'error': 'Empty filename'}), 400
 
-        # ── Save uploaded file ──
         temp_filename = secure_filename(file.filename)
-        audio_path = os.path.join(UPLOAD_FOLDER, temp_filename)
+        audio_path    = os.path.join(UPLOAD_FOLDER, temp_filename)
         file.save(audio_path)
 
-        # ── Convert to WAV if needed ──
         if not temp_filename.lower().endswith('.wav'):
             import subprocess
             converted_path = audio_path + '.wav'
@@ -214,122 +198,139 @@ def semaData_transcribe():
             except Exception as e:
                 print(f"ffmpeg conversion failed (continuing): {e}")
 
-        # ── 1. Quality Gate ──
         if librosa and np:
             valid, message = is_audible_valid(audio_path)
             if not valid:
                 _cleanup(audio_path)
                 return jsonify({'error': 'Quality gate failed.', 'message': message}), 400
 
-        # ── 2. Domain + Authorization ──
         target_domain = Domain.query.get(domain_id)
         if not target_domain:
             _cleanup(audio_path)
             return jsonify({"error": "Domain not found"}), 404
 
-        if target_domain.reference_number != ref_number:
+        if not target_domain.is_active:
             _cleanup(audio_path)
-            return jsonify({"error": "Reference number does not match domain"}), 400
+            return jsonify({"error": "This domain is no longer active"}), 403
 
         collector = User.query.get(collector_id)
         if not collector:
             _cleanup(audio_path)
             return jsonify({"error": "Collector not found"}), 404
 
-        # ✅ Verify collector belongs to this domain via reference number
-        if collector.reference_number != ref_number:
+        application = JobApplication.query.filter_by(
+            reference_number_assigned=collector.reference_number,
+            status='approved'
+        ).first()
+        if not application:
+            _cleanup(audio_path)
+            return jsonify({"error": "No approved application found for this collector"}), 403
+
+        job = Job.query.get(application.job_id)
+        if not job or job.domain_id != domain_id:
             _cleanup(audio_path)
             return jsonify({"error": "Collector not authorized for this domain"}), 403
 
-        if not target_domain.is_active:
-            _cleanup(audio_path)
-            return jsonify({"error": "This domain is no longer active"}), 403
+        print(f"AUTH OK: Collector {collector_id} ({collector.first_name}) -> Domain {domain_id}")
 
-        print(f"✓ AUTH OK: Collector {collector_id} ({collector.first_name}) → Domain {domain_id}")
-
-        # ── 3. Transcription ──
         if not semaData_model:
             _cleanup(audio_path)
             return jsonify({"error": "Transcription model not loaded"}), 503
 
         segments, info = semaData_model.transcribe(audio_path, task='transcribe')
         transcribed_text = " ".join([seg.text for seg in segments]).strip()
+        print(f"TRANSCRIBED: {transcribed_text[:80]}...")
 
-        # Move to secure permanent storage
-        final_filename = f"DOMAIN_{domain_id}__REF__{ref_number}__{datetime.now().strftime('%H%M%S')}.wav"
+        final_filename = (
+            f"DOMAIN_{domain_id}__REF__{collector.reference_number}"
+            f"__{datetime.now().strftime('%Y%m%d_%H%M%S')}.wav"
+        )
         final_path = os.path.join(SECURE_STORAGE, final_filename)
         os.rename(audio_path, final_path)
-        audio_path = None  # no longer needs cleanup — it's been moved
+        audio_path = None
 
-        print(f"Audio secured: {final_path}")
-
-        # ── 4. Semantic Segmentation ──
         required_features = target_domain.domain_features
-        initial_segments = {}
-
         if semantic_model and torch:
             initial_segments = process_semantic_segmentation(transcribed_text, required_features)
         else:
             initial_segments = {f.name: "Not Mentioned" for f in required_features}
 
-        # ── 4b. LLM Refinement ──
+        refined_json_str, llm_metadata = refine_with_llm(
+            transcribed_text,
+            initial_segments,
+            required_features
+        )
+        print(f"LLM STATUS: {llm_metadata['status']}")
+
         try:
-            refined_json_str, llm_metadata = refine_with_llm(transcribed_text, initial_segments)
             segmented_text = json.loads(refined_json_str) if isinstance(refined_json_str, str) else refined_json_str
-            print(f"LLM status: {llm_metadata['status']}")
-        except (json.JSONDecodeError, Exception) as e:
-            print(f"LLM fallback to semantic: {e}")
+        except json.JSONDecodeError:
+            print("[Engine] LLM returned invalid JSON — falling back to semantic")
             segmented_text = initial_segments
 
-        # ── 5. Save to Database ──
         domain_owner_id = target_domain.owner_id
+
         existing_entry = Dataset.query.filter_by(
-            ref_number=ref_number, domain_id=domain_id
+            collector_id=collector_id,
+            domain_id=domain_id
         ).first()
 
         if existing_entry:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-            existing_entry.combined_text += f"\n\n--- Entry: {timestamp} ---\n{transcribed_text}"
-            existing_entry.segmented_text = json.dumps(segmented_text)  # ✅ store as JSON string
-            existing_entry.status = "AI_Passed"
+            existing_entry.combined_text  += f"\n\n--- Entry: {timestamp} ---\n{transcribed_text}"
+            existing_entry.segmented_text  = json.dumps(segmented_text)
+            existing_entry.status          = "AI_Passed"
             dataset_record = existing_entry
         else:
             dataset_record = Dataset(
-                name=f"Ingestion_{ref_number}_{datetime.now().strftime('%H%M')}",
+                name=f"Ingestion_{collector.reference_number}_{datetime.now().strftime('%H%M')}",
                 description="Automated AI Transcription",
                 owner_id=domain_owner_id,
-                ref_number=ref_number,
+                ref_number=collector.reference_number,
                 domain_id=domain_id,
                 audio_file_path=final_path,
                 collector_id=collector_id,
                 combined_text=transcribed_text,
-                segmented_text=json.dumps(segmented_text),  # ✅ store as JSON string
+                segmented_text=json.dumps(segmented_text),
                 status="AI_Passed"
             )
             db.session.add(dataset_record)
 
-        db.session.flush()  # get dataset_record.id before creating Transcription
+        db.session.flush()
 
         transcription_record = Transcription(
             dataset_id=dataset_record.id,
             user_id=collector_id,
             contributor_name=f"{collector.first_name} {getattr(collector, 'second_name', '')}".strip(),
             transcription_text=transcribed_text,
-            domain_features=json.dumps(segmented_text),  # ✅ store as JSON string
+            domain_features=json.dumps(segmented_text),
         )
-        db.session.add(transcription_record)  # ✅ THIS WAS MISSING — records were never saved
-        db.session.commit()                   # ✅ THIS WAS MISSING — nothing persisted to DB
+        db.session.add(transcription_record)
+        db.session.commit()
 
-        print(f"✓ SAVED: Dataset {dataset_record.id}, Transcription {transcription_record.id}")
+        total_submissions = Dataset.query.filter_by(domain_id=domain_id).count()
+        target_goal       = target_domain.target_goal or 1
+        progress_percent  = round((total_submissions / target_goal) * 100, 1)
+
+        print(f"SAVED: Dataset {dataset_record.id}, Transcription {transcription_record.id}")
+        print(f"PROGRESS: {total_submissions}/{target_goal} ({progress_percent}%)")
 
         return jsonify({
-            "status": "Success",
+            "status":        "Success",
             "transcription": transcribed_text,
-            "segments": segmented_text
+            "segments":      segmented_text,
+            "llm_status":    llm_metadata['status'],
+            "progress": {
+                "submitted": total_submissions,
+                "target":    target_goal,
+                "percent":   progress_percent
+            }
         }), 200
 
     except Exception as e:
         db.session.rollback()
         _cleanup(audio_path)
         print(f"Transcribe error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
