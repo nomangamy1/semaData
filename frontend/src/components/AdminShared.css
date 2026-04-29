@@ -1,0 +1,331 @@
+/* ============================================
+   SEMADATA ADMIN — SHARED MODAL & COMPONENT CSS
+   All modal, form, badge and admin component styles
+   ============================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
+
+/* ── Variables ── */
+:root {
+  --admin-primary:      #489c8c;
+  --admin-primary-dark: #367a6d;
+  --admin-primary-ring: rgba(72,156,140,0.25);
+  --admin-sidebar:      #0f172a;
+  --admin-success:      #10b981;
+  --admin-danger:       #f43f5e;
+  --admin-bg:           #f8fafc;
+  --admin-border:       #e2e8f0;
+  --admin-text:         #1e293b;
+  --admin-muted:        #64748b;
+  --admin-radius:       1rem;
+  --admin-transition:   all 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ══════════════════════════════════════════
+   MODAL — single definition used by both modals
+   ══════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.modal-container {
+  position: relative;
+  background: white;
+  width: 100%;
+  max-width: 900px;
+  max-height: 92vh;
+  border-radius: 2rem;
+  box-shadow: 0 25px 60px -12px rgba(0,0,0,0.4);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalEnter {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+.modal-header {
+  background: var(--admin-sidebar);
+  padding: 1.75rem 2.25rem;
+  color: white;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem 2.25rem;
+  background: var(--admin-bg);
+}
+
+.modal-footer,
+.modal-container footer {
+  padding: 1.25rem 2.25rem;
+  background: #f8fafc;
+  border-top: 1px solid var(--admin-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════
+   APPLICANT MODAL SPECIFIC
+   ══════════════════════════════════════════ */
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 1.25rem;
+  background: var(--admin-success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--admin-sidebar);
+  flex-shrink: 0;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.875rem;
+}
+
+.cv-preview-box {
+  background: #f0fdf4;
+  border: 2px dashed #bbf7d0;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  text-align: center;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ══════════════════════════════════════════
+   FORM INPUTS — used in JobPostModal + AdminDashboard
+   ══════════════════════════════════════════ */
+.admin-input-field {
+  width: 100%;
+  padding: 0.875rem 1.125rem;
+  border: 1.5px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  font-size: 0.9rem;
+  font-family: "Inter", sans-serif;
+  background: white;
+  color: var(--admin-text);
+  transition: var(--admin-transition);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.admin-input-field:focus {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 4px var(--admin-primary-ring);
+  background: white;
+}
+
+.admin-input-field::placeholder { color: #94a3b8; }
+
+.admin-input-field.border-red-500 {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239,68,68,0.12);
+}
+
+textarea.admin-input-field {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.6;
+}
+
+select.admin-input-field {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1.1rem;
+  padding-right: 2.75rem;
+  cursor: pointer;
+}
+
+/* ══════════════════════════════════════════
+   SCROLLBAR
+   ══════════════════════════════════════════ */
+.admin-scroll::-webkit-scrollbar       { width: 5px; }
+.admin-scroll::-webkit-scrollbar-track  { background: transparent; }
+.admin-scroll::-webkit-scrollbar-thumb  { background: #cbd5e1; border-radius: 10px; }
+.admin-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ══════════════════════════════════════════
+   ADMIN ROOT — dashboard page scope
+   ══════════════════════════════════════════ */
+.admin-root {
+  background-color: var(--admin-bg);
+  color: var(--admin-text);
+  font-family: "Inter", system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+.admin-root table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+.admin-root thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(248,250,252,0.95);
+  backdrop-filter: blur(4px);
+}
+
+/* ── Sidebar logo ── */
+.admin-root .sidebar-logo-text {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Domain badge ── */
+.admin-root .jobs-domain-badge {
+  display: inline-block;
+  background: rgba(16,185,129,0.1);
+  color: #059669;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(16,185,129,0.2);
+}
+
+/* ── Status badge ── */
+.admin-root .badge-status {
+  letter-spacing: 0.05em;
+  font-weight: 800;
+  font-size: 11px;
+}
+
+/* ── Action buttons ── */
+.admin-root .btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--admin-transition);
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+.admin-root .btn-action:hover  { transform: scale(1.12) translateY(-1px); }
+.admin-root .btn-action:active { transform: scale(0.95); }
+
+/* ── Select in filter bar ── */
+.admin-root select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1em;
+  padding-right: 2rem;
+}
+
+/* ── Pulse animation ── */
+.admin-root .animate-pulse {
+  animation: adminPulse 2s cubic-bezier(0.4,0,0.6,1) infinite;
+}
+@keyframes adminPulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+
+/* ── Modal animate-in ── */
+.animate-in {
+  animation: modalEnter 0.3s cubic-bezier(0.16,1,0.3,1);
+}
+
+/* ── Template manager ── */
+.admin-root .template-card {
+  padding: 1.5rem;
+  border-radius: 1.5rem;
+  border: 2px solid transparent;
+  background: white;
+  transition: var(--admin-transition);
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+.admin-root .template-card.active {
+  border-color: var(--admin-success);
+  background: #f0fdf4;
+  transform: translateX(6px);
+}
+
+.admin-root .editor-textarea {
+  width: 100%;
+  min-height: 380px;
+  background: #f8fafc;
+  border-radius: 1.25rem;
+  padding: 1.75rem;
+  border: 1px solid var(--admin-border);
+  color: #334155;
+  font-family: "Inter", sans-serif;
+  line-height: 1.7;
+  resize: none;
+  transition: var(--admin-transition);
+  box-sizing: border-box;
+}
+.admin-root .editor-textarea:focus {
+  outline: none;
+  border-color: var(--admin-primary);
+  background: white;
+  box-shadow: 0 0 0 4px var(--admin-primary-ring);
+}
+
+.admin-root .tag-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  background: #f1f5f9;
+  border: 1px solid var(--admin-border);
+  border-radius: 0.625rem;
+  font-size: 11px;
+  font-weight: 800;
+  color: #475569;
+  cursor: pointer;
+  transition: var(--admin-transition);
+  text-transform: uppercase;
+  user-select: none;
+}
+.admin-root .tag-badge:hover {
+  background: var(--admin-sidebar);
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .modal-container { border-radius: 1.25rem; }
+  .modal-header     { padding: 1.25rem 1.5rem; }
+  .modal-body       { padding: 1.25rem 1.5rem; }
+  .detail-grid      { grid-template-columns: 1fr; }
+}

@@ -1,26 +1,17 @@
-from flask_mail import Message,Mail
-#should install Flask-Mail 
-from flask import current_app 
+from flask_mailman import EmailMessage
+from flask import current_app
 
-mail = Mail()
-#for sending verification email
-def send_email(to, subject, template):
-    print("\n" + "!"*20 + " INTERNAL EMAIL DEBUG " + "!"*20)
-    print(f"To: {to}")
-    print(f"Subject: {subject}")
-    print(f"Body: {template}")
-    print("!"*62 + "\n")
-    
-    msg = Message(
+def send_email(to, subject, body):
+    msg = EmailMessage(
         subject,
-        recipients=[to],
-        html=template,
-        sender=current_app.config['MAIL_DEFAULT_SENDER']
+        body,
+        current_app.config['MAIL_DEFAULT_SENDER'],
+        [to]
     )
-    # Wrap this in a try so the app doesn't crash if SMTP fails
-   # try:
-       # mail.send(msg)
-    #except Exception as e:
-     #   print(f"SMTP Error: {e}")
-
-    # will embark on this during deployment
+    msg.content_subtype = "html"  # This ensures your <h3> and <p> tags work
+    try:
+        msg.send()
+        return True
+    except Exception as e:
+        print(f"Mail delivery failed: {e}")
+        return False

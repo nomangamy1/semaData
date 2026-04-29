@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Briefcase, MapPin, DollarSign, Clock, FileText, PlusCircle, Layers, AlertCircle } from 'lucide-react';
-import './JobPostModal.css';
+import './AdminShared.css';
 
 const JobPostModal = ({ isOpen, onClose, domains = [], onPublish }) => {
   const [jobData, setJobData] = useState({

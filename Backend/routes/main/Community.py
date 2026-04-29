@@ -68,6 +68,7 @@ def get_feed():
     if feed_type != 'all':
         query = query.filter_by(post_type=feed_type)
 
+    if not query: return jsonify({"posts": [], "pages": 0}), 200
     posts = query.paginate(page=page, per_page=20, error_out=False)
     return jsonify({
         "posts":        [_serialize_post(p) for p in posts.items],

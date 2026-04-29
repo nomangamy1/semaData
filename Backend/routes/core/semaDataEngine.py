@@ -44,7 +44,7 @@ from .nlp_matcher import segment_data
 semantic_model = None
 semaData_model = None
 
-if os.environ.get('FLASK_ENV') != 'migration':
+if os.environ.get('FLASK_ENV') != 'migration' and os.environ.get('DISABLE_ML_MODELS') != 'true':
     if SentenceTransformer and torch:
         try:
             print("Loading Semantic Model...")

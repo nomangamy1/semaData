@@ -63,11 +63,12 @@ const DefineFeatures = () => {
             if (response.ok) {
                 navigate('/payInitiate', {
                     state: {
-                        domainId: data.domain_id,
-                        refNum: data.reference_number,
+                        domainId:   data.domain_id,
                         domainName: data.domain_name,
                         target_goal: data.target_goal,
-                        total: data.total_budget
+                        deposit:    data.deposit,
+                        total:      data.total_budget
+                        // refNum intentionally omitted — generated after payment
                     }
                 });
             } else {

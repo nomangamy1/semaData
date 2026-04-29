@@ -102,6 +102,8 @@ const Dashboard = () => {
         }
 
         const fetchDomains = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
             try {
                 const response = await fetch('http://localhost:8000/api/my-domains', {
                     headers: {
@@ -132,7 +134,7 @@ const Dashboard = () => {
         };
 
         fetchDomains();
-    }, [token, navigate]);
+    }, [token]); // ✅ navigate excluded — stable ref not needed in deps
 
     // Use features from the selected domain, not hardcoded strings
     const selectedFeatures = selectedDomain?.features?.map(f => f.name || f) || [];

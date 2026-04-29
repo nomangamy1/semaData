@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import './ApllicantModal.css'; // <--- Importing the new separate CSS
+import './AdminShared.css'; // <--- Importing the new separate CSS
 import { X, CheckCircle, XCircle, MapPin, Globe, FileText, Calendar, Briefcase, User, Info, Mail } from 'lucide-react';
 const ApplicantModal = ({ applicant, onClose, onApprove, onReject }) => {
   

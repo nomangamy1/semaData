@@ -1,3 +1,9 @@
+from dotenv import load_dotenv
+import os
+load_dotenv()
+from dotenv import load_dotenv
+import os
+load_dotenv()
 from urllib import response
 
 from flask import Flask, request 
@@ -20,7 +26,6 @@ from routes.main.Community import community_bp
 from routes.main.AdminDashboard import admin_bp
 from routes.main.careersPage import careers_bp
 from routes.main.export import export_bp
-from utils.email import mail 
 from flask_cors import CORS
 from Config import config
 import os

@@ -120,7 +120,7 @@ const UserDashboard = () => {
         }
 
         const data = await response.json();
-        setSessionData(data.sessionData);
+        setSessionData(data.sessionData || { total_hours: 0, submissions: 0 });
         setActiveTask(data.activeTask);
 
         // ✅ Store refNum for CollectorHome to read
