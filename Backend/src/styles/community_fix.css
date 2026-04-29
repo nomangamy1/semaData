@@ -1,0 +1,45 @@
+/* 1. LAYOUT: Lock columns so they don't squish */
+.community-layout {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 2rem;
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* 2. POST CARDS: Clean Parrot OS Dark Theme */
+.post-card {
+    background: #121212;
+    border: 1px solid #282828;
+    border-left: 4px solid #00fe00; /* Neon Green Accent */
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    color: #e0e0e0;
+}
+
+/* 3. LEADERBOARD: Sticky Sidebar */
+.leaderboard-sidebar {
+    position: sticky;
+    top: 20px;
+    height: fit-content;
+    background: #181818;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #333;
+}
+
+/* 4. THE CATASTROPHE PREVENTER: Disable Audio Globally */
+audio, 
+video, 
+.audio-player, 
+[class*="audio"], 
+[id*="audio"] {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}

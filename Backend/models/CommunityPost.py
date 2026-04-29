@@ -10,7 +10,7 @@ class CommunityPost(db.Model):
     author_type = db.Column(db.String(20), nullable=False, default="user")
     post_type   = db.Column(db.String(20), nullable=False, default="post")
     title       = db.Column(db.String(255), nullable=True)
-    content     = db.Column(db.Text, nullable=False)
+    body = db.Column(db.Text, nullable=False)
     likes       = db.Column(db.Integer, default=0)
     domain_ref  = db.Column(db.String(100), nullable=True)
     domain_name = db.Column(db.String(100), nullable=True)

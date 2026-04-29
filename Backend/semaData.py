@@ -1,3 +1,4 @@
+from routes.main.community_routes import community_bp
 from dotenv import load_dotenv
 import os
 load_dotenv()
