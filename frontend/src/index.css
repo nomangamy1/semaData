@@ -52,3 +52,7 @@ a {
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom Component Styles */
+@import './styles/community.css';
+@import './styles/CommunityPostForm.css';

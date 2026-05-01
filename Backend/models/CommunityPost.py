@@ -14,6 +14,7 @@ class CommunityPost(db.Model):
     likes       = db.Column(db.Integer, default=0)
     domain_ref  = db.Column(db.String(100), nullable=True)
     domain_name = db.Column(db.String(100), nullable=True)
+    attachment = db.Column(db.String(500),nullable=True)
     created_at  = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at  = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
