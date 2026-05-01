@@ -1,0 +1,140 @@
+:root {
+    --reddit-orange: #ff4500;
+    --reddit-bg: #dae0e6;
+    --reddit-card: #ffffff;
+    --reddit-text: #1a1a1a;
+    --reddit-secondary: #7c7c7c;
+}
+
+body {
+    margin: 0;
+    background-color: var(--reddit-bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.community-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar Styling */
+.sidebar {
+    width: 260px;
+    background-color: var(--reddit-card);
+    padding: 24px 16px;
+    border-right: 1px solid #ccc;
+    box-shadow: 1px 0 5px rgba(0,0,0,0.05);
+}
+
+.sidebar h2 {
+    color: var(--reddit-orange);
+    font-size: 22px;
+    margin-bottom: 24px;
+}
+
+.sidebar-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-item {
+    margin: 12px 0;
+}
+
+.sidebar-btn {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 10px 12px;
+    font-size: 15px;
+    cursor: pointer;
+    border-radius: 4px;
+    color: var(--reddit-text);
+    transition: background 0.2s ease;
+}
+
+.sidebar-btn:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
+.sidebar-btn.active {
+    font-weight: 700;
+    background-color: #e8ecef;
+}
+
+/* Main Content Area */
+.main-content {
+    flex: 1;
+    padding: 24px;
+    max-width: 680px;
+    margin: 0 auto;
+}
+
+/* Post Cards */
+.post-card {
+    background-color: var(--reddit-card);
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 16px;
+    transition: border-color 0.15s ease;
+}
+
+.post-card:hover {
+    border-color: #898989;
+}
+
+.post-meta {
+    font-size: 12px;
+    color: var(--reddit-secondary);
+    margin-bottom: 8px;
+    display: block;
+}
+
+.post-title {
+    font-size: 20px;
+    color: var(--reddit-text);
+    margin: 6px 0 12px 0;
+}
+
+.post-body {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--reddit-text);
+}
+
+.post-img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 12px 0;
+}
+
+.post-actions {
+    display: flex;
+    gap: 24px;
+    margin-top: 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--reddit-secondary);
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--reddit-secondary);
+    font-weight: 600;
+    font-size: 14px;
+    transition: color 0.15s;
+}
+
+.action-btn:hover {
+    color: var(--reddit-orange);
+}
+
+.attachment-block {
+    margin-top: 12px;
+}
