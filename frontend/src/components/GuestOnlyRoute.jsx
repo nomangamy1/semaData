@@ -1,4 +1,3 @@
-// src/components/GuestOnlyRoute.jsx
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -7,25 +6,27 @@ export default function GuestOnlyRoute({ children }) {
   const token = localStorage.getItem('token');
 
   useEffect(() => {
-    if (token) {
-      // Read stored user data (assuming you save it after login)
+    // Only redirect if a valid token exists
+    if (token && token !== 'null' && token !== 'undefined') {
       const userString = localStorage.getItem('user');
       const user = userString ? JSON.parse(userString) : null;
+      const role = user?.role || localStorage.getItem('userRole');
 
-      // Role-based redirect
-      if (user?.role === 'admin') {
+      if (role === 'admin') {
         navigate('/AdminDashboard', { replace: true });
-      } else if (user?.role === 'domain_owner') {
-        navigate('/DomainDefinition', { replace: true });
-      } else if (user?.role === 'user') {
+      } else if (role === 'domain_owner' || role === 'domainowner') {
+        navigate('/Dashboard', { replace: true });
+      } else if (role === 'user' || role === 'collector') {
         navigate('/userDashboard', { replace: true });
+      } else if (role === 'community') {
+        navigate('/community', { replace: true });
       } else {
-        // Fallback for unknown role or missing user data
-        navigate('/dashboard', { replace: true });
+        // Fallback for any other logged-in users
+        navigate('/Dashboard', { replace: true });
       }
     }
   }, [token, navigate]);
 
-  // If no token → show login/signup page
-  return !token ? children : null;
+  // If no valid token → show login/signup page
+  return (!token || token === 'null' || token === 'undefined') ? children : null;
 }

@@ -1,434 +1,316 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import './Community.css';
 
-const BASE = 'http://localhost:8000/api/community';
+export default function Community() {
+  const [posts, setPosts] = useState([]);
+  const [threads, setThreads] = useState([]);
+  const [comments, setComments] = useState({});
+  const [postTitle, setPostTitle] = useState('');
+  const [postBody, setPostBody] = useState('');
+  const [attachment, setAttachment] = useState('');
+  const [postType, setPostType] = useState('post');
+  const [error, setError] = useState('');
+  
+  const [profile, setProfile] = useState({ 
+    name: 'Ian Chege', 
+    role: 'AI & Software Engineer', 
+    location: 'Eldoret, Kenya', 
+    bio: 'Building African tech platforms' 
+  });
+  
+  const [dms, setDms] = useState([
+    { id: 1, sender: 'AbbyRency', message: 'The deployment for the analytics module looks ready.', time: '10:45' }
+  ]);
+  const [dmMessage, setDmMessage] = useState('');
 
-// ── Inline icons ─────────────────────────────────────────────
-const Ic = ({ d, size = 18 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d={d} />
-  </svg>
-);
-const IcFlag   = () => <Ic d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7" />;
-const IcChat   = () => <Ic d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />;
-const IcTrophy = () => <Ic d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M8 21h8M12 17v4M17 9a5 5 0 1 1-10 0V4h10z" />;
-const IcStar   = () => <Ic d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />;
-const IcCheck  = () => <Ic d="M20 6L9 17l-5-5" />;
-const IcPlus   = () => <Ic d="M12 5v14M5 12h14" />;
-const IcGlobe  = () => <Ic d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />;
-const IcAlert  = () => <Ic d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01" />;
-const IcArrow  = () => <Ic d="M19 12H5M12 5l7 7-7 7" />;
-
-// ── Badge config ─────────────────────────────────────────────
-const BADGES = [
-  { id: 'pioneer',     label: 'Pioneer',     color: '#f59e0b', min: 1   },
-  { id: 'verified',    label: 'Verified',    color: '#10b981', min: 10  },
-  { id: 'contributor', label: 'Contributor', color: '#3b82f6', min: 50  },
-  { id: 'expert',      label: 'Expert',      color: '#8b5cf6', min: 100 },
-  { id: 'guardian',    label: 'Guardian',    color: '#489c8c', min: 250 },
-];
-const getBadge = (n) => [...BADGES].reverse().find(b => n >= b.min) || null;
-const getRank  = (r) => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : `#${r}`;
-
-// ── Auth helpers ─────────────────────────────────────────────
-const getToken    = () => localStorage.getItem('token');
-const getRole     = () => (localStorage.getItem('userRole') || '').toLowerCase();
-const getUsername = () => localStorage.getItem('username') || '';
-const isLoggedIn  = () => !!getToken();
-const authHeaders = () => ({ 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' });
-
-// ── Sub-components ───────────────────────────────────────────
-
-const Spinner = () => (
-  <div className="comm-spinner">
-    <div className="comm-spinner-ring" />
-  </div>
-);
-
-const LeaderboardRow = ({ collector, rank, onClick }) => {
-  const badge = getBadge(collector.submissions);
-  return (
-    <div className={`lb-row ${rank <= 3 ? 'lb-row--top' : ''}`} onClick={() => onClick(collector)}>
-      <span className="lb-rank">{getRank(rank)}</span>
-      <div className="lb-avatar">{collector.avatar || collector.name?.substring(0,2).toUpperCase()}</div>
-      <div className="lb-info">
-        <span className="lb-name">{collector.name}</span>
-        <span className="lb-meta">{collector.domain || 'General'}</span>
-      </div>
-      {badge && (
-        <span className="lb-badge" style={{'--badge-color': badge.color}}>{badge.label}</span>
-      )}
-      <div className="lb-score">
-        <span className="lb-count">{collector.submissions}</span>
-        <span className="lb-unit">verified</span>
-      </div>
-    </div>
-  );
-};
-
-const FeedCard = ({ post, token, onRequireAuth }) => {
-  const [liked,  setLiked]  = useState(false);
-  const [likes,  setLikes]  = useState(post.likes || 0);
-  const isFlag = post.type === 'flag';
-
-  const handleLike = async () => {
-    if (!token) { onRequireAuth(); return; }
-    const next = !liked;
-    setLiked(next);
-    setLikes(l => next ? l + 1 : l - 1);
-    try {
-      await fetch(`${BASE}/post/${post.id}/like`, {
-        method: 'POST', headers: authHeaders()
-      });
-    } catch { /* optimistic — ignore */ }
-  };
-
-  return (
-    <article className={`feed-card ${isFlag ? 'feed-card--flag' : ''}`}>
-      <div className="feed-header">
-        <div className="feed-avatar">{post.avatar || post.author?.substring(0,2).toUpperCase()}</div>
-        <div className="feed-meta">
-          <span className="feed-author">{post.author}</span>
-          <span className="feed-time">{post.time}</span>
-        </div>
-        <span className="feed-tag">{post.domain || 'General'}</span>
-        {isFlag && <span className="feed-flag-badge"><IcAlert /> Quality Flag</span>}
-      </div>
-      <h4 className="feed-title">{post.title}</h4>
-      <p className="feed-body">{post.body}</p>
-      <div className="feed-actions">
-        <button className={`feed-action ${liked ? 'feed-action--liked' : ''}`} onClick={handleLike}>
-          <IcStar /> {likes}
-        </button>
-        <button className="feed-action">
-          <IcChat /> {post.replies || 0} replies
-        </button>
-      </div>
-    </article>
-  );
-};
-
-const ProfileModal = ({ collector, onClose }) => {
-  if (!collector) return null;
-  const badge    = getBadge(collector.submissions);
-  const nextBadge = BADGES.find(b => b.min > collector.submissions);
-  const progress = nextBadge
-    ? Math.round((collector.submissions / nextBadge.min) * 100)
-    : 100;
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={e => e.stopPropagation()}>
-        <div className="modal-hero">
-          <div className="modal-avatar">{collector.avatar || collector.name?.substring(0,2).toUpperCase()}</div>
-          <div className="modal-identity">
-            <h2>{collector.name}</h2>
-            {collector.username && <p>@{collector.username}</p>}
-            {badge && <span className="modal-badge" style={{'--badge-color': badge.color}}>{badge.label}</span>}
-          </div>
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
-        <div className="modal-stats">
-          <div className="modal-stat">
-            <span className="modal-stat-val">{collector.submissions}</span>
-            <span className="modal-stat-label">Verified Submissions</span>
-          </div>
-          <div className="modal-stat">
-            <span className="modal-stat-val">{collector.domain || '—'}</span>
-            <span className="modal-stat-label">Domain</span>
-          </div>
-          <div className="modal-stat">
-            <span className="modal-stat-val">#{collector.rank}</span>
-            <span className="modal-stat-label">Rank</span>
-          </div>
-        </div>
-        <div className="modal-progress-section">
-          <div className="modal-progress-label">
-            <span>{nextBadge ? `Progress to ${nextBadge.label}` : 'Maximum badge reached'}</span>
-            <span>{progress}%</span>
-          </div>
-          <div className="modal-progress-bar">
-            <div className="modal-progress-fill"
-              style={{width: `${progress}%`, '--badge-color': badge?.color || '#489c8c'}} />
-          </div>
-        </div>
-        <div className="modal-badges-row">
-          {BADGES.map(b => (
-            <div key={b.id}
-              className={`modal-badge-chip ${collector.submissions >= b.min ? 'earned' : 'locked'}`}
-              style={{'--badge-color': b.color}}>
-              {collector.submissions >= b.min ? <IcCheck /> : '🔒'} {b.label}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const PostForm = ({ token, onPost, onCancel }) => {
-  const [title, setTitle] = useState('');
-  const [body,  setBody]  = useState('');
-  const [busy,  setBusy]  = useState(false);
-  const [err,   setErr]   = useState('');
-
-  const submit = async () => {
-    if (!title.trim() || !body.trim()) { setErr('Title and body are required.'); return; }
-    setBusy(true); setErr('');
-    try {
-      const res  = await fetch(`${BASE}/post`, {
-        method: 'POST', headers: authHeaders(),
-        body: JSON.stringify({ title, body })
-      });
-      const data = await res.json();
-      if (!res.ok) { setErr(data.error || 'Failed to post.'); return; }
-      onPost(data);
-      setTitle(''); setBody('');
-    } catch { setErr('Server error. Try again.'); }
-    finally { setBusy(false); }
-  };
-
-  return (
-    <div className="post-form">
-      {err && <p className="post-form-error">{err}</p>}
-      <input className="post-form-title" placeholder="Post title…"
-        value={title} onChange={e => setTitle(e.target.value)} />
-      <textarea className="post-form-body" rows={4}
-        placeholder="Share insights, ask questions, discuss African language AI…"
-        value={body} onChange={e => setBody(e.target.value)} />
-      <div className="post-form-actions">
-        <button className="post-form-cancel" onClick={onCancel}>Cancel</button>
-        <button className="post-form-submit" onClick={submit} disabled={busy}>
-          {busy ? 'Publishing…' : 'Publish Post'}
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// ── Main Component ────────────────────────────────────────────
-const Community = () => {
-  const navigate = useNavigate();
-  const token    = getToken();
-  const role     = getRole();
-  const loggedIn = isLoggedIn();
-
-  const [tab,               setTab]               = useState('leaderboard');
-  const [leaderboard,       setLeaderboard]        = useState([]);
-  const [feed,              setFeed]               = useState([]);
-  const [feedFilter,        setFeedFilter]         = useState('all');
-  const [selectedCollector, setSelectedCollector]  = useState(null);
-  const [showPostForm,      setShowPostForm]       = useState(false);
-  const [loadingLB,         setLoadingLB]          = useState(true);
-  const [loadingFeed,       setLoadingFeed]        = useState(true);
-  const [lbError,           setLbError]            = useState('');
-  const [feedError,         setFeedError]          = useState('');
-  const [authPrompt,        setAuthPrompt]         = useState(false);
-
-  // Aggregate stats for hero
-  const totalSubmissions = leaderboard.reduce((a, c) => a + (c.submissions || 0), 0);
-
-  // ── Fetch leaderboard ──
-  const fetchLeaderboard = useCallback(async () => {
-    setLoadingLB(true); setLbError('');
-    try {
-      const res  = await fetch(`${BASE}/leaderboard`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed');
-      // attach rank to each entry for ProfileModal
-      setLeaderboard(data.map((c, i) => ({ ...c, rank: i + 1 })));
-    } catch (e) {
-      setLbError('Could not load leaderboard. Please try again.');
-    } finally { setLoadingLB(false); }
+  useEffect(() => {
+    fetchFeed();
+    fetchInbox();
   }, []);
 
-  // ── Fetch feed ──
-  const fetchFeed = useCallback(async (type = 'all') => {
-    setLoadingFeed(true); setFeedError('');
+  const fetchFeed = async (type = 'all') => {
     try {
-      const res  = await fetch(`${BASE}/feed?type=${type}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed');
-      setFeed(data.posts || []);
-    } catch (e) {
-      setFeedError('Could not load feed. Please try again.');
-    } finally { setLoadingFeed(false); }
-  }, []);
-
-  useEffect(() => { fetchLeaderboard(); }, [fetchLeaderboard]);
-  useEffect(() => { fetchFeed(feedFilter); }, [fetchFeed, feedFilter]);
-
-  const handleNewPost = (post) => {
-    setFeed(prev => [post, ...prev]);
-    setShowPostForm(false);
+      const res = await axios.get('/api/community/feed?type=' + type);
+      setPosts(res.data.posts || []);
+    } catch (err) {
+      console.error('Error fetching feed:', err);
+    }
   };
 
-  const handleRequireAuth = () => setAuthPrompt(true);
+  const fetchInbox = async () => {
+    try {
+      const res = await axios.get('/api/inbox');
+      setThreads(res.data.threads || []);
+    } catch (err) {
+      console.error('Error fetching inbox:', err);
+    }
+  };
+
+  const handleLike = async (postId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('/api/community/post/' + postId + '/like', {}, {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      fetchFeed();
+    } catch (err) {
+      setError('Authentication required to like this post.');
+    }
+  };
+
+  const handleAddComment = async (postId, commentText) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('/api/community/post/' + postId + '/comment', { body: commentText }, {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      fetchFeed();
+    } catch (err) {
+      setError('Failed to post reply.');
+    }
+  };
+
+  const handlePostSubmit = (e) => {
+    e.preventDefault();
+    console.log('Submitted Thought/Post', { postTitle, postBody, postType, attachment });
+  };
+
+  const handleSendDM = (e) => {
+    e.preventDefault();
+    if(dmMessage.trim() === '') return;
+    setDms([...dms, { id: Date.now(), sender: 'System User', message: dmMessage, time: 'Now' }]);
+    setDmMessage('');
+  };
 
   return (
     <div className="community-page">
-
-      {/* ── HERO ── */}
       <header className="comm-hero">
         <div className="comm-hero-content">
-          <div className="comm-hero-tag"><IcGlobe size={13} /> Africa's Language Data Network</div>
-          <h1>The humans behind<br /><em>every dataset</em></h1>
-          <p>semaData collectors are named, ranked, and celebrated contributors building African language datasets for the AI age. Connect, discuss, and help shape what gets built.</p>
-          <div className="comm-hero-stats">
-            <div>
-              <strong>{loadingLB ? '…' : totalSubmissions.toLocaleString()}</strong>
-              <span>Verified Recordings</span>
-            </div>
-            <div>
-              <strong>{loadingLB ? '…' : leaderboard.length}</strong>
-              <span>Active Collectors</span>
-            </div>
-          </div>
-          {!loggedIn && (
-            <button className="comm-hero-cta" onClick={() => navigate('/signup?role=community')}>
-              Join the community <IcArrow />
-            </button>
-          )}
+          <div className="comm-hero-tag">SemaData • African Innovation</div>
+          <h1>African Tech <em>Community</em></h1>
+          <p>Collaborate, write workflows, and build connections across the region.</p>
         </div>
         <div className="comm-hero-visual">
-          {leaderboard.slice(0, 5).map((c, i) => (
-            <div key={c.id} className="comm-hero-card"
-              style={{'--delay': `${i * 0.1}s`, '--offset': `${(i % 2) * 24}px`}}>
-              <span className="hero-card-avatar">
-                {c.avatar || c.name?.substring(0,2).toUpperCase()}
-              </span>
-              <span className="hero-card-name">{c.name?.split(' ')[0]}</span>
-              <span className="hero-card-count">{c.submissions} ✓</span>
-            </div>
-          ))}
+          <div className="comm-hero-card">
+            <span className="hero-card-avatar">🌍</span>
+            <span className="hero-card-name">Regional Nodes</span>
+            <span className="hero-card-count">Online</span>
+          </div>
         </div>
       </header>
 
-      {/* ── MAIN ── */}
-      <main className="comm-main">
-
-        {/* ── LEADERBOARD TAB ── */}
-        {tab === 'leaderboard' && (
-          <section className="comm-section">
-            <div className="comm-section-head">
-              <div>
-                <h2>Contributor Rankings</h2>
-                <p>Ranked by total verified submissions. Click any row to view a full profile.</p>
-              </div>
+      <section className="comm-section">
+        <div className="inbox-module" style={{ background: '#0f172a', borderColor: '#334155' }}>
+          <div className="inbox-header" style={{ borderColor: '#334155' }}>
+            <h3>User Profile</h3>
+            <span className="feed-tag" style={{ background: '#059669', color: '#fff' }}>{profile.location}</span>
+          </div>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '1rem' }}>
+            <div style={{ width: '4rem', height: '4rem', borderRadius: '50%', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', color: '#489c8c' }}>
+              IC
             </div>
+            <div>
+              <h4 style={{ margin: '0 0 0.25rem 0', color: '#fff' }}>{profile.name}</h4>
+              <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem' }}>{profile.role}</p>
+              <p style={{ margin: '0.25rem 0 0 0', color: '#cbd5e1', fontSize: '0.8rem', fontStyle: 'italic' }}>{profile.bio}</p>
+            </div>
+          </div>
+        </div>
 
-            {loadingLB ? <Spinner /> : lbError ? (
-              <div className="comm-error">
-                {lbError}
-                <button onClick={fetchLeaderboard}>Retry</button>
-              </div>
-            ) : leaderboard.length === 0 ? (
-              <div className="comm-empty">
-                <p>No verified submissions yet. Be the first collector to contribute.</p>
-              </div>
-            ) : (
-              <div className="lb-list">
-                {leaderboard.map((c, i) => (
-                  <LeaderboardRow key={c.id} collector={c} rank={i + 1}
-                    onClick={setSelectedCollector} />
-                ))}
-              </div>
-            )}
+        {error && (
+          <div className="feed-login-prompt">
+            <p>{error} <button onClick={() => setError('')}>Dismiss</button></p>
+          </div>
+        )}
 
-            <div className="lb-cta">
-              <p>Want your name on this board?</p>
-              <button onClick={() => navigate('/signup?role=collector')} className="lb-cta-btn">
-                Apply as a Collector <IcArrow />
+        <form className="post-form" onSubmit={handlePostSubmit}>
+          <input 
+            type="text" 
+            className="post-form-title" 
+            placeholder="Post Title" 
+            value={postTitle}
+            onChange={(e) => setPostTitle(e.target.value)}
+          />
+          
+          <div className="post-form-toolbar">
+            {['post', 'code', 'link', 'image'].map((type) => (
+              <button 
+                key={type}
+                type="button" 
+                className={`form-toolbar-btn ${postType === type ? 'active' : ''}`} 
+                onClick={() => setPostType(type)}
+              >
+                {type.charAt(0).toUpperCase() + type.slice(1)}
               </button>
-            </div>
-          </section>
-        )}
+            ))}
+          </div>
 
-        {/* ── FEED TAB ── */}
-        {tab === 'feed' && (
-          <section className="comm-section">
-            <div className="comm-section-head">
-              <div>
-                <h2>Community Feed</h2>
-                <p>Discussions, insights, and quality flags from the semaData community.</p>
-              </div>
-              <div className="feed-controls">
-                <div className="feed-filters">
-                  {['all', 'posts', 'flags'].map(f => (
-                    <button key={f}
-                      className={feedFilter === f ? 'active' : ''}
-                      onClick={() => setFeedFilter(f)}>
-                      {f === 'flags' ? <><IcAlert /> Flags</>
-                        : f === 'posts' ? <><IcChat /> Posts</>
-                        : 'All'}
-                    </button>
-                  ))}
+          <textarea 
+            className="post-form-body" 
+            rows={4} 
+            placeholder="Share your thoughts..." 
+            value={postBody}
+            onChange={(e) => setPostBody(e.target.value)}
+          />
+
+          <input 
+            type="text" 
+            className="post-form-title" 
+            placeholder={postType === 'code' ? 'Enter language or code snippet' : 'Attachment URL'} 
+            value={attachment}
+            onChange={(e) => setAttachment(e.target.value)}
+          />
+
+          <div className="post-form-actions">
+            <button type="button" className="post-form-cancel" onClick={() => { setPostBody(''); setPostTitle(''); setAttachment(''); }}>
+              Cancel
+            </button>
+            <button type="submit" className="post-form-submit">
+              Publish Idea
+            </button>
+          </div>
+        </form>
+
+        <div className="feed-list">
+          {posts.length > 0 ? (
+            posts.map((p) => (
+              <article className="feed-card" key={p.id}>
+                <div className="feed-header">
+                  <div className="feed-avatar">
+                    {p.authorName ? p.authorName[0].toUpperCase() : 'U'}
+                  </div>
+                  <div className="feed-meta">
+                    <span className="feed-author">{p.authorName || 'User'}</span>
+                    <span className="feed-time">{p.createdAt}</span>
+                  </div>
+                  <span className="feed-tag">{p.domainName || 'General'}</span>
                 </div>
-                {loggedIn && (
-                  <button className="feed-post-btn" onClick={() => setShowPostForm(s => !s)}>
-                    <IcPlus /> New Post
-                  </button>
+                <h4 className="feed-title">{p.title}</h4>
+                <p className="feed-body">{p.body}</p>
+                
+                {p.postType === 'code' && (
+                  <pre className="feed-code-block">
+                    <code>{p.attachment}</code>
+                  </pre>
                 )}
-              </div>
+                {p.postType === 'link' && (
+                  <a href={p.attachment} className="feed-link-attachment" target="_blank" rel="noopener noreferrer">
+                    🔗 {p.attachment}
+                  </a>
+                )}
+                {p.postType === 'image' && (
+                  <img src={p.attachment} alt="Attachment" className="feed-media" />
+                )}
+
+                <div className="feed-actions">
+                  <button className="feed-action" onClick={() => handleLike(p.id)}>
+                    ❤ Like ({p.likes})
+                  </button>
+                </div>
+
+                <div className="comment-section">
+                  <div className="comment-list">
+                    {(comments[p.id] || []).length > 0 ? (
+                      (comments[p.id] || []).map((c) => (
+                        <div key={c.id} className="comment-card">
+                          <div className="comment-header">
+                            <span>{c.author}</span>
+                            <span>{c.timestamp}</span>
+                          </div>
+                          <div>{c.body}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ fontSize: '0.8rem', color: '#475569' }}>No replies yet. Be the first to reply!</div>
+                    )}
+                  </div>
+
+                  <form className="comment-form" onSubmit={(e) => {
+                    e.preventDefault();
+                    const inputVal = e.target.elements.commentText.value;
+                    handleAddComment(p.id, inputVal);
+                    e.target.reset();
+                  }}>
+                    <input
+                      type="text"
+                      name="commentText"
+                      className="comment-input"
+                      placeholder="Write a reply or paste code snippet..."
+                      required
+                    />
+                    <button type="submit" className="comment-submit-btn">Send</button>
+                  </form>
+                </div>
+              </article>
+            ))
+          ) : (
+            <div style={{ color: '#94a3b8', padding: '2rem', textAlign: 'center', background: '#111827', border: '1px solid #1f2937', borderRadius: '10px' }}>
+              <p style={{ margin: 0 }}>No thoughts or posts found in the feed. Share your first idea!</p>
             </div>
+          )}
+        </div>
 
-            {/* Auth prompt */}
-            {(authPrompt || !loggedIn) && (
-              <div className="feed-login-prompt">
-                <p>
-                  <strong>Join the conversation</strong> —{' '}
-                  <button onClick={() => navigate('/login?fresh=true')}>sign in</button>
-                  {' '}or{' '}
-                  <button onClick={() => navigate('/signup?role=community')}>create a free account</button>
-                  {' '}to like posts, flag issues, and share insights.
-                </p>
-              </div>
-            )}
-
-            {showPostForm && loggedIn && (
-              <PostForm
-                token={token}
-                onPost={handleNewPost}
-                onCancel={() => setShowPostForm(false)}
-              />
-            )}
-
-            {loadingFeed ? <Spinner /> : feedError ? (
-              <div className="comm-error">
-                {feedError}
-                <button onClick={() => fetchFeed(feedFilter)}>Retry</button>
-              </div>
-            ) : feed.length === 0 ? (
-              <div className="comm-empty">
-                <p>No posts yet.
-                  {loggedIn
-                    ? ' Be the first to start a discussion.'
-                    : ' Sign up to start the conversation.'}
-                </p>
-              </div>
+        <div className="inbox-module">
+          <div className="inbox-header">
+            <h3>Direct Messages</h3>
+            <span className="feed-tag">Active Threads</span>
+          </div>
+          <div className="inbox-threads">
+            {dms.length > 0 ? (
+              dms.map((dm) => (
+                <div key={dm.id} className="inbox-thread">
+                  <div>
+                    <span className="thread-sender">{dm.sender}</span>
+                    <div className="thread-snippet">{dm.message}</div>
+                  </div>
+                  <span className="feed-time">{dm.time}</span>
+                </div>
+              ))
             ) : (
-              <div className="feed-list">
-                {feed.map(post => (
-                  <FeedCard key={post.id} post={post} token={token}
-                    onRequireAuth={handleRequireAuth} />
-                ))}
+              <div style={{ color: '#64748b', textAlign: 'center', padding: '1rem 0' }}>
+                No messages available.
               </div>
             )}
-          </section>
-        )}
-      </main>
+            
+            <form style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }} onSubmit={handleSendDM}>
+              <input 
+                type="text" 
+                className="comment-input" 
+                placeholder="Direct message a user..." 
+                value={dmMessage}
+                onChange={(e) => setDmMessage(e.target.value)} 
+                required 
+              />
+              <button type="submit" className="comment-submit-btn">Send</button>
+            </form>
+          </div>
+        </div>
 
-      {/* ── PROFILE MODAL ── */}
-      {selectedCollector && (
-        <ProfileModal
-          collector={selectedCollector}
-          onClose={() => setSelectedCollector(null)}
-        />
-      )}
+        <div className="inbox-module">
+          <div className="inbox-header">
+            <h3>Active Conversations</h3>
+            <span className="feed-tag">{threads.length} Open</span>
+          </div>
+          <div className="inbox-threads">
+            {threads.length > 0 ? (
+              threads.map((thread) => (
+                <div key={thread.id} className="inbox-thread">
+                  <div>
+                    <span className="thread-sender">{thread.senderName}</span>
+                    <div className="thread-snippet">{thread.snippet}</div>
+                  </div>
+                  <span className="feed-time">{thread.time}</span>
+                </div>
+              ))
+            ) : (
+              <div style={{ color: '#64748b', textAlign: 'center', padding: '1rem 0' }}>
+                No active public threads in the inbox.
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
     </div>
   );
-};
-
-export default Community;
+}
