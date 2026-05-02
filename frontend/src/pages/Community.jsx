@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import CommunityPostForm from '../components/CommunityPostForm';
 import TechnicalPost from '../components/TechnicalPost';
+import '../styles/community.css';
 
 export default function CommunityPage() {
     const [posts, setPosts] = useState([]);
@@ -19,7 +20,7 @@ export default function CommunityPage() {
     const fetchFeed = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`http://localhost:5000/api/community/feed?type=${activeTab}`);
+            const response = await fetch(`http://localhost:8000/api/community/feed?type=${activeTab}`);
             const data = await response.json();
             if (response.ok) {
                 setPosts(data.posts);
@@ -31,9 +32,9 @@ export default function CommunityPage() {
         }
     };
 
-    const handleLike = async (postId) => {
+    const handleLikePost = async (postId) => {
         try {
-            const response = await fetch(`http://localhost:5000/api/community/post/${postId}/like`, {
+            const response = await fetch(`http://localhost:8000/api/community/post/${postId}/like`, {
                 method: 'POST'
             });
             if (response.ok) {
@@ -50,33 +51,41 @@ export default function CommunityPage() {
     );
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#dae0e6', fontFamily: 'Arial, sans-serif' }}>
-            {/* Left Sidebar (Topics/Filters) */}
-            <div style={{ width: '240px', backgroundColor: '#ffffff', padding: '20px', borderRight: '1px solid #ccc' }}>
+        <div className="community-layout">
+            <div className="sidebar">
                 <h2>SemaData</h2>
-                <ul style={{ listStyleType: 'none', padding: 0 }}>
-                    <li style={{ margin: '10px 0' }}><button onClick={() => setActiveTab('all')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: activeTab === 'all' ? 'bold' : 'normal' }}>Home Feed</button></li>
-                    <li style={{ margin: '10px 0' }}><button onClick={() => setActiveTab('ml')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: activeTab === 'ml' ? 'bold' : 'normal' }}>Machine Learning</button></li>
-                    <li style={{ margin: '10px 0' }}><button onClick={() => setActiveTab('research')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: activeTab === 'research' ? 'bold' : 'normal' }}>Research</button></li>
+                <ul className="sidebar-list">
+                    <li className="sidebar-item">
+                        <button onClick={() => setActiveTab('all')} className={`sidebar-btn ${activeTab === 'all' ? 'active' : ''}`}>
+                            Home Feed
+                        </button>
+                    </li>
+                    <li className="sidebar-item">
+                        <button onClick={() => setActiveTab('ml')} className={`sidebar-btn ${activeTab === 'ml' ? 'active' : ''}`}>
+                            Machine Learning
+                        </button>
+                    </li>
+                    <li className="sidebar-item">
+                        <button onClick={() => setActiveTab('research')} className={`sidebar-btn ${activeTab === 'research' ? 'active' : ''}`}>
+                            Research
+                        </button>
+                    </li>
                 </ul>
             </div>
 
-            {/* Main Content Feed Area */}
-            <div style={{ flex: 1, padding: '24px', maxWidth: '680px', margin: '0 auto' }}>
-                
-                {/* Top Search & Profile Bar */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', padding: '10px 16px', borderRadius: '4px', marginBottom: '20px', border: '1px solid #ccc' }}>
+            <div className="main-content">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', padding: '12px 20px', borderRadius: '6px', marginBottom: '24px', border: '1px solid var(--sema-border)', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                     <input 
                         type="text" 
                         placeholder="Search posts or algorithms..." 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        style={{ width: '70%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+                        style={{ width: '68%', padding: '8px 12px', border: '1px solid var(--sema-border)', borderRadius: '6px', outline: 'none' }}
                     />
                     
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '14px', fontWeight: 'bold' }}>{currentUser.name}</span>
-                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#ff4500', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: '600' }}>{currentUser.name}</span>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>
                             {currentUser.name.charAt(0)}
                         </div>
                     </div>
@@ -84,14 +93,20 @@ export default function CommunityPage() {
 
                 <CommunityPostForm />
 
-                {loading ? <p>Loading workspace content...</p> : (
-                    filteredPosts.map(post => (
-                        <TechnicalPost 
-                            key={post.id} 
-                            post={post} 
-                            onLike={handleLike} 
-                        />
-                    ))
+                {loading ? (
+                    <p style={{ textAlign: 'center', padding: '32px' }}>Loading workspace content...</p>
+                ) : (
+                    filteredPosts.length > 0 ? (
+                        filteredPosts.map(post => (
+                            <TechnicalPost 
+                                key={post.id} 
+                                post={post} 
+                                onLike={handleLikePost} 
+                            />
+                        ))
+                    ) : (
+                        <p style={{ textAlign: 'center', padding: '32px', color: 'var(--sema-secondary)' }}>No items match the query.</p>
+                    )
                 )}
             </div>
         </div>

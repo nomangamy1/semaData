@@ -1,33 +1,30 @@
 :root {
-    --sema-green: #10b981; /* Matches primary-emerald */
+    --sema-green: #10b981;
     --sema-green-hover: #059669;
     --sema-purple: #581c87;
     --sema-purple-light: #7e22ce;
     --sema-bg: #f8fafc;
     --sema-card: #ffffff;
-    --sema-text: #1f2937; /* Matches text-main */
+    --sema-text: #1f2937;
     --sema-secondary: #64748b;
     --sema-border: #e2e8f0;
 }
 
-body {
-    margin: 0;
-    background-color: var(--sema-bg);
-    color: var(--sema-text);
-}
-
 .community-layout {
     display: flex;
+    flex-direction: row;
+    width: 100%;
     min-height: 100vh;
+    background-color: var(--sema-bg);
 }
 
-/* Sidebar Styling */
+/* Sidebar */
 .sidebar {
     width: 260px;
     background-color: var(--sema-card);
     padding: 24px 16px;
     border-right: 1px solid var(--sema-border);
-    box-shadow: 1px 0 5px rgba(0, 0, 0, 0.02);
+    flex-shrink: 0;
 }
 
 .sidebar h2 {
@@ -74,10 +71,11 @@ body {
 
 /* Main Content Area */
 .main-content {
-    flex: 1;
+    flex-grow: 1;
     padding: 32px;
     max-width: 720px;
     margin: 0 auto;
+    overflow-y: auto;
 }
 
 /* Post Cards */
@@ -116,14 +114,6 @@ body {
     color: var(--sema-text);
 }
 
-.post-img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 6px;
-    margin: 12px 0;
-    border: 1px solid var(--sema-border);
-}
-
 .post-actions {
     display: flex;
     gap: 24px;
@@ -145,8 +135,4 @@ body {
 
 .action-btn:hover {
     color: var(--sema-green);
-}
-
-.attachment-block {
-    margin-top: 12px;
 }
