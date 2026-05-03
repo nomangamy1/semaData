@@ -102,8 +102,6 @@ const Dashboard = () => {
         }
 
         const fetchDomains = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
             try {
                 const response = await fetch('http://localhost:8000/api/my-domains', {
                     headers: {
@@ -115,6 +113,13 @@ const Dashboard = () => {
                 if (response.status === 401 || response.status === 403) {
                     localStorage.clear();
                     navigate('/login', { replace: true });
+                    return;
+                }
+
+                if (response.status === 404) {
+                    console.error('Endpoint not found. Endpoint available at: /api/my-domains');
+                    setError('API endpoint configuration error. Please contact support.');
+                    setLoading(false);
                     return;
                 }
 
@@ -134,7 +139,7 @@ const Dashboard = () => {
         };
 
         fetchDomains();
-    }, [token]); // ✅ navigate excluded — stable ref not needed in deps
+    }, [token, navigate]);
 
     // Use features from the selected domain, not hardcoded strings
     const selectedFeatures = selectedDomain?.features?.map(f => f.name || f) || [];
@@ -271,16 +276,11 @@ const Dashboard = () => {
                                     <p className="text-sm text-slate-400 mb-4 font-medium">{domain.domain_field || 'General Research'}</p>
 
                                     {/* Features pills */}
-                                    {domain.features && domain.features.length > 0 && (
+                                    {domain.feature_count && domain.feature_count > 0 && (
                                         <div className="flex flex-wrap gap-1 mb-4">
-                                            {domain.features.slice(0, 3).map((f, i) => (
-                                                <span key={i} className="text-[10px] bg-[#489c8c]/10 text-[#489c8c] px-2 py-0.5 rounded-full font-bold">
-                                                    {f.name || f}
-                                                </span>
-                                            ))}
-                                            {domain.features.length > 3 && (
-                                                <span className="text-[10px] text-slate-400 px-2 py-0.5">+{domain.features.length - 3} more</span>
-                                            )}
+                                            <span className="text-[10px] bg-[#489c8c]/10 text-[#489c8c] px-2 py-0.5 rounded-full font-bold">
+                                                {domain.feature_count} features
+                                            </span>
                                         </div>
                                     )}
 
@@ -305,7 +305,7 @@ const Dashboard = () => {
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            navigate(`/domain/${domain.id || domain.reference_number}`);
+                                            navigate(`/domain/${domain.domain_id || domain.reference_number}`);
                                         }}
                                         className="w-full mt-4 py-3 flex items-center justify-center gap-2 text-xs font-black uppercase text-slate-500 hover:text-[#489c8c] transition group"
                                     >
