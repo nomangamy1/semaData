@@ -59,6 +59,71 @@ def get_DomainProfileName():
 
 logger = logging.getLogger(__name__)
 
+@dashboard_bp.route('/my-domains', methods=['GET'])
+@jwt_required()
+def get_my_domains():
+    """
+    Get all domains owned by the current DomainOwner (JWT identity)
+    Returns full domain details including features, datasets, submission/collector counts
+    """
+    try:
+        owner_id = get_jwt_identity()
+        
+        # Query all domains owned by this user
+        owner_domains = Domain.query.filter_by(owner_id=owner_id).all()
+        
+        if not owner_domains:
+            return jsonify([]), 200
+        
+        # Build response with domain details
+        domains_data = []
+        for domain in owner_domains:
+            # Get features for this domain
+            features = Feature.query.filter_by(domain_id=domain.id).all()
+            feature_list = [
+                {"name": f.name, "type": getattr(f, 'field_type', 'text')}
+                for f in features
+            ]
+            
+            # Get datasets for this domain
+            datasets = Dataset.query.filter_by(domain_id=domain.id).all()
+            datasets_list = [
+                {
+                    "id": d.id,
+                    "ref_number": d.reference_number,
+                    "status": d.status,
+                    "segmented_text": d.segmented_text,
+                    "collector_id": d.collector_id,
+                }
+                for d in datasets
+            ]
+            
+            # Count submissions and collectors
+            submission_count = len(datasets)
+            collector_ids = set(d.collector_id for d in datasets if d.collector_id)
+            collector_count = len(collector_ids)
+            
+            domains_data.append({
+                "id": domain.id,
+                "domain_name": domain.domain_name,
+                "domain_field": domain.domain_field or "General Research",
+                "reference_number": domain.reference_number,
+                "payment_status": domain.payment_status,
+                "is_active": domain.is_active,
+                "target_goal": domain.target_goal,
+                "requirements": domain.requirements,
+                "submission_count": submission_count,
+                "collector_count": collector_count,
+                "features": feature_list,
+                "datasets": datasets_list,
+            })
+        
+        return jsonify(domains_data), 200
+    except Exception as e:
+        logger.error(f"Error fetching domains for owner {owner_id}: {str(e)}")
+        return jsonify({"error": "Failed to fetch domains"}), 500
+
+
 @dashboard_bp.route('/download/<int:domain_id>', methods=['GET'])
 @jwt_required()
 def download_dataset(domain_id):
