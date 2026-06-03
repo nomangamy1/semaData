@@ -10,7 +10,7 @@ import json
 import string
 
 def generate_ref_number(domain_name):
-    prefix = domain_name[:4].upper()
+    prefix = domain_name[:4].upper().replace(" ", "")
     suffix = "".join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(6))
     return f"{prefix}--{suffix}"
 
@@ -21,12 +21,22 @@ domain_bp = Blueprint("domain", __name__)
 @jwt_required()
 def domain_register():
     try:
-        current_user_id = get_jwt_identity()
+        jwt_identity = get_jwt_identity()
+        
+        # ─── COMPOSITE IDENTITY EXTRACTION ──────────────────────────────
+        if isinstance(jwt_identity, dict):
+            current_user_id = jwt_identity.get("id")
+            user_role = jwt_identity.get("role")
+        else:
+            current_user_id = jwt_identity
+            user_role = "domainowner"  # Fallback for old primitive tokens
+
+        # Safeguard: Verify identity and restrict to domain owners
         owner = DomainOwner.query.filter_by(id=int(current_user_id)).first()
-        if not owner:
-            owner = DomainOwner.query.filter(DomainOwner.id == current_user_id).first()
-        if not owner:
-            return jsonify({"error": "Owner not found. Please log in again."}), 403
+        if not owner or (user_role and user_role != "domainowner"):
+            return jsonify({"error": "Unauthorized Access. Domain Owner profile required."}), 403
+        # ────────────────────────────────────────────────────────────────
+
         data = request.get_json()
         domain_name = data.get("domain_name", "").strip()
         if not domain_name:
@@ -45,10 +55,14 @@ def domain_register():
             target_goal_numeric = 0
         total_budget   = price_per_response * target_goal_numeric
         deposit_amount = float(total_budget) * 0.3
+        
+        # Call the generator token here explicitly instead of using None
+        assigned_reference_token = generate_ref_number(domain_name)
+
         domain = Domain(
             domain_name=domain_name,
             owner_id=owner.id,
-            reference_number=None,
+            reference_number=assigned_reference_token,
             target_goal=target_goal_numeric,
             total_budget=total_budget,
             requirements=requirements_text,
@@ -81,11 +95,20 @@ def domain_register():
 @domain_bp.route("/my-domains", methods=["GET"])
 @jwt_required()
 def get_my_domains():
-    current_user_id = get_jwt_identity()
+    jwt_identity = get_jwt_identity()
+    
+    # ─── COMPOSITE IDENTITY EXTRACTION ──────────────────────────────
+    if isinstance(jwt_identity, dict):
+        query_id = jwt_identity.get("id")
+    else:
+        query_id = jwt_identity
+
     try:
-        query_id = int(current_user_id)
+        query_id = int(query_id)
     except (ValueError, TypeError):
-        query_id = current_user_id
+        pass
+    # ────────────────────────────────────────────────────────────────
+
     domains = Domain.query.filter_by(owner_id=query_id).all()
     if not domains:
         return jsonify([]), 200
@@ -117,12 +140,12 @@ def get_my_domains():
         output.append({
             "domain_name":      d.domain_name,
             "reference_number": d.reference_number,
-            "domain_field":     d.requirements[:30] + "..." if d.requirements else "General Research",
+            "domain_field":      d.requirements[:30] + "..." if d.requirements else "General Research",
             "datasets":         dataset_list,
             "feature_count":    feature_count,
             "collector_count":  collector_count,
             "submission_count": submission_count,
-            "total_budget":     d.total_budget,
+            "total_budget":      d.total_budget,
             "deposit_amount":   d.deposit_amount,
             "amount_paid":      d.amount_paid or 0,
             "payment_status":   d.payment_status,

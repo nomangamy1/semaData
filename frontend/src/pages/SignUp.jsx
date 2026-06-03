@@ -10,8 +10,8 @@ const INTERESTS = [
 ];
 
 const ROLE_HINTS = {
-  community:   'For data scientists, ML engineers, researchers and linguists. Free, no vetting, instant access.',
-  User:        'For field agents and local language speakers. Requires an approved application and a reference number from a domain owner.',
+  community:    'For data scientists, ML engineers, researchers and linguists. Free, no vetting, instant access.',
+  User:         'For field agents and local language speakers. Requires an approved application and a reference number from a domain owner.',
   domainowner: 'For researchers, NGOs and organisations that need African language datasets. Requires payment after signup.',
 };
 
@@ -19,11 +19,10 @@ const Signup = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // ── Pre-select role from URL param (?role=community / collector / domainowner)
   const paramRole = searchParams.get('role');
   const initialRole = paramRole === 'collector' ? 'User'
     : paramRole === 'domainowner' ? 'domainowner'
-    : 'community'; // default to community — lowest friction
+    : 'community';
 
   const [role, setRole] = useState(initialRole);
   const [submitted, setSubmitted] = useState(false);
@@ -75,7 +74,13 @@ const Signup = () => {
         else if (data.userId) localStorage.setItem('ownerId', String(data.userId));
         localStorage.setItem('userRole', data.role || role);
         localStorage.setItem('username', formData.first_name);
-        setSubmitted(true);
+        
+        // Instant Redirection to the lowercase path matching App.jsx
+        if ((data.role || role) === 'community') {
+          navigate('/community');
+        } else {
+          setSubmitted(true);
+        }
       } else {
         setError(data.error || 'Signup failed. Please try again.');
       }
@@ -86,7 +91,6 @@ const Signup = () => {
 
   const roleLabel = { community: 'Community', User: 'Collector', domainowner: 'Domain Owner' }[role];
 
-  // ── Success screen ──
   if (submitted) {
     return (
       <div className="signup-success">
@@ -98,9 +102,7 @@ const Signup = () => {
           <p>We sent a verification link to</p>
           <p><strong>{formData.email}</strong></p>
           <small>
-            {role === 'community'
-              ? 'Verify your email to start posting in the community.'
-              : 'Click the link to verify your account, then log in to continue.'}
+            Click the link to verify your account, then log in to continue.
           </small>
           <button className="signup-btn" onClick={() => navigate('/login')}>
             Go to Login
@@ -118,8 +120,6 @@ const Signup = () => {
       </div>
 
       <div className="signup-card">
-
-        {/* ── Role tabs ── */}
         <div className="signup-role-toggle">
           <button type="button"
             className={`signup-role-btn ${role === 'community' ? 'active' : ''}`}
@@ -138,14 +138,11 @@ const Signup = () => {
           </button>
         </div>
 
-        {/* Role description */}
         <p className="signup-role-hint">{ROLE_HINTS[role]}</p>
 
         {error && <div className="signup-error">{error}</div>}
 
         <form className="signup-form" onSubmit={handleSubmit}>
-
-          {/* Name row — all roles */}
           <div className="signup-grid">
             <div className="signup-field">
               <label className="signup-label">First Name</label>
@@ -160,7 +157,6 @@ const Signup = () => {
             </div>
           </div>
 
-          {/* Username — domain owner only */}
           {role === 'domainowner' && (
             <div className="signup-field">
               <label className="signup-label">Username</label>
@@ -169,14 +165,12 @@ const Signup = () => {
             </div>
           )}
 
-          {/* Email — all roles */}
           <div className="signup-field">
             <label className="signup-label">Email Address</label>
             <input className="signup-input" name="email" type="email" required
               placeholder="you@example.com" onChange={handleChange} />
           </div>
 
-          {/* Community: area of interest */}
           {role === 'community' && (
             <div className="signup-field">
               <label className="signup-label">Area of Interest</label>
@@ -188,7 +182,6 @@ const Signup = () => {
             </div>
           )}
 
-          {/* Collector: reference number + domain */}
           {role === 'User' && (
             <>
               <div className="signup-field">
@@ -207,7 +200,6 @@ const Signup = () => {
             </>
           )}
 
-          {/* Domain owner: category */}
           {role === 'domainowner' && (
             <div className="signup-field">
               <label className="signup-label">Domain Category</label>
@@ -220,7 +212,6 @@ const Signup = () => {
             </div>
           )}
 
-          {/* Password — all roles */}
           <div className="signup-field">
             <label className="signup-label">Password</label>
             <input className="signup-input" name="password" type="password" required

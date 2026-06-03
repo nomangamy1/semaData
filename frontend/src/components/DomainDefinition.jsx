@@ -5,18 +5,17 @@ import './DomainDefinition.css';
 
 const DefineFeatures = () => {
     const navigate = useNavigate();
-    const token = localStorage.getItem('token');
-
-    // Auth guard inside useEffect — never call navigate() in render body
-    useEffect(() => {
-        if (!token) navigate('/login', { replace: true });
-    }, [token, navigate]);
 
     const [domainName, setDomainName] = useState('');
     const [features, setFeatures] = useState(['']);
     const [target_goal, setTargetGoal] = useState('');
     const [requirements, setRequirements] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        const currentToken = localStorage.getItem('token');
+        if (!currentToken) navigate('/login', { replace: true });
+    }, [navigate]);
 
     const handleAddFeature = () => setFeatures([...features, '']);
 
@@ -34,6 +33,13 @@ const DefineFeatures = () => {
         e.preventDefault();
         setIsSubmitting(true);
 
+        const currentToken = localStorage.getItem('token');
+        if (!currentToken) {
+            alert('Session invalid. Please log in again.');
+            navigate('/login');
+            return;
+        }
+
         const payload = {
             domain_name: domainName,
             target_goal: parseInt(target_goal, 10),
@@ -46,7 +52,7 @@ const DefineFeatures = () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${currentToken}`
                 },
                 body: JSON.stringify(payload),
             });
@@ -68,7 +74,6 @@ const DefineFeatures = () => {
                         target_goal: data.target_goal,
                         deposit:    data.deposit,
                         total:      data.total_budget
-                        // refNum intentionally omitted — generated after payment
                     }
                 });
             } else {
@@ -82,7 +87,7 @@ const DefineFeatures = () => {
         }
     };
 
-    if (!token) return null;
+    if (!localStorage.getItem('token')) return null;
 
     return (
         <div className="features-container">
