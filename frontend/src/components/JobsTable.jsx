@@ -1,6 +1,6 @@
 // src/components/JobsTable.jsx
 import React from 'react';
-import { Trash2, ExternalLink } from 'lucide-react';
+import { Trash2,Briefcase, ExternalLink } from 'lucide-react';
 
 const JobsTable = ({ jobs, onDelete }) => {
   if (!jobs || jobs.length === 0) {
