@@ -40,11 +40,14 @@ const Login = () => {
     setError('');
     setIsLoading(true);
 
+    const backendRole = loginRole === 'collector' ? 'user' : loginRole;
+
     const payload = {
       email:    formData.email.trim(),
       password: formData.password,
-      // Only send reference_number for collectors — backend uses its absence
-      // to distinguish community members from collectors
+      role:     backendRole,
+
+
       ...(loginRole === 'collector' && { reference_number: formData.reference_number.trim() })
     };
 

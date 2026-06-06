@@ -26,14 +26,7 @@ class User(db.Model, UserMixin):
     area_of_interest = db.Column(db.String(100), nullable=True)
     # area_of_interest is only populated for community members
 
-    reference_number = db.Column(
-        db.String(64),
-        db.ForeignKey('domain.reference_number'),
-        nullable=True   # ← must be True: community members have no domain link
-    )
-
-    # ── Relationships ──────────────────────────────────────
-    domain = db.relationship('Domain', foreign_keys=[reference_number], backref='collectors')
+    reference_number = db.Column(db.String(64), nullable=True)
 
     # ── Instance methods ───────────────────────────────────
     def set_password(self, password):
@@ -55,9 +48,6 @@ class User(db.Model, UserMixin):
     @classmethod
     def find_by_id(cls, user_id):
         return cls.query.get(user_id)
-
-    # NOTE: find_by_username removed — User has no username column.
-    # Username belongs to DomainOwner. Call DomainOwner.find_by_username() instead.
 
     def __repr__(self):
         return f"<User {self.id} [{self.user_type}] {self.email}>"

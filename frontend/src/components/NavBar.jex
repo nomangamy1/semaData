@@ -1,0 +1,53 @@
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Database, LogOut } from 'lucide-react';
+import './NavBar.css';
+
+const NavBar = () => {
+  const navigate = useNavigate();
+  const token = localStorage.getItem('token');
+  const userRole = localStorage.getItem('userRole');
+
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate('/login');
+  };
+
+  return (
+    <nav className="navbar" style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', background: '#1e293b', color: '#fff' }}>
+      <div className="navbar-brand">
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff', textDecoration: 'none', fontWeight: 'bold' }}>
+          <Database size={24} />
+          <span>semaData</span>
+        </Link>
+      </div>
+      
+      <div className="navbar-links" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+        <Link to="/AboutUs" style={{ color: '#cbd5e1', textDecoration: 'none' }}>About</Link>
+        <Link to="/ContactUs" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Contact</Link>
+        <Link to="/community" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Community</Link>
+        <Link to="/careers" style={{ color: '#cbd5e1', textDecoration: 'none' }}>Careers</Link>
+        
+        {token ? (
+          <>
+            {/* Dynamic Dashboard Routing */}
+            {userRole?.toLowerCase() === 'admin' && <Link to="/AdminDashboard" style={{ color: '#38bdf8', fontWeight: '600' }}>Dashboard</Link>}
+            {(userRole?.toLowerCase() === 'domain_owner' || userRole?.toLowerCase() === 'domainowner') && <Link to="/Dashboard" style={{ color: '#38bdf8', fontWeight: '600' }}>Dashboard</Link>}
+            {userRole?.toLowerCase() === 'user' && <Link to="/userDashboard" style={{ color: '#38bdf8', fontWeight: '600' }}>Collector Panel</Link>}
+            
+            <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: '#ef4444', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer' }}>
+              <LogOut size={16} /> Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <Link to="/login" style={{ color: '#fff', textDecoration: 'none' }}>Login</Link>
+            <Link to="/signup" style={{ background: '#2563eb', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none' }}>Sign Up</Link>
+          </>
+        )}
+      </div>
+    </nav>
+  );
+};
+
+export default NavBar;

@@ -1,6 +1,6 @@
 from flask_mail import Message
+from flask import current_app
 from extensions import mail
-
 
 def send_approval_email(recipient_email, first_name, job_title,
                         ref_number, domain_name=None, signup_link=None):
@@ -88,6 +88,11 @@ SemaData Admin Team
 </div>
             """
         )
+        
+        # Ensure 'flask-mail' extension key placeholder exists in app extensions maps
+        if 'flask-mail' not in current_app.extensions and 'mail' in current_app.extensions:
+            current_app.extensions['flask-mail'] = current_app.extensions['mail']
+            
         mail.send(msg)
         return True
     except Exception as e:

@@ -16,7 +16,7 @@ import UserDashboard from './pages/userDashboard';
 import CollectorHome from './pages/collectorHome';
 import AdminDashboard from './pages/AdminDashboard';
 import DefineFeatures from './components/DomainDefinition';
-import PayInitiate from './components/PaymentInitiation'; // <-- Fixed filename import here
+import PayInitiate from './components/PaymentInitiation'; 
 import SuccessPage from './components/Success';
 import GuestOnlyRoute from './components/GuestOnlyRoute';
 import AdminRoute from './components/AdminRoute';
@@ -26,9 +26,23 @@ const STANDALONE_PATHS = [
   '/dataanalytics', '/teamcollector', '/domaindefinition', '/payinitiate'
 ];
 
-const ProtectedRoute = ({ children }) => {
+// 🛡️ Enhanced Protected Route with Role Guard Rails
+const ProtectedRoute = ({ children, allowedRoles }) => {
   const token = localStorage.getItem('token');
-  if (!token) return <Navigate to="/login" replace />;
+  const userRole = (localStorage.getItem('userRole') || '').toLowerCase();
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.map(r => r.toLowerCase()).includes(userRole)) {
+    // If unauthorized for this specific page, redirect cleanly to their correct home base
+    if (userRole === 'admin') return <Navigate to="/AdminDashboard" replace />;
+    if (userRole === 'domain_owner' || userRole === 'domainowner') return <Navigate to="/Dashboard" replace />;
+    if (userRole === 'user') return <Navigate to="/userDashboard" replace />;
+    return <Navigate to="/login" replace />;
+  }
+
   return children;
 };
 
@@ -51,17 +65,22 @@ function AppShell() {
           <Route path="/signup" element={<GuestOnlyRoute><Signup /></GuestOnlyRoute>} />
           <Route path="/login" element={<GuestOnlyRoute><Login /></GuestOnlyRoute>} />
           
-          {/* Dashboard Casings */}
-          <Route path="/Dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          {/* 🏢 Domain Owner Only Routes */}
+          <Route path="/Dashboard" element={<ProtectedRoute allowedRoles={['domain_owner', 'domainowner']}><Dashboard /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['domain_owner', 'domainowner']}><Dashboard /></ProtectedRoute>} />
+          <Route path="/DomainDefinition" element={<ProtectedRoute allowedRoles={['domain_owner', 'domainowner']}><DefineFeatures /></ProtectedRoute>} />
+          <Route path="/payInitiate" element={<ProtectedRoute allowedRoles={['domain_owner', 'domainowner']}><PayInitiate /></ProtectedRoute>} />
           
-          {/* Target Workflows */}
-          <Route path="/DomainDefinition" element={<ProtectedRoute><DefineFeatures /></ProtectedRoute>} />
-          <Route path="/payInitiate" element={<ProtectedRoute><PayInitiate /></ProtectedRoute>} />
+          {/* 👥 Collector / Standard User Only Routes */}
+          <Route path="/userDashboard" element={<ProtectedRoute allowedRoles={['user']}><UserDashboard /></ProtectedRoute>} />
+          <Route path="/userdashboard" element={<ProtectedRoute allowedRoles={['user']}><UserDashboard /></ProtectedRoute>} />
+          <Route path="/collectorHome" element={<ProtectedRoute allowedRoles={['user']}><CollectorHome /></ProtectedRoute>} />
+          <Route path="/collectorhome" element={<ProtectedRoute allowedRoles={['user']}><CollectorHome /></ProtectedRoute>} />
           
-          <Route path="/userDashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
-          <Route path="/collectorHome" element={<ProtectedRoute><CollectorHome /></ProtectedRoute>} />
+          {/* 👑 Admin Only Routes */}
           <Route path="/AdminDashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/admindashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          
           <Route path="/Success" element={<SuccessPage />} />
           
           {/* 404 Fallback Catch-all */}

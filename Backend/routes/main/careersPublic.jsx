@@ -1,3 +1,4 @@
+// src/pages/careersPublic.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Search, MapPin, Clock, ArrowRight, Briefcase, Loader } from 'lucide-react';
@@ -13,15 +14,15 @@ const CareersPage = () => {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        // Hitting the true public route with NO tokens required
+        // Correct blueprint URL mapping to Flask factory config
         const response = await fetch('http://localhost:8000/api/careers');
-        if (!response.ok) throw new Error('Network response failure');
+        if (!response.ok) throw new Error('Network response matching failed');
         const data = await response.json();
         
-        // Extract from the {"jobs": [...]} envelope
+        // Destructure safely from the {"jobs": [...]} API dictionary envelope
         setJobs(data.jobs || []);
       } catch (err) {
-        console.error("Fetch failed, using local fallback data:", err);
+        console.error("Fetch failed, utilizing local system fallback context:", err);
         setJobs([
           { id: 1, title: 'Voice Collector (Swahili)', location: 'Eldoret', field: 'Linguistics', type: 'Contract', compensation: 'Ksh 25,000' },
           { id: 2, title: 'Amharic Data Validator', location: 'Remote', field: 'Data', type: 'Full-time', compensation: 'Negotiable' },
@@ -34,7 +35,7 @@ const CareersPage = () => {
     fetchJobs();
   }, []);
 
-  // Filter against .field matching your DB columns
+  // Filter evaluation matching the model attributes payload structure (.field instead of .category)
   const filteredJobs = jobs.filter(job => 
     job.title?.toLowerCase().includes(searchTerm.toLowerCase()) &&
     (category === 'All' || job.field === category)
@@ -42,6 +43,7 @@ const CareersPage = () => {
 
   return (
     <div className="careers-container">
+      {/* Hero Header Presentation */}
       <header className="careers-hero">
         <div className="hero-content">
           <div className="badge">
@@ -53,6 +55,7 @@ const CareersPage = () => {
         </div>
       </header>
 
+      {/* Control Navigation Filters Wrapper Block */}
       <section className="search-wrapper">
         <div className="search-card">
           <div className="search-input-group">
@@ -73,6 +76,7 @@ const CareersPage = () => {
         </div>
       </section>
 
+      {/* Grid Iteration Area Component Container */}
       <main className="jobs-grid-container">
         {loading ? (
           <div className="loader-box"><Loader className="spinner" size={40} /></div>
@@ -80,7 +84,7 @@ const CareersPage = () => {
           <div className="jobs-grid">
             {filteredJobs.length === 0 ? (
               <div className="w-full text-center py-12 text-slate-500 font-medium">
-                No active openings found matching your filters.
+                No active openings found matching your chosen filter options.
               </div>
             ) : filteredJobs.map((job) => (
               <article 

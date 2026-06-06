@@ -4,11 +4,10 @@ import {
   Plus, Globe, RefreshCw, Mail,
   ExternalLink, Trash2, Eye, AlertCircle
 } from "lucide-react";
-import "./AdminDashboard.css";
 import ApplicantModal  from "../components/ApplicantModal";
 import TemplateManager from "../components/TemplateManager";
 import JobPostModal    from "../components/JobPostModal";
-
+import "./AdminDashboard.css";
 const AdminDashboard = () => {
   const [activeTab,      setActiveTab]      = useState("applications");
   const [applications,   setApplications]   = useState([]);
