@@ -22,10 +22,12 @@ def login():
         email      = data.get('email', '').strip()
         password   = data.get('password', '')
         ref_number = data.get('reference_number', '').strip()
-        req_role   = data.get('role', '').lower() # Grab the role intended by the UI
+        req_role   = data.get('role', '').strip().lower()
 
         if not email or not password:
             return jsonify({"error": "Email and password are required"}), 400
+
+        print(f"DEBUG AUTH TRACE -> Email: {email} | Parsed Role: '{req_role}' | Ref: '{ref_number}'")
 
         # ── 1. ADMIN ─────────────────────────────────────────────────
         if req_role == 'admin':

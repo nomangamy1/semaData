@@ -200,99 +200,76 @@ const CollectorHome = () => {
     }
   };
 
-  const stopRecording = () => {
+const stopRecording = () => {
     if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
       mediaRecorder.current.stop();
       stream?.getTracks().forEach(track => track.stop());
       setIsRecording(false);
       setIsPaused(false);
-      setTranscription('Acoustic buffer finalized. Ready for sync.');
+
+      mediaRecorder.current.onstop = async () => {
+        // Create audio blob from collected array chunks
+        const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+        
+        if (navigator.onLine) {
+          setTranscription('Processing pipeline running... Extracting audio markers.');
+          await uploadAudioToServer(audioBlob);
+        } else {
+          // Fallback smoothly to Dexie IndexedDB cache layer if working offline in the field
+          await saveToLocalDatabase(audioBlob);
+        }
+      };
     }
   };
 
-  // ─── Save & Sync ───
-  const handleSaveAndSync = async () => {
-    if (audioChunks.current.length === 0) {
-      alert('No audio data captured.');
-      return;
-    }
+  // ─── Cloud Sync Pipeline ───
+  const uploadAudioToServer = async (blob) => {
+    try {
+      const formData = new FormData();
+      // Ensure file name maps seamlessly to your secure_filename parameters
+      formData.append('file', blob, `audio_capture_${Date.now()}.webm`);
+      formData.append('referenceNumber', ref);
+      formData.append('domain_id', domainId);
 
-    const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+      const response = await fetch('http://localhost:8000/api/core/transcribe', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}` // JWT token mapping to @jwt_required()
+        },
+        body: formData,
+      });
 
-    if (isOnline) {
-      try {
-        setTranscription('Transmitting to SemaData Cloud...');
+      const data = await response.json();
 
-        const formData = new FormData();
-        formData.append('file', audioBlob, 'recording.webm');
-        formData.append('referenceNumber', ref);
-        formData.append('domain_id', domainId);  // ✅ consistent key name
-
-        const response = await fetch('http://localhost:8000/api/core/transcribe', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`  // ✅ JWT token — no Content-Type with FormData
-          },
-          body: formData,
-        });
-
-        if (response.ok) {
-          alert('✅ Sync Complete!');
-          navigate('/userDashboard');
-          return;
-        } else {
-          throw new Error('Cloud rejected the data');
-        }
-      } catch (err) {
-        console.warn('Cloud sync failed. Saving to Local Vault.', err);
+      if (response.ok) {
+        setTranscription(data.transcription || 'Audio parsed successfully.');
+        alert(`✅ Engine Match Success!\nProgress: ${data.progress.percent}% of domain goal target.`);
+      } else {
+        setTranscription(`Quality Gate Flagged: ${data.error || 'Processing failure'}`);
       }
+    } catch (err) {
+      console.error('Server sync failure:', err);
+      setTranscription('Connection broken. Saving backup draft copy into local vault.');
+      await saveToLocalDatabase(blob);
     }
+  };
 
-    // Fallback: IndexedDB
+  // ─── Dexie Local Cache Backup ───
+  const saveToLocalDatabase = async (blob) => {
     try {
       await db.drafts.add({
-        audioBlob,
-        refNum: ref,
-        task,
-        domainId,
-        status: 'Pending Sync',
+        task: task || 'General Data Collection',
+        audioBlob: blob,
+        duration: formatTime(duration),
         timestamp: Date.now(),
-        duration: formatTime(duration)
+        refNum: ref,
+        domainId: domainId
       });
-      alert('NETWORK LOW: Session saved to secure local vault.');
-      navigate('/userDashboard');
-    } catch (dbErr) {
-      console.error('Critical Storage Error:', dbErr);
-      alert('Failed to save locally. Please check your storage settings.');
+      alert('📡 Device working offline. Audio copy safely archived inside Local Vault.');
+    } catch (err) {
+      console.error('IndexedDB write failure:', err);
     }
   };
-
-  // ─── Loading / Error states ───
-  if (taskLoading) {
-    return (
-      <div className="collector-focus-mode">
-        <div className="engine-container" style={{ textAlign: 'center', paddingTop: '4rem' }}>
-          <p style={{ color: '#489c8c', fontWeight: 'bold', fontSize: '1.1rem', animation: 'pulse 1.5s infinite' }}>
-            Loading your assigned task...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (taskError) {
-    return (
-      <div className="collector-focus-mode">
-        <div className="engine-container" style={{ textAlign: 'center', paddingTop: '4rem' }}>
-          <p style={{ color: '#ef4444', fontWeight: 'bold' }}>{taskError}</p>
-          <button className="save-btn" style={{ marginTop: '1rem' }} onClick={() => navigate('/userDashboard')}>
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="collector-focus-mode">
 
@@ -355,13 +332,13 @@ const CollectorHome = () => {
             Cancel Session
           </button>
           <button
-            className={`save-btn ${!isOnline ? 'draft-mode' : ''}`}
-            disabled={isRecording || duration === 0}
-            onClick={handleSaveAndSync}
-          >
-            {isOnline ? 'Finalize & Sync Cloud' : 'Save to Local Vault'}
-          </button>
-        </div>
+  className="save-btn"
+  disabled={isRecording || duration === 0}
+  onClick={() => navigate('/userDashboard')}
+>
+  Return to Dashboard
+</button>
+                  </div>
       </div>
     </div>
   );

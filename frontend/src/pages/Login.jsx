@@ -35,21 +35,29 @@ const Login = () => {
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
+    // 🎯 Grab raw values directly from the DOM to bypass any state/tab bugs
+    const formEl = e.currentTarget;
+    const rawData = new FormData(formEl);
+    const emailVal = rawData.get('email')?.trim();
+    const passwordVal = rawData.get('password');
+    const refVal = rawData.get('reference_number')?.trim();
+
     const backendRole = loginRole === 'collector' ? 'user' : loginRole;
 
     const payload = {
-      email:    formData.email.trim(),
-      password: formData.password,
+      email:    emailVal,
+      password: passwordVal,
       role:     backendRole,
-
-
-      ...(loginRole === 'collector' && { reference_number: formData.reference_number.trim() })
+      ...(loginRole === 'collector' && { reference_number: refVal })
     };
+
+    // DEBUG: Log this inside your browser console (Press F12) to see what is leaving the browser
+    console.log("SENDING PAYLOAD TO BACKEND:", payload);
 
     try {
       const response = await fetch('http://localhost:8000/api/Auth/login', {
@@ -71,7 +79,6 @@ const Login = () => {
         if (data.domain)   localStorage.setItem('domain',    data.domain);
         if (data.referenceNumber) localStorage.setItem('referenceNumber', data.referenceNumber);
 
-        // nextPath comes from email verification link e.g. ?next=/community
         if (nextPath) { navigate(nextPath, { replace: true }); return; }
 
         const role = (data.role || '').toLowerCase();
@@ -81,15 +88,14 @@ const Login = () => {
         else if (role === 'community')                              navigate('/community',       { replace: true });
         else setError('Unknown role received from server.');
       } else {
-        setError(data.error || 'Login failed. Please check your credentials.');
+        setError(data.error || 'Login failed.');
       }
     } catch {
-      setError('Server connection failed. Is the backend running?');
+      setError('Server connection failed.');
     } finally {
       setIsLoading(false);
     }
   };
-
   return (
     <div className="login-page">
       <div className="login-card">
