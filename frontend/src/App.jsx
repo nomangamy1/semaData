@@ -20,6 +20,8 @@ import PayInitiate from './components/PaymentInitiation';
 import SuccessPage from './components/Success';
 import GuestOnlyRoute from './components/GuestOnlyRoute';
 import AdminRoute from './components/AdminRoute';
+import CollectorProfile from './components/collectorProfile';
+import PayoutManagement from './components/PayoutManagement';
 
 const STANDALONE_PATHS = [
   '/dashboard', '/userdashboard', '/collectorhome', '/admindashboard',
@@ -61,6 +63,7 @@ function AppShell() {
           <Route path="/community" element={<Community />} />
           <Route path="/careers" element={<CareersPage />} />
           <Route path="/careers/:id" element={<JobDescriptionView />} />
+          <Route path="/profile" element={<CollectorProfile />} />
           
           <Route path="/signup" element={<GuestOnlyRoute><Signup /></GuestOnlyRoute>} />
           <Route path="/login" element={<GuestOnlyRoute><Login /></GuestOnlyRoute>} />
@@ -80,7 +83,7 @@ function AppShell() {
           {/* 👑 Admin Only Routes */}
           <Route path="/AdminDashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/admindashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-          
+          <Route path="/admin/payouts" element={<PayoutManagement />} />
           <Route path="/Success" element={<SuccessPage />} />
           
           {/* 404 Fallback Catch-all */}

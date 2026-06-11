@@ -195,3 +195,74 @@ aside button.bg-emerald-500:hover {
   font-weight: 700;
   color: var(--emerald-accent);
 }
+.admin-payout-desk-view {
+  padding: 1.5rem;
+  background: #ffffff;
+  border-radius: 8px;
+}
+
+.admin-finance-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1.5rem;
+  text-align: left;
+}
+
+.admin-finance-table th, .admin-finance-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.9rem;
+}
+
+.admin-finance-table th {
+  background: #f7fafc;
+  color: #4a5568;
+  font-weight: 700;
+}
+
+/* Channel Pill Decorators */
+.channel-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+.channel-badge.mpesa { background: #dcfce7; color: #15803d; }
+.channel-badge.paypal { background: #e0f2fe; color: #0369a1; }
+
+/* Control Form Inlines */
+.payout-execution-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.audit-note-field {
+  padding: 0.5rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  width: 180px;
+}
+
+.commit-payout-btn {
+  background: #1e3a8a;
+  color: white;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.commit-payout-btn:hover { background: #172554; }
+
+.admin-status-banner {
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+.admin-status-banner.success-view { background: #dcfce7; color: #14532d; }
+.admin-status-banner.error-view { background: #fee2e2; color: #7f1d1d; }

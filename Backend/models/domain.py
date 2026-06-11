@@ -20,6 +20,7 @@ class Domain(db.Model):
     domain_features = db.relationship('Feature',lazy =True,backref = 'domain')
     datasets = db.relationship('Dataset', backref='domain', lazy=True)
     requirements = db.Column(db.Text)
+    collector_bounty = db.Column(db.Float, nullable=False, default=10.0)
     # Domain features can be defined by the owner  
      
 
@@ -48,6 +49,8 @@ class Domain(db.Model):
         # Use per-item rate of 20 (matches payment initiation calculation)
         self.total_budget = float(tg) * 20
         self.deposit_amount = self.total_budget * 0.3
+        if not self.collector_bounty:
+            self.collector_bounty = 10.0
 
         # Persist using the session (some code expects a save() helper)
         db.session.add(self)

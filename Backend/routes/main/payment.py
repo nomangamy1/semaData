@@ -141,3 +141,138 @@ def get_status(domain_id):
         "deposit_amount":   domain.deposit_amount,
         "amount_paid":      domain.amount_paid or 0,
     }), 200
+# ==============================================================================
+# COLLECTOR DISBURSEMENT & FINANCIAL MANAGEMENT SYSTEM
+# ==============================================================================
+@payment_bp.route("/finance-summary", methods=["GET"])
+@jwt_required()
+def get_finance_summary():
+    from models.user import User  
+    from models.datasets import DatasetEntry 
+    from models.disbursements import AdminDisbursement 
+    from models.domain import Domain
+    
+    collector_id = get_jwt_identity()
+    try:
+        collector_id = int(collector_id)
+    except (ValueError, TypeError):
+        pass
+
+    try:
+        # 1. Compute baseline gross earnings from verified entries
+        gross_query = db.session.query(
+            func.coalesce(func.sum(Domain.collector_bounty), 0.00)
+        ).join(
+            DatasetEntry, DatasetEntry.domain_id == Domain.id
+        ).filter(
+            DatasetEntry.collector_id == collector_id,
+            DatasetEntry.status == "Verified"
+        ).scalar()
+        
+        base_earnings = float(gross_query)
+
+        # 2. RUN QUALITY AUDIT: Check if penalty applies
+        total_submissions = DatasetEntry.query.filter_by(collector_id=collector_id).count()
+        null_rejections = DatasetEntry.query.filter_by(
+            collector_id=collector_id, 
+            status='Rejected', 
+            rejection_reason='HIGH_NULL_VALUES'
+        ).count()
+        
+        failure_rate = (null_rejections / total_submissions) if total_submissions > 0 else 0
+        
+        # Determine penalty deduction percentage
+        penalty_percentage = 0.0
+        penalty_deduction_amount = 0.0
+        
+        if failure_rate > 0.20 and total_submissions >= 5:
+            penalty_percentage = 0.15 # 15% penalty fee for spam/null data patterns
+            penalty_deduction_amount = base_earnings * penalty_percentage
+
+        # Adjusted earnings after quality control fines
+        net_gross_earnings = base_earnings - penalty_deduction_amount
+
+        # 3. Fetch past successful payouts
+        withdrawn_query = db.session.query(
+            func.coalesce(func.sum(AdminDisbursement.amount), 0.00)
+        ).filter(
+            AdminDisbursement.collector_id == collector_id,
+            AdminDisbursement.status == "DISBURSED"
+        ).scalar()
+        
+        total_withdrawn = float(withdrawn_query)
+        current_balance = net_gross_earnings - total_withdrawn
+
+        return jsonify({
+            "base_earnings": base_earnings,
+            "penalty_deduction": penalty_deduction_amount,
+            "penalty_percentage_applied": f"{penalty_percentage * 100}%",
+            "net_gross_earnings": net_gross_earnings,
+            "total_withdrawn": total_withdrawn,
+            "current_balance": max(current_balance, 0.00), # Prevent negative balance edge cases
+            "quality_metrics": {
+                "total_submitted": total_submissions,
+                "null_rejections": null_rejections,
+                "rejection_rate": f"{round(failure_rate * 100, 2)}%"
+            }
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Ledger aggregation crash: {str(e)}"}), 500
+
+@payment_bp.route("/request-withdrawal", methods=["POST"])
+@jwt_required()
+def request_withdrawal():
+    """ Creates a withdrawal intent row after validating the newly scaled dynamic balance formulas """
+    from models.datasets import DatasetEntry
+    from models.disbursements import AdminDisbursement
+
+    collector_id = get_jwt_identity()
+    try:
+        collector_id = int(collector_id)
+    except (ValueError, TypeError):
+        pass
+
+    data = request.get_json(silent=True) or {}
+    try:
+        requested_amount = float(data.get("amount", 0))
+    except (ValueError, TypeError):
+        return jsonify({"error": "Numeric values only"}), 400
+
+    if requested_amount < 100.00:
+        return jsonify({"error": "Minimum payout requirement is KES 100.00"}), 400
+
+    try:
+        # ─── RE-VERIFY BALANCE WITH DYNAMIC BOUNTY RATES ───
+        gross = db.session.query(
+            func.coalesce(func.sum(Domain.collector_bounty), 0.00)
+        ).join(
+            DatasetEntry, DatasetEntry.domain_id == Domain.id
+        ).filter(
+            DatasetEntry.collector_id == collector_id,
+            DatasetEntry.status == "Verified"
+        ).scalar()
+        
+        paid = db.session.query(func.coalesce(func.sum(AdminDisbursement.amount), 0.00)).filter(
+            AdminDisbursement.collector_id == collector_id, AdminDisbursement.status == "DISBURSED"
+        ).scalar()
+        
+        live_balance = float(gross) - float(paid)
+
+        if requested_amount > live_balance:
+            return jsonify({"error": "Withdrawal request rejected due to insufficient verified funds"}), 400
+
+        new_intent = AdminDisbursement(
+            collector_id=collector_id,
+            amount=requested_amount,
+            status="PENDING",
+            initiated_at=datetime.utcnow()
+        )
+        db.session.add(new_intent)
+        db.session.commit()
+
+        return jsonify({"status": "success", "message": "Cashout request logged successfully."}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Ledger validation database error: {str(e)}"}), 500

@@ -22,6 +22,7 @@ from routes.main.payment import payment_bp
 from routes.main.UserDashboard import UserDashboard_bp
 from routes.main.doDataAnalytics import UserAnalytics_bp
 from routes.main.contact import contact_bp
+from routes.main.payment import payment_bp
 from routes.AdminCareers import AdminCareers_bp
 from routes.main.community_routes import community_bp
 from routes.main.AdminDashboard import admin_bp
@@ -78,7 +79,7 @@ def semaData_app():
     semaData.register_blueprint(export_bp,url_prefix='/api/export')
     semaData.register_blueprint(AdminCareers_bp,url_prefix='/api/admin')
     semaData.register_blueprint(community_bp,url_prefix='/api')
-
+    semaData.register_blueprint(payment_bp,url_prefix='/api/collector',name='collector_payment')
     @login_manager.user_loader
     def load_user(user_id):
         if user_id is None:
