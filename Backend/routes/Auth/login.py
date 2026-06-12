@@ -11,10 +11,6 @@ import logging
 logger = logging.getLogger(__name__)
 login_bp = Blueprint("login", __name__)
 
-
-
-
-
 @login_bp.route('/login', methods=['POST'])
 def login():
     try:
@@ -29,22 +25,21 @@ def login():
 
         print(f"DEBUG AUTH TRACE -> Email: {email} | Parsed Role: '{req_role}' | Ref: '{ref_number}'")
 
-        # ── 1. ADMIN ─────────────────────────────────────────────────
-        if req_role == 'admin':
-            admin = User.query.filter_by(email=email, role='admin').first()
-            if admin:
-                if not check_password_hash(admin.password_hash, password):
-                    return jsonify({"error": "Invalid admin credentials"}), 401
-                token = create_access_token(
-                    identity=str(admin.id),
-                    additional_claims={"role": "admin"}
-                )
-                return jsonify({
-                    "token":  token,
-                    "role":   "admin",
-                    "userId": admin.id,
-                    "email":  admin.email,
-                }), 200
+        # ── 1. GLOBAL PRODUCTION ADMIN INTERCEPT ─────────────────────
+        admin = User.query.filter_by(email=email, role='admin').first()
+        if admin:
+            if not check_password_hash(admin.password_hash, password):
+                return jsonify({"error": "Invalid admin credentials"}), 401
+            token = create_access_token(
+                identity=str(admin.id),
+                additional_claims={"role": "admin"}
+            )
+            return jsonify({
+                "token":  token,
+                "role":   "admin",
+                "userId": admin.id,
+                "email":  admin.email,
+            }), 200
 
         # ── 2. DOMAIN OWNER ──────────────────────────────────────────
         if req_role == 'domainowner' or req_role == 'domain_owner':

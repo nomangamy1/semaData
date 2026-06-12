@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './adminDashboard.css'; // Fits inside your existing administrative design theme layout
+import '../pages/AdminDashboard.css'; // Fits inside your existing administrative design theme layout
 
 const PayoutManagement = () => {
   const [requests, setRequests] = useState([]);

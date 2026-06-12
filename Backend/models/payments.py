@@ -26,7 +26,7 @@ class AdminDisbursement(db.Model):
     __tablename__ = 'admin_disbursement'
     
     id = db.Column(db.Integer, primary_key=True)
-    collector_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    collector_id = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     
     # State Engine: 'PENDING', 'DISBURSED', 'REJECTED'

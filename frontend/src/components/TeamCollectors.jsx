@@ -1,108 +1,131 @@
-import React from 'react';
-import { Users, UserPlus, Mail, Shield, MoreVertical, Star } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import ApplicationsTable from './ApplicationsTable';
+import ApplicantModal from './ApplicantModal';
+import { Users } from 'lucide-react';
+import './TeamCollectors.css';
 
 const TeamCollectors = () => {
-  // Mock data for team members
-  const teamMembers = [
-    { id: 1, name: "Sarah Wambui", email: "sarah.w@semadata.org", role: "Field Lead", submissions: 142, accuracy: "98.5%", status: "Active" },
-    { id: 2, name: "David Kipkorir", email: "david.k@semadata.org", role: "Data Collector", submissions: 89, accuracy: "94.2%", status: "Active" },
-    { id: 3, name: "Amara Okechi", email: "amara.o@semadata.org", role: "Researcher", submissions: 215, accuracy: "99.1%", status: "On Leave" },
-    { id: 4, name: "Kevin Mutua", email: "kevin.m@semadata.org", role: "Data Collector", submissions: 45, accuracy: "92.0%", status: "Active" },
-  ];
+    const [rawApplications, setRawApplications] = useState([]);
+    const [selectedApplicant, setSelectedApplicant] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
 
-  return (
-    <div className="team-view animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* --- HEADER & INVITE --- */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
-        <div>
-          <h2 className="text-3xl font-black text-slate-900">Research Team</h2>
-          <p className="text-slate-500 font-medium">Manage permissions and monitor collector performance.</p>
-        </div>
-        <button className="bg-[#489c8c] hover:bg-[#3d8577] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition shadow-lg shadow-emerald-900/10">
-          <UserPlus size={20} /> Invite New Member
-        </button>
-      </div>
+    // 1. Fetching pending applicant payloads from your Flask API server
+    const fetchApplications = async () => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/admin/applications', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setRawApplications(data);
+            }
+        } catch (error) {
+            console.error("Error retrieving collector applications:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-      {/* --- QUICK STATS --- */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        {[
-          { label: "Active Collectors", val: "12", icon: <Users size={16}/> },
-          { label: "Top Performer", val: "Amara O.", icon: <Star size={16}/> },
-          { label: "Avg. Accuracy", val: "96.4%", icon: <Shield size={16}/> },
-          { label: "Invites Sent", val: "3", icon: <Mail size={16}/> }
-        ].map((s, i) => (
-          <div key={i} className="bg-white p-4 rounded-2xl border border-slate-100 flex items-center gap-4">
-            <div className="p-2 bg-slate-50 text-[#489c8c] rounded-lg">{s.icon}</div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{s.label}</p>
-              <p className="text-sm font-bold text-slate-800">{s.val}</p>
+    useEffect(() => {
+        fetchApplications();
+    }, []);
+
+    // 2. Normalize schema discrepancies for ApplicationsTable
+    const tableData = rawApplications.map(app => ({
+        ...app,
+        id: app.id,
+        applicant_name: app.applicant_name || `${app.first_name || ''} ${app.second_name || ''}`.strip() || 'Anonymous',
+        applicant_email: app.applicant_email || app.email || 'N/A',
+        job_title: app.job_title || 'Field Data Collector',
+        domain_name: app.domain_name || 'General Operations'
+    }));
+
+    // 3. Action Control Planes
+    const handleViewDetails = (mappedApp) => {
+        // Find original raw payload record matching clicked element row key
+        const originalRecord = rawApplications.find(a => a.id === mappedApp.id);
+        
+        // Safety Fallbacks to stop the Avatar string indexing crash
+        const safeRecord = {
+            ...originalRecord,
+            first_name: originalRecord?.first_name || originalRecord?.applicant_name?.split(' ')[0] || 'U',
+            second_name: originalRecord?.second_name || originalRecord?.applicant_name?.split(' ')[1] || 'N',
+            email: originalRecord?.email || originalRecord?.applicant_email || 'N/A'
+        };
+        
+        setSelectedApplicant(safeRecord);
+        setIsModalOpen(true);
+    };
+
+    const handleApprove = async (id) => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/admin/applications/${id}/approve`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setIsModalOpen(false);
+                fetchApplications(); // Hot reload list
+            }
+        } catch (err) {
+            console.error("Approve endpoint failure:", err);
+        }
+    };
+
+    const handleReject = async (id) => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/admin/applications/${id}/reject`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setIsModalOpen(false);
+                fetchApplications(); // Hot reload list
+            }
+        } catch (err) {
+            console.error("Reject endpoint failure:", err);
+        }
+    };
+
+    return (
+        <div className="admin-section-container">
+            <div className="section-card">
+                <div className="mb-6">
+                    <h2 className="text-2xl font-black text-slate-800">Pending Collector Registrations</h2>
+                    <p className="text-sm text-slate-500 mt-1">Review incoming field network applicants and provision operational tracking routes.</p>
+                </div>
+
+                {loading ? (
+                    <div className="py-12 text-center text-slate-400 font-medium">Querying platform database context...</div>
+                ) : (
+                    <ApplicationsTable 
+                        data={tableData}
+                        onView={handleViewDetails}
+                        onApprove={handleApprove}
+                        onReject={handleReject}
+                    />
+                )}
             </div>
-          </div>
-        ))}
-      </div>
 
-      {/* --- TEAM TABLE --- */}
-      <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-50/50">
-              <th className="p-6 text-xs font-black text-slate-400 uppercase tracking-widest">Team Member</th>
-              <th className="p-6 text-xs font-black text-slate-400 uppercase tracking-widest">Role</th>
-              <th className="p-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Submissions</th>
-              <th className="p-6 text-xs font-black text-slate-400 uppercase tracking-widest">AI Accuracy</th>
-              <th className="p-6 text-xs font-black text-slate-400 uppercase tracking-widest">Status</th>
-              <th className="p-6"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {teamMembers.map((member) => (
-              <tr key={member.id} className="border-t border-slate-50 hover:bg-slate-50/30 transition-colors group">
-                <td className="p-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center font-bold text-[#489c8c]">
-                      {member.name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-800">{member.name}</p>
-                      <p className="text-xs text-slate-400">{member.email}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="p-6">
-                  <span className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-lg">{member.role}</span>
-                </td>
-                <td className="p-6 text-center font-mono text-sm font-bold text-slate-700">
-                  {member.submissions}
-                </td>
-                <td className="p-6">
-                  <div className="flex items-center gap-2">
-                    <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-[#489c8c]" 
-                        style={{ width: member.accuracy }}
-                      ></div>
-                    </div>
-                    <span className="text-xs font-bold text-[#489c8c]">{member.accuracy}</span>
-                  </div>
-                </td>
-                <td className="p-6">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${member.status === 'Active' ? 'bg-green-500' : 'bg-slate-300'}`}></span>
-                    <span className="text-xs font-bold text-slate-600">{member.status}</span>
-                  </div>
-                </td>
-                <td className="p-6 text-right">
-                  <button className="p-2 text-slate-300 hover:text-slate-600 transition">
-                    <MoreVertical size={18} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+            {/* Dynamic Modal View Overlay */}
+            {isModalOpen && selectedApplicant && (
+                <ApplicantModal 
+                    applicant={selectedApplicant}
+                    onClose={() => {
+                        setIsModalOpen(false);
+                        setSelectedApplicant(null);
+                    }}
+                    onApprove={handleApprove}
+                    onReject={handleReject}
+                />
+            )}
+        </div>
+    );
 };
 
 export default TeamCollectors;
