@@ -5,6 +5,12 @@ from models.user import User
 from models.Job import Job
 from models.domainowner import DomainOwner
 from models.JobApplication import JobApplication
+import string
+import secrets
+from flask import Blueprint, request, jsonify, current_app
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from models.user import User
+from extensions import db
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -140,3 +146,62 @@ def approve_payout(request_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Database mutation crash tracking block: {str(e)}"}), 500
+
+
+
+@admin_bp.route("/manage-team/invite", methods=["POST"])
+@jwt_required()
+def invite_reviewer():
+    """
+    Allows an existing administrator to instantly provision a new secure account
+    for a reviewer without accessing the database command line.
+    """
+    admin_id = get_jwt_identity()
+    if not require_admin(admin_id):
+        return jsonify({"error": "Unauthorized. Higher administrative clearance required."}), 403
+
+    data = request.get_json() or {}
+    email = data.get("email", "").strip().lower()
+    first_name = data.get("first_name", "").strip()
+    second_name = data.get("second_name", "").strip()
+
+    if not email or not first_name or not second_name:
+        return jsonify({"error": "Missing required fields: email, first_name, and second_name are mandatory."}), 400
+
+    # Prevent duplicates
+    if User.find_by_email(email):
+        return jsonify({"error": f"An account with the email {email} already exists in the system."}), 400
+
+    try:
+        # 1. Generate a secure, random temporary password
+        alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+        temp_password = ''.join(secrets.choice(alphabet) for _ in range(12))
+
+        # 2. Create the user object with admin permissions for the verification pipeline
+        new_reviewer = User(
+            email=email,
+            first_name=first_name,
+            second_name=second_name,
+            user_type='admin',  # Maps to your admin panel logic
+            role='admin',       # Mirrors user_type for JWT verification
+            is_verified=True    # Pre-vetted by the super-admin
+        )
+        new_reviewer.set_password(temp_password)
+        new_reviewer.create()
+
+        # 3. Dynamic Notification Log 
+        # In production, hook this up to your SendGrid/Mailgun service to email the credentials.
+        current_app.logger.info(f"SUCCESS: Created reviewer account for {email} with temp password: {temp_password}")
+
+        return jsonify({
+            "status": "success",
+            "message": f"Account for {first_name} successfully created!",
+            "credentials": {
+                "email": email,
+                "temporary_password": temp_password
+            }
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Internal system fault provisioning reviewer account: {str(e)}"}), 500

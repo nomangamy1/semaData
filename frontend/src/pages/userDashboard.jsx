@@ -1,21 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import WalletTab from '../components/WalletTab';
+import PersonalProfile from '../components/PersonalProfile';
 import './userDashboard.css';
 import db from './db';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
 
-  // ✅ Read from localStorage using consistent keys set by login.jsx
-  const token  = localStorage.getItem('token');
-  const userId = localStorage.getItem('ownerId'); // login stores both owner and user id as 'ownerId'
+  // ✅ Token and identity mapping checks
+  const token = localStorage.getItem('token');
+  const userId = localStorage.getItem('ownerId'); 
   const domainId = localStorage.getItem('domainId');
 
+  // Dashboard Data and UI Loading states
   const [isLoading, setIsLoading] = useState(true);
   const [drafts, setDrafts] = useState([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState('');
 
+  // Financial State Management Context
+  const [finance, setFinance] = useState({
+    currentBalance: 0.0,
+    baseEarnings: 0.0,
+    penaltyDeduction: 0.0,
+    totalApproved: 0,
+    totalRejected: 0,
+    rejectionRate: 0.0
+  });
+
+  // Profile data context state mapping
   const [sessionData, setSessionData] = useState({
     name: '', email: '', domain: '', refNum: ''
   });
@@ -46,14 +60,13 @@ const UserDashboard = () => {
 
         const formData = new FormData();
         formData.append('file', draft.audioBlob, `sync_${draft.timestamp}.webm`);
-        formData.append('referenceNumber', draft.refNum);   // ✅ matches engine
-        formData.append('domain_id', draft.domainId || domainId); // ✅ matches engine
+        formData.append('referenceNumber', draft.refNum);   
+        formData.append('domain_id', draft.domainId || domainId); 
 
         const response = await fetch('http://localhost:8000/api/core/transcribe', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`  // ✅ JWT token — required by engine
-            // ✅ No Content-Type — browser sets it automatically for FormData
+            'Authorization': `Bearer ${token}`  
           },
           body: formData,
         });
@@ -71,6 +84,7 @@ const UserDashboard = () => {
 
       if (remaining.length === 0) {
         alert('✅ All local records synced successfully!');
+        fetchFinancialSummary();
       } else {
         alert(`⚠️ ${remaining.length} drafts still pending. Some may have failed.`);
       }
@@ -82,9 +96,34 @@ const UserDashboard = () => {
     }
   };
 
+  // ─── Fetch Financial Metrics ───
+  const fetchFinancialSummary = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/main/finance-summary', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setFinance({
+          currentBalance: data.current_balance,
+          baseEarnings: data.base_earnings,
+          penaltyDeduction: data.penalty_deduction,
+          totalApproved: data.quality_metrics?.approved_entries || 0,
+          totalRejected: data.quality_metrics?.rejected_entries || 0,
+          rejectionRate: data.quality_metrics?.rejection_rate || 0.0
+        });
+      }
+    } catch (err) {
+      console.error("Error connecting to payment API ledger paths:", err);
+    }
+  };
+
   // ─── Initialize dashboard ───
   useEffect(() => {
-    // ✅ Guard: no token = go to login
     if (!token || !userId) {
       navigate('/login');
       return;
@@ -92,22 +131,19 @@ const UserDashboard = () => {
 
     const initializeDashboard = async () => {
       try {
-        // 1. Load local drafts
         const localDrafts = await db.drafts.toArray();
         setDrafts(localDrafts);
 
-        // 2. Fetch collector stats with JWT token
         const response = await fetch(
           `http://localhost:8000/api/main/collector-stats/${userId}`,
           {
             headers: {
-              'Authorization': `Bearer ${token}`,  // ✅ JWT — required by @jwt_required()
+              'Authorization': `Bearer ${token}`,  
               'Content-Type': 'application/json'
             }
           }
         );
 
-        // ✅ Handle auth errors
         if (response.status === 401 || response.status === 403) {
           localStorage.removeItem('token');
           navigate('/login');
@@ -123,10 +159,12 @@ const UserDashboard = () => {
         setSessionData(data.sessionData || { total_hours: 0, submissions: 0 });
         setActiveTask(data.activeTask);
 
-        // ✅ Store refNum for CollectorHome to read
         if (data.sessionData?.refNum) {
           localStorage.setItem('referenceNumber', data.sessionData.refNum);
         }
+
+        // Parallel thread for updating financial indicators
+        await fetchFinancialSummary();
 
       } catch (err) {
         console.error('Dashboard init error:', err);
@@ -154,7 +192,6 @@ const UserDashboard = () => {
     ? Math.min(Math.round((activeTask.currentCount / activeTask.targetCount) * 100), 100)
     : 0;
 
-  // ─── Loading ───
   if (isLoading) {
     return (
       <div className="dashboard-wrapper">
@@ -165,7 +202,6 @@ const UserDashboard = () => {
     );
   }
 
-  // ─── Error ───
   if (error) {
     return (
       <div className="dashboard-wrapper">
@@ -210,10 +246,13 @@ const UserDashboard = () => {
         </div>
       </header>
 
+      {/* Modular Balance Card Panel Component Integration */}
+      <WalletTab finance={finance} token={token} onRefresh={fetchFinancialSummary} />
+
       <div className="dashboard-grid">
         <div className="main-content-flow">
 
-          {/* Active Task */}
+          {/* Active Task Allocation */}
           <section className="task-card">
             <h2>Work Allocation</h2>
             <div className="active-assignment-box">
@@ -259,20 +298,11 @@ const UserDashboard = () => {
             </section>
           )}
 
-          {/* Account Info */}
-          <section className="profile-details-card">
-            <h3>Account Metadata</h3>
-            <div className="info-grid">
-              <div className="info-item"><label>Full Name</label><p>{sessionData.name}</p></div>
-              <div className="info-item"><label>Domain</label><p>{sessionData.domain}</p></div>
-              <div className="info-item"><label>Role</label><p>Data Collection Agent</p></div>
-              <div className="info-item"><label>Auth Mode</label><p>Reference-Bound JWT</p></div>
-            </div>
-            <button className="logout-link" onClick={handleLogout}>Sign out of system</button>
-          </section>
+          {/* Modular Account Personal Details Meta Card Component Integration */}
+          <PersonalProfile sessionData={sessionData} onLogout={handleLogout} />
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar Guidelines Panel Layout */}
         <aside className="instructions-aside">
           <h4>Operational Guidelines</h4>
           <ul>
@@ -287,6 +317,7 @@ const UserDashboard = () => {
           </div>
         </aside>
       </div>
+
     </div>
   );
 };

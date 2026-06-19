@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import '../pages/AdminDashboard.css';
 import '../components/AdminShared.css';
+import ReviewerOnboardingModal from '../components/ReviewerOnboardingModal';
 
 // Import all system sub-components
 import DataAnalytics from '../components/DataAnalytics';
@@ -9,11 +10,12 @@ import JobsTable from '../components/JobsTable';
 import TemplateManager from '../components/TemplateManager';
 import PayoutManagement from '../components/PayoutManagement';
 import JobPostModal from '../components/JobPostModal';
-import DomainsTable from '../components/DomainsTable'; // 🗲 Pull in your new table structure
+import DomainsTable from '../components/DomainsTable';
 
 const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('overview');
     const [isJobModalOpen, setIsJobModalOpen] = useState(false);
+    const [isReviewerModalOpen, setIsReviewerModalOpen] = useState(false);
 
     // Sidebar navigation configuration
     const menuItems = [
@@ -21,7 +23,7 @@ const AdminDashboard = () => {
         { id: 'collectors', label: 'Team Collectors', icon: '👥' },
         { id: 'jobs', label: 'Manage Jobs & Tasks', icon: '💼' },
         { id: 'templates', label: 'Data Templates', icon: '📝' },
-        { id: 'domains', label: 'Registered Domains', icon: '🌐' }, // 🗲 Admin Core view control
+        { id: 'domains', label: 'Registered Domains', icon: '🌐' },
         { id: 'payouts', label: 'Financials & Payouts', icon: '💳' }
     ];
 
@@ -89,17 +91,28 @@ const AdminDashboard = () => {
 
             {/* Main Application Content Window */}
             <main className="admin-main-viewport">
-                <header className="admin-top-navbar">
+                <header className="admin-top-navbar flex justify-between items-center px-6 py-4 bg-white border-b border-slate-100">
                     <div className="welcome-text">
                         <h3>System Controller Workspace</h3>
                     </div>
-                    <div className="admin-profile-badge">
-                        <span className="status-indicator online"></span>
-                        <p>Platform Admin</p>
+                    
+                    {/* Action Panel: Triggers the new onboarding modal */}
+                    <div className="flex items-center gap-4">
+                        <button 
+                            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                            onClick={() => setIsReviewerModalOpen(true)}
+                        >
+                            🛡️ Add Reviewer Account
+                        </button>
+
+                        <div className="admin-profile-badge flex items-center gap-2">
+                            <span className="status-indicator online"></span>
+                            <p className="text-sm font-semibold text-slate-700">Platform Admin</p>
+                        </div>
                     </div>
                 </header>
 
-                <div className="admin-page-content">
+                <div className="admin-page-content p-6">
                     {renderContent()}
                 </div>
             </main>
@@ -109,6 +122,14 @@ const AdminDashboard = () => {
                 <JobPostModal 
                     isOpen={isJobModalOpen} 
                     onClose={() => setIsJobModalOpen(false)} 
+                />
+            )}
+
+            {/* Programmatic Reviewer Provisioning Portal */}
+            {isReviewerModalOpen && (
+                <ReviewerOnboardingModal 
+                    isOpen={isReviewerModalOpen} 
+                    onClose={() => setIsReviewerModalOpen(false)}
                 />
             )}
         </div>

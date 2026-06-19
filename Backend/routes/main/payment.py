@@ -471,60 +471,6 @@ def finance_b2c_timeout_callback():
 
 
 
-@payment_bp.route("/api/admin/payouts/approve/<int:request_id>", methods=["POST"])
-@jwt_required()
-def approve_manual_payout(request_id):
-    """
-    Interceptions block that updates a PENDING withdrawal intent row manually,
-    saving a verified confirmation code/receipt token to clear out balances.
-    """
-    from models.disbursements import AdminDisbursement
-
-    # 1. Identity context validation layer
-    current_admin_id = get_jwt_identity()
-
-    # 2. Extract request body values
-    data = request.get_json(silent=True) or {}
-    transaction_note = data.get("transaction_note")
-
-    if not transaction_note or not str(transaction_note).strip():
-        return jsonify({"error": "A valid transaction reference code or note is required for verification."}), 400
-
-    try:
-        # 3. Locate the targeted ledger entry profile
-        intent = AdminDisbursement.query.get(request_id)
-        if not intent:
-            return jsonify({"error": "Target disbursement tracking row not found."}), 404
-
-        if intent.status != "PENDING":
-            return jsonify({"error": f"Invalid state transition: request is already marked as {intent.status}."}), 400
-
-        # 4. Map verification notes and shift states directly
-        intent.status = "DISBURSED"
-        
-        # Save note/receipt data into a transaction record column if supported by your schema definitions
-        if hasattr(intent, 'transaction_note'):
-            intent.transaction_note = str(transaction_note).strip()
-        elif hasattr(intent, 'reference_note'):
-            intent.reference_note = str(transaction_note).strip()
-            
-        if hasattr(intent, 'processed_at'):
-            intent.processed_at = datetime.utcnow()
-
-        db.session.commit()
-
-        return jsonify({
-            "status": "success",
-            "message": f"Ledger Request #{request_id} successfully flagged as DISBURSED.",
-            "request_id": request_id
-        }), 200
-
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(f"Manual Payout Approval System Crash: {str(e)}")
-        return jsonify({"error": "Internal ledger validation database processing error."}), 500
-
-
 # ==============================================================================
 # SECURE ADMINISTRATIVE DISBURSEMENT QUEUE ENDPOINTS
 # ==============================================================================

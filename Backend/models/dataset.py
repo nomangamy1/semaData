@@ -15,6 +15,8 @@ class Dataset(db.Model):
     description = db.Column(db.Text, nullable=True)
     combined_text = db.Column(db.Text, nullable=True)
     segmented_text = db.Column(db.JSON, nullable=True)
+    locked_by = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=True, index=True)
+    locked_at = db.Column(db.DateTime, nullable=True)
     
     # Matching your statuses dynamically ('Initial', 'pending', 'Verified', 'Rejected')
     status = db.Column(db.String(50), nullable=False, default='pending')
