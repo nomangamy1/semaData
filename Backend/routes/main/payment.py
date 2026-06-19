@@ -4,10 +4,16 @@ from models.domain import Domain
 from models.domainowner import DomainOwner
 from models.payments import Payment
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+
 from datetime import datetime
 import time
 import secrets
 import string
+from sqlalchemy import func
+import os
+import requests
+import base64
 
 payment_bp = Blueprint("payment", __name__)
 
@@ -276,3 +282,351 @@ def request_withdrawal():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Ledger validation database error: {str(e)}"}), 500
+
+
+
+
+# ==============================================================================
+# SAFARICOM M-PESA DARAJA B2C AUTOMATED DISBURSEMENT PIPELINE
+# ==============================================================================
+
+# Fast memory-mapped token engine cache to keep optimization paths fluid
+TOKEN_STORAGE = {"access_token": None, "expires_at": 0}
+
+def get_daraja_access_token():
+    """Generates and handles a valid OAuth2 token payload cache from Safaricom."""
+    now = time.time()
+    if TOKEN_STORAGE["access_token"] and now < TOKEN_STORAGE["expires_at"]:
+        return TOKEN_STORAGE["access_token"]
+
+    env = os.getenv("MPESA_ENV", "sandbox")
+    base_url = "https://sandbox.safaricom.co.ke" if env == "sandbox" else "https://api.safaricom.co.ke"
+    
+    consumer_key = os.getenv("MPESA_CONSUMER_KEY")
+    consumer_secret = os.getenv("MPESA_CONSUMER_SECRET")
+    
+    if not consumer_key or not consumer_secret:
+        current_app.logger.error("Missing M-Pesa environment auth configuration profiles.")
+        return None
+
+    auth_chain = f"{consumer_key}:{consumer_secret}"
+    b64_credentials = base64.b64encode(auth_chain.encode()).decode()
+    
+    headers = {"Authorization": f"Basic {b64_credentials}"}
+    url = f"{base_url}/oauth/v1/generate?grant_type=client_credentials"
+    
+    try:
+        res = requests.get(url, headers=headers, timeout=10)
+        if res.status_code == 200:
+            payload = res.json()
+            TOKEN_STORAGE["access_token"] = payload["access_token"]
+            TOKEN_STORAGE["expires_at"] = now + int(payload["expires_in"]) - 60
+            return TOKEN_STORAGE["access_token"]
+        current_app.logger.error(f"Daraja Authentication Refused: {res.text}")
+        return None
+    except Exception as e:
+        current_app.logger.error(f"Upstream transmission channel exception: {str(e)}")
+        return None
+
+
+@payment_bp.route("/admin/disburse/approve", methods=["POST"])
+@jwt_required()
+def admin_approve_and_disburse():
+    """
+    Admin control action that intercepts a PENDING withdrawal intent row,
+    validates the phone mapping target, and fires a live transaction request to Daraja.
+    """
+    from models.disbursements import AdminDisbursement
+    from models.user import User  # Used to safely target physical contact details
+
+    # Add admin-level claims checking here if your JWT setup handles specific role attributes
+    data = request.get_json(silent=True) or {}
+    disbursement_id = data.get("disbursement_id")
+
+    if not disbursement_id:
+        return jsonify({"error": "disbursement_id target parameter required"}), 400
+
+    intent = AdminDisbursement.query.get(disbursement_id)
+    if not intent:
+        return jsonify({"error": "Target disbursement tracking row not found"}), 404
+
+    if intent.status != "PENDING":
+        return jsonify({"error": f"Invalid transition: row is already marked as {intent.status}"}), 400
+
+    collector_profile = User.query.get(intent.collector_id)
+    if not collector_profile or not collector_profile.phone_number:
+        return jsonify({"error": "Collector user profile lacks valid operational phone mapping"}), 400
+
+    # Ensure format strings match Kenya country prefixes cleanly (2547XXXXXXXX or 2541XXXXXXXX)
+    clean_phone = str(collector_profile.phone_number).strip().replace("+", "")
+    if clean_phone.startswith("0"):
+        clean_phone = "254" + clean_phone[1:]
+
+    token = get_daraja_access_token()
+    if not token:
+        return jsonify({"error": "Failed proxy authentication sequence with Safaricom Daraja"}), 502
+
+    env = os.getenv("MPESA_ENV", "sandbox")
+    base_url = "https://sandbox.safaricom.co.ke" if env == "sandbox" else "https://api.safaricom.co.ke"
+    
+    # Structure the formal B2C payment parameter dictionary payload object
+    daraja_payload = {
+        "InitiatorName": os.getenv("MPESA_INITIATOR_NAME"),
+        "SecurityCredential": os.getenv("MPESA_INITIATOR_PASSWORD"), # In production, ensure this token string is encrypted via public certificate
+        "CommandID": "SalaryPayment", # Use 'SalaryPayment' or 'BusinessPayment' depending on corporate shortcode configurations
+        "Amount": int(intent.amount),
+        "PartyA": os.getenv("MPESA_B2C_SHORTCODE"),
+        "PartyB": clean_phone,
+        "Remarks": f"SemaData Payout #{intent.id}",
+        "QueueTimeOutURL": f"{os.getenv('MPESA_CALLBACK_BASE_URL')}/api/v1/finance/b2c/timeout",
+        "ResultURL": f"{os.getenv('MPESA_CALLBACK_BASE_URL')}/api/v1/finance/b2c/result",
+        "Occasion": "CollectorDisbursement"
+    }
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        response = requests.post(
+            f"{base_url}/mpesa/b2c/v3/paymentrequest", 
+            json=daraja_payload, 
+            headers=headers, 
+            timeout=15
+        )
+        res_json = response.json()
+
+        if response.status_code == 200 and res_json.get("ResponseCode") == "0":
+            # Update local transaction trace to isolate matching callback confirmation frames later
+            intent.status = "PROCESSING"
+            # Assuming your model contains a reference tracker field (e.g., tracking_id or conversation_id)
+            if hasattr(intent, 'conversation_id'):
+                intent.conversation_id = res_json.get("ConversationID")
+                
+            db.session.commit()
+            
+            return jsonify({
+                "status": "queued",
+                "message": "Disbursement pipeline initialized with M-Pesa network.",
+                "conversation_id": res_json.get("ConversationID")
+            }), 200
+        else:
+            return jsonify({
+                "error": "Upstream transaction execution handshake rejected by Safaricom", 
+                "details": res_json
+            }), 400
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"B2C Pipeline Request Fault: {str(e)}")
+        return jsonify({"error": "Internal processing interface connection timeout"}), 500
+
+
+@payment_bp.route("/api/v1/finance/b2c/result", methods=["POST"])
+def finance_b2c_result_callback():
+    """Asynchronous pipeline terminal entry hit by M-Pesa when fund transfers clear settlement."""
+    from models.disbursements import AdminDisbursement
+    
+    payload = request.get_json(silent=True) or {}
+    result_container = payload.get("Result", {})
+    result_code = result_container.get("ResultCode")
+    conversation_id = result_container.get("ConversationID")
+
+    current_app.logger.info(f"[B2C Callback Tracking] Context hit for Conversation: {conversation_id}")
+
+    # Recover transaction trace matching backend reference tracking codes
+    intent = AdminDisbursement.query.filter_by(conversation_id=conversation_id).first()
+    if not intent:
+        # Gracefully handle early exits if records are unlinked or decoupled
+        return jsonify({"ResultCode": 0, "ResultDesc": "Acknowledged - No Matching Intent Trace"}), 200
+
+    try:
+        if str(result_code) == "0":
+            intent.status = "DISBURSED"
+            if hasattr(intent, 'processed_at'):
+                intent.processed_at = datetime.utcnow()
+            current_app.logger.info(f"Disbursement transaction success for Intent ID #{intent.id}")
+        else:
+            intent.status = "FAILED"
+            current_app.logger.warning(f"Disbursement transaction failed. Reason Code: {result_code}")
+            
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Callback status tracking update database error: {str(e)}")
+        return jsonify({"error": "internal state processing exception"}), 500
+
+    return jsonify({"ResultCode": 0, "ResultDesc": "Success Notification Resolved"}), 200
+
+
+@payment_bp.route("/api/v1/finance/b2c/timeout", methods=["POST"])
+def finance_b2c_timeout_callback():
+    """Fallback handler tracking dropped or timed-out server connection segments safely."""
+    current_app.logger.error("[M-PESA B2C TIMEOUT] Upstream network window expired.")
+    return jsonify({"ResultCode": 0, "ResultDesc": "Timeout Received"}), 200
+
+
+
+
+
+
+@payment_bp.route("/api/admin/payouts/approve/<int:request_id>", methods=["POST"])
+@jwt_required()
+def approve_manual_payout(request_id):
+    """
+    Interceptions block that updates a PENDING withdrawal intent row manually,
+    saving a verified confirmation code/receipt token to clear out balances.
+    """
+    from models.disbursements import AdminDisbursement
+
+    # 1. Identity context validation layer
+    current_admin_id = get_jwt_identity()
+
+    # 2. Extract request body values
+    data = request.get_json(silent=True) or {}
+    transaction_note = data.get("transaction_note")
+
+    if not transaction_note or not str(transaction_note).strip():
+        return jsonify({"error": "A valid transaction reference code or note is required for verification."}), 400
+
+    try:
+        # 3. Locate the targeted ledger entry profile
+        intent = AdminDisbursement.query.get(request_id)
+        if not intent:
+            return jsonify({"error": "Target disbursement tracking row not found."}), 404
+
+        if intent.status != "PENDING":
+            return jsonify({"error": f"Invalid state transition: request is already marked as {intent.status}."}), 400
+
+        # 4. Map verification notes and shift states directly
+        intent.status = "DISBURSED"
+        
+        # Save note/receipt data into a transaction record column if supported by your schema definitions
+        if hasattr(intent, 'transaction_note'):
+            intent.transaction_note = str(transaction_note).strip()
+        elif hasattr(intent, 'reference_note'):
+            intent.reference_note = str(transaction_note).strip()
+            
+        if hasattr(intent, 'processed_at'):
+            intent.processed_at = datetime.utcnow()
+
+        db.session.commit()
+
+        return jsonify({
+            "status": "success",
+            "message": f"Ledger Request #{request_id} successfully flagged as DISBURSED.",
+            "request_id": request_id
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Manual Payout Approval System Crash: {str(e)}")
+        return jsonify({"error": "Internal ledger validation database processing error."}), 500
+
+
+# ==============================================================================
+# SECURE ADMINISTRATIVE DISBURSEMENT QUEUE ENDPOINTS
+# ==============================================================================
+
+@payment_bp.route("/api/admin/payouts/pending", methods=["GET"])
+@jwt_required()
+def get_pending_payouts():
+    """
+    Fetches all disbursement intents with a status of 'PENDING' 
+    Strictly restricted to users holding administrative claims tokens.
+    """
+    # 1. Enforce Role-Based Access Control (RBAC) via Custom JWT Claims
+    claims = get_jwt()
+    if not claims.get("is_admin", False) and claims.get("role") != "ADMIN":
+        current_app.logger.warning(f"Unauthorized access attempt to pending financial ledger by User ID: {get_jwt_identity()}")
+        return jsonify({"error": "Access denied. Administrative credentials required."}), 403
+
+    from models.disbursements import AdminDisbursement
+    from models.user import User
+
+    try:
+        # Join AdminDisbursement with User table to fetch collector profiles securely
+        pending_records = db.session.query(
+            AdminDisbursement, User
+        ).join(
+            User, User.id == AdminDisbursement.collector_id
+        ).filter(
+            AdminDisbursement.status == "PENDING"
+        ).all()
+
+        results = []
+        for disbursement, user in pending_records:
+            results.append({
+                "id": disbursement.id,
+                "collector_id": disbursement.collector_id,
+                "username": user.username if hasattr(user, 'username') else f"user_{user.id}",
+                "preferred_gateway": "MPESA",  
+                "target_coordinate": user.phone_number if hasattr(user, 'phone_number') else "No linked contact",
+                "amount": float(disbursement.amount),
+                "initiated_at": disbursement.initiated_at.strftime("%Y-%m-%d %H:%M:%S") if disbursement.initiated_at else "N/A"
+            })
+
+        return jsonify(results), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error fetching pending payout ledger: {str(e)}")
+        return jsonify({"error": "Failed to aggregate pending payout metrics from database."}), 500
+
+
+@payment_bp.route("/api/admin/payouts/approve/<int:request_id>", methods=["POST"])
+@jwt_required()
+def approve_manual_payout(request_id):
+    """
+    Intercepts and processes a pending withdrawal row manually.
+    Enforces RBAC validation, prevents tracking code reuse, and maps transaction locks.
+    """
+    # 1. Enforce Role-Based Access Control (RBAC) via Custom JWT Claims
+    claims = get_jwt()
+    if not claims.get("is_admin", False) and claims.get("role") != "ADMIN":
+        current_app.logger.error(f"CRITICAL: Unauthorized manual payout verification payload fired by non-admin identity token!")
+        return jsonify({"error": "Access denied. Administrative privileges required."}), 403
+
+    from models.disbursements import AdminDisbursement
+
+    # 2. Extract and sanitize reference tokens
+    data = request.get_json(silent=True) or {}
+    transaction_note = data.get("transaction_note")
+
+    if not transaction_note or not str(transaction_note).strip():
+        return jsonify({"error": "A valid transaction reference code or note is required for verification."}), 400
+    
+    clean_note = str(transaction_note).strip()
+
+    try:
+        # 3. Microsecond Race-Condition Defense: Enforce Row Locking with .with_for_update()
+        intent = AdminDisbursement.query.with_for_update().get(request_id)
+        if not intent:
+            return jsonify({"error": "Target disbursement tracking row not found."}), 404
+
+        if intent.status != "PENDING":
+            return jsonify({"error": f"Invalid state transition: request is already processed or {intent.status}."}), 400
+
+        # 4. Check for duplicate receipt use manually before DB commit crashes
+        duplicate_check = AdminDisbursement.query.filter_by(transaction_note=clean_note).first()
+        if duplicate_check:
+            return jsonify({"error": "Security alert: This payment confirmation reference code has already been processed in the system."}), 409
+
+        # 5. Commit state changes
+        intent.status = "DISBURSED"
+        intent.transaction_note = clean_note
+        intent.processed_at = datetime.utcnow()
+
+        db.session.commit()
+
+        current_app.logger.info(f"Payout ID #{request_id} manually cleared by Admin ID {get_jwt_identity()} with reference {clean_note}")
+        return jsonify({
+            "status": "success",
+            "message": f"Ledger Request #{request_id} successfully authenticated and marked as DISBURSED.",
+            "request_id": request_id
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Manual Payout Approval System Exception: {str(e)}")
+        return jsonify({"error": "Internal ledger execution error. Reference might be a duplicated key entries conflict."}), 500

@@ -34,9 +34,6 @@ class AdminDisbursement(db.Model):
     
     initiated_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     processed_at = db.Column(db.DateTime, nullable=True)
+    transaction_note = db.Column(db.Text, nullable=True, unique=True)
     
-    # Audit tracking notes (e.g., MPESA Reference code or rejection reason)
-    transaction_note = db.Column(db.Text, nullable=True)
-
-    # Relationship back-link helper to reach user data easily
     collector = db.relationship('User', backref=db.backref('disbursements', lazy=True))

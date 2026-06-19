@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import '../pages/AdminDashboard.css'; // Fits inside your existing administrative design theme layout
+import '../pages/AdminDashboard.css'; 
 
 const PayoutManagement = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [processingId, setProcessingId] = useState(null);
   
-  // State tracking block to capture the verification code text per item row
+  // Local state for tracking manual transaction receipt codes
   const [transactionNotes, setTransactionNotes] = useState({});
 
   // ─── FETCH THE PENDING DISBURSEMENT STACK ───
@@ -17,6 +18,7 @@ const PayoutManagement = () => {
     const token = localStorage.getItem('token');
     
     try {
+      // Points exactly to your existing pending backend pipeline
       const response = await fetch('http://localhost:8000/api/admin/payouts/pending', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -38,7 +40,6 @@ const PayoutManagement = () => {
     fetchPendingPayouts();
   }, []);
 
-  // ─── HANDLE TEXT INPUT FOR RECEIPT CODES ───
   const handleNoteChange = (id, value) => {
     setTransactionNotes(prev => ({
       ...prev,
@@ -46,15 +47,49 @@ const PayoutManagement = () => {
     }));
   };
 
-  // ─── COMMIT DISBURSEMENT TO BALANCED STATE ───
-  const handleApproveDisbursement = async (requestId) => {
+  // ─── OPTION A: AUTOMATED M-PESA B2C DISBURSEMENT (NEW) ───
+  const handleAutomatedB2C = async (requestId) => {
+    setErrorMessage('');
+    setSuccessMessage('');
+    if (!window.confirm(`Fire live Safaricom B2C M-Pesa transfer for Request #${requestId}?`)) return;
+
+    const token = localStorage.getItem('token');
+    setProcessingId(requestId);
+
+    try {
+      const response = await fetch('http://localhost:8000/admin/disburse/approve', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ disbursement_id: requestId })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.status === 'queued') {
+        setSuccessMessage(`⚡ M-Pesa Request #${requestId} successfully queued. Daraja Track ID: ${data.conversation_id}`);
+        fetchPendingPayouts();
+      } else {
+        setErrorMessage(data.error || 'Daraja gateway handshake rejected or timed out.');
+      }
+    } catch (err) {
+      setErrorMessage('Failed to establish connection to upstream payment routing nodes.');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  // ─── OPTION B: MANUAL FALLBACK COMMIT (YOUR EXISTING LOGIC) ───
+  const handleManualApprove = async (requestId) => {
     setErrorMessage('');
     setSuccessMessage('');
     const token = localStorage.getItem('token');
     const noteText = transactionNotes[requestId] || '';
 
     if (!noteText.trim()) {
-      setErrorMessage(`⚠️ You must provide a valid payment transaction proof reference before approving request #${requestId}.`);
+      setErrorMessage(`⚠️ You must provide a manual transaction reference for request #${requestId}.`);
       return;
     }
 
@@ -69,18 +104,16 @@ const PayoutManagement = () => {
       });
 
       if (response.ok) {
-        setSuccessMessage(`✅ Ledger Request #${requestId} successfully flagged as DISBURSED.`);
-        // Clean out field local trace variables
+        setSuccessMessage(`✅ Ledger Request #${requestId} manually verified as DISBURSED.`);
         setTransactionNotes(prev => {
           const updated = { ...prev };
           delete updated[requestId];
           return updated;
         });
-        // Refresh structural balance values instantly
         fetchPendingPayouts();
       } else {
         const errorData = await response.json();
-        setErrorMessage(errorData.error || 'Server rejected payout commitment payload.');
+        setErrorMessage(errorData.error || 'Server rejected manual settlement confirmation.');
       }
     } catch (err) {
       setErrorMessage('Network connection failure during status commit.');
@@ -92,11 +125,10 @@ const PayoutManagement = () => {
       <header className="admin-view-header">
         <h2>Collector Payout Queue Desk</h2>
         <p className="subtext-alert">
-          Verify manual funds relocation transfers on M-Pesa or PayPal prior to clicking the confirmation action hooks below.
+          Choose between initiating automated real-time API payouts via Safaricom B2C or recording off-platform transactions manually.
         </p>
       </header>
 
-      {/* SYSTEM FEEDBACK NOTIFICATIONS */}
       {errorMessage && <div className="admin-status-banner error-view">{errorMessage}</div>}
       {successMessage && <div className="admin-status-banner success-view">{successMessage}</div>}
 
@@ -105,7 +137,7 @@ const PayoutManagement = () => {
       ) : requests.length === 0 ? (
         <div className="empty-payout-state">
           <h3>🎯 Financial Queue Cleared</h3>
-          <p>There are currently zero pending user extraction requests submitted by the collector network matrix.</p>
+          <p>There are currently zero pending extraction requests submitted by the collector network matrix.</p>
         </div>
       ) : (
         <div className="table-responsive-wrapper">
@@ -118,7 +150,7 @@ const PayoutManagement = () => {
                 <th>Payment Destination Target</th>
                 <th>Amount Due</th>
                 <th>Requested At</th>
-                <th>Action Approvals Verification & Audit</th>
+                <th>Operational Actions & Automated Routing</th>
               </tr>
             </thead>
             <tbody>
@@ -132,7 +164,7 @@ const PayoutManagement = () => {
                     </div>
                   </td>
                   <td>
-                    <span className={`channel-badge ${req.preferred_gateway.toLowerCase()}`}>
+                    <span className={`channel-badge ${req.preferred_gateway?.toLowerCase()}`}>
                       {req.preferred_gateway}
                     </span>
                   </td>
@@ -146,20 +178,36 @@ const PayoutManagement = () => {
                     <small className="date-string-lbl">{req.initiated_at}</small>
                   </td>
                   <td>
-                    <div className="payout-execution-form">
-                      <input 
-                        type="text" 
-                        placeholder={req.preferred_gateway === 'MPESA' ? "e.g., RFA8712XYZ" : "e.g., PayPal Txn ID"}
-                        value={transactionNotes[req.id] || ''}
-                        onChange={(e) => handleNoteChange(req.id, e.target.value)}
-                        className="audit-note-field"
-                      />
-                      <button 
-                        onClick={() => handleApproveDisbursement(req.id)}
-                        className="commit-payout-btn"
-                      >
-                        Confirm Disbursed
-                      </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {/* AUTOMATED TRANSFER ACCESS (Enabled only for MPESA rows) */}
+                      {req.preferred_gateway === 'MPESA' && (
+                        <button
+                          onClick={() => handleAutomatedB2C(req.id)}
+                          disabled={processingId === req.id}
+                          className="commit-payout-btn"
+                          style={{ backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          {processingId === req.id ? "Queuing API Request..." : "⚡ Trigger M-Pesa B2C Payout"}
+                        </button>
+                      )}
+
+                      {/* MANUAL TRANSFER OVERRIDE WORKFLOW */}
+                      <div className="payout-execution-form" style={{ borderTop: req.preferred_gateway === 'MPESA' ? '1px dashed #cbd5e1' : 'none', paddingTop: req.preferred_gateway === 'MPESA' ? '8px' : '0' }}>
+                        <input 
+                          type="text" 
+                          placeholder={req.preferred_gateway === 'MPESA' ? "Manual receipt (e.g. RFA8712XYZ)" : "e.g. PayPal Txn ID"}
+                          value={transactionNotes[req.id] || ''}
+                          onChange={(e) => handleNoteChange(req.id, e.target.value)}
+                          className="audit-note-field"
+                        />
+                        <button 
+                          onClick={() => handleManualApprove(req.id)}
+                          className="commit-payout-btn"
+                          style={{ whiteSpace: 'nowrap' }}
+                        >
+                          Confirm Manual Code
+                        </button>
+                      </div>
                     </div>
                   </td>
                 </tr>

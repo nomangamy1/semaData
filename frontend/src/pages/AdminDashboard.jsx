@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import '../pages/AdminDashboard.css';
 import '../components/AdminShared.css';
 
-// Import all your existing sub-components
+// Import all system sub-components
 import DataAnalytics from '../components/DataAnalytics';
 import TeamCollectors from '../components/TeamCollectors';
 import JobsTable from '../components/JobsTable';
 import TemplateManager from '../components/TemplateManager';
 import PayoutManagement from '../components/PayoutManagement';
 import JobPostModal from '../components/JobPostModal';
+import DomainsTable from '../components/DomainsTable'; // 🗲 Pull in your new table structure
 
 const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('overview');
@@ -20,6 +21,7 @@ const AdminDashboard = () => {
         { id: 'collectors', label: 'Team Collectors', icon: '👥' },
         { id: 'jobs', label: 'Manage Jobs & Tasks', icon: '💼' },
         { id: 'templates', label: 'Data Templates', icon: '📝' },
+        { id: 'domains', label: 'Registered Domains', icon: '🌐' }, // 🗲 Admin Core view control
         { id: 'payouts', label: 'Financials & Payouts', icon: '💳' }
     ];
 
@@ -47,6 +49,16 @@ const AdminDashboard = () => {
                 );
             case 'templates':
                 return <TemplateManager />;
+            case 'domains':
+                return (
+                    <div className="admin-section-container">
+                        <div className="mb-6">
+                            <h2 className="text-2xl font-black text-slate-800">System Domain Registry</h2>
+                            <p className="text-sm text-slate-500 mt-1">Global log of operational scopes, unique matching keys, and production statuses.</p>
+                        </div>
+                        <DomainsTable />
+                    </div>
+                );
             case 'payouts':
                 return <PayoutManagement />;
             default:
