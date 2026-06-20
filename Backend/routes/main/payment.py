@@ -154,8 +154,8 @@ def get_status(domain_id):
 @jwt_required()
 def get_finance_summary():
     from models.user import User  
-    from models.datasets import DatasetEntry 
-    from models.disbursements import AdminDisbursement 
+    from models.dataset import Dataset as DatasetEntry 
+    from models.payments import AdminDisbursement 
     from models.domain import Domain
     
     collector_id = get_jwt_identity()
