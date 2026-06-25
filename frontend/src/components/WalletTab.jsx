@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-
+import './walletView.css';
 const WalletTab = ({ finance, token, onRefresh }) => {
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
@@ -71,7 +71,7 @@ const WalletTab = ({ finance, token, onRefresh }) => {
         <span className="finance-label">QUALITY PENALTY TRACKING</span>
         <h3 className="penalty-text">KES {finance.penaltyDeduction.toFixed(2)}</h3>
         <small className={finance.rejectionRate > 15 ? 'danger-text' : 'warning-text'}>
-          ❌ Rejection Rate: {finance.rejectionRate.toFixed(1)}%
+          ❌ Rejection Rate: {Number(finance.rejectionRate || 0).toFixed(2)}%
         </small>
       </div>
 

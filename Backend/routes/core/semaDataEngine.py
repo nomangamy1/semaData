@@ -1,4 +1,5 @@
 import re
+import threading
 import os
 import json
 from datetime import datetime
@@ -270,31 +271,20 @@ def semaData_transcribe():
 
         domain_owner_id = target_domain.owner_id
 
-        existing_entry = Dataset.query.filter_by(
+        # ✅ Every submission is its own Dataset row — never merge
+        dataset_record = Dataset(
+            name=f"Sub_{collector.reference_number}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            description="Automated AI Transcription",
+            owner_id=domain_owner_id,
+            ref_number=collector.reference_number,
+            domain_id=domain_id,
+            audio_file_path=final_path,
             collector_id=collector_id,
-            domain_id=domain_id
-        ).first()
-
-        if existing_entry:
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-            existing_entry.combined_text  += f"\n\n--- Entry: {timestamp} ---\n{transcribed_text}"
-            existing_entry.segmented_text  = json.dumps(segmented_text)
-            existing_entry.status          = "AI_Passed"
-            dataset_record = existing_entry
-        else:
-            dataset_record = Dataset(
-                name=f"Ingestion_{collector.reference_number}_{datetime.now().strftime('%H%M')}",
-                description="Automated AI Transcription",
-                owner_id=domain_owner_id,
-                ref_number=collector.reference_number,
-                domain_id=domain_id,
-                audio_file_path=final_path,
-                collector_id=collector_id,
-                combined_text=transcribed_text,
-                segmented_text=json.dumps(segmented_text),
-                status="AI_Passed"
-            )
-            db.session.add(dataset_record)
+            combined_text=transcribed_text,
+            segmented_text=json.dumps(segmented_text),
+            status="pending_review"
+        )
+        db.session.add(dataset_record)
 
         db.session.flush()
 

@@ -9,6 +9,8 @@ class Config:
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'False').lower() == 'true'
     MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL', 'True').lower() == 'true'
+    JWT_TOKEN_LOCATION = ['headers', 'query_string']
+    JWT_QUERY_STRING_NAME = 'token'
     FLASK_ENV = os.environ.get('FLASK_ENV', 'development')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173').rstrip('/')

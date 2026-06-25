@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../pages/AdminDashboard.css'; 
+import './PayoutManagement.css'; // Points to component specific stylesheet directly
 
 const PayoutManagement = () => {
   const [requests, setRequests] = useState([]);
@@ -18,7 +18,6 @@ const PayoutManagement = () => {
     const token = localStorage.getItem('token');
     
     try {
-      // Points exactly to your existing pending backend pipeline
       const response = await fetch('http://localhost:8000/api/admin/payouts/pending', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -47,7 +46,7 @@ const PayoutManagement = () => {
     }));
   };
 
-  // ─── OPTION A: AUTOMATED M-PESA B2C DISBURSEMENT (NEW) ───
+  // ─── OPTION A: AUTOMATED M-PESA B2C DISBURSEMENT ───
   const handleAutomatedB2C = async (requestId) => {
     setErrorMessage('');
     setSuccessMessage('');
@@ -81,7 +80,7 @@ const PayoutManagement = () => {
     }
   };
 
-  // ─── OPTION B: MANUAL FALLBACK COMMIT (YOUR EXISTING LOGIC) ───
+  // ─── OPTION B: MANUAL FALLBACK COMMIT ───
   const handleManualApprove = async (requestId) => {
     setErrorMessage('');
     setSuccessMessage('');
@@ -150,7 +149,7 @@ const PayoutManagement = () => {
                 <th>Payment Destination Target</th>
                 <th>Amount Due</th>
                 <th>Requested At</th>
-                <th>Operational Actions & Automated Routing</th>
+                <th>Operational Actions &amp; Automated Routing</th>
               </tr>
             </thead>
             <tbody>
@@ -184,8 +183,8 @@ const PayoutManagement = () => {
                         <button
                           onClick={() => handleAutomatedB2C(req.id)}
                           disabled={processingId === req.id}
-                          className="commit-payout-btn"
-                          style={{ backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontWeight: 'bold', cursor: 'pointer' }}
+                          className="commit-payout-btn automated-trigger-row-btn"
+                          style={{ backgroundColor: '#10b981', color: '#fff', border: 'none' }}
                         >
                           {processingId === req.id ? "Queuing API Request..." : "⚡ Trigger M-Pesa B2C Payout"}
                         </button>

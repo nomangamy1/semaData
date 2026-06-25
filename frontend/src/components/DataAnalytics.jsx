@@ -30,7 +30,7 @@ const DataAnalytics = ({ domainId }) => {
         // Dynamic targeting: Use admin global endpoint or domain owner endpoint
         const targetUrl = domainId 
           ? `http://localhost:8000/api/main/analytics/${domainId}`
-          : `http://localhost:8000/api/dashboard-stats`;
+          : `http://localhost:8000/api/admin/dashboard-stats`;
 
         const response = await fetch(targetUrl, {
           method: 'GET',

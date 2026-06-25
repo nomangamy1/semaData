@@ -10,7 +10,7 @@ const DomainsTable = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/all-domains', {
+            const response = await fetch('http://localhost:8000/api/admin/all-domains', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {

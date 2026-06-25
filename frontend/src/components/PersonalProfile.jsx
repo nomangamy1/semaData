@@ -1,5 +1,5 @@
 import React from 'react';
-
+import './walletView.css';
 const PersonalProfile = ({ sessionData, onLogout }) => {
   return (
     <section className="profile-details-card">

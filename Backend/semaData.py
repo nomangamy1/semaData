@@ -28,6 +28,8 @@ from routes.main.community_routes import community_bp
 from routes.main.AdminDashboard import admin_bp
 from routes.main.careersPage import careers_bp
 from routes.main.export import export_bp
+from routes.main.collector_finance import collector_finance_bp
+from routes.main.submission_review import submission_bp
 from flask_cors import CORS
 from Config import config
 import os
@@ -77,6 +79,8 @@ def semaData_app():
     semaData.register_blueprint(admin_bp,url_prefix='/api/admin')
     semaData.register_blueprint(careers_bp,url_prefix ='/api')
     semaData.register_blueprint(export_bp,url_prefix='/api/export')
+    semaData.register_blueprint(collector_finance_bp,url_prefix='/api/collector')
+    semaData.register_blueprint(submission_bp,url_prefix='/api/admin')
     semaData.register_blueprint(AdminCareers_bp,url_prefix='/api/admin')
     semaData.register_blueprint(community_bp,url_prefix='/api')
     semaData.register_blueprint(payment_bp,url_prefix='/api/collector',name='collector_payment')

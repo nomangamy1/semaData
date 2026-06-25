@@ -290,6 +290,148 @@
   background: var(--primary-green);
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
+/* --- High Fidelity Wallet Card Overhaul --- */
+.wallet-card-panel {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: white;
+  padding: 2.2rem;
+  border-radius: 24px;
+  margin-bottom: 2.5rem;
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.2), 
+    0 10px 10px -5px rgba(0, 0, 0, 0.1),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle fintech glowing accent background effect */
+.wallet-card-panel::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.wallet-main-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.balance-display-block h4 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #94a3b8;
+  margin: 0 0 0.6rem 0;
+  font-weight: 600;
+}
+
+.balance-amount {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: #10b981; /* SemaData Accent Emerald */
+  letter-spacing: -1px;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.currency-symbol {
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: #34d399;
+  opacity: 0.8;
+}
+
+.refresh-ledger-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+  padding: 0.8rem 1.4rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.refresh-ledger-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.refresh-ledger-btn:active {
+  transform: translateY(1px);
+}
+
+.financial-sub-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 1.8rem;
+}
+
+.stat-metric-node {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stat-metric-node label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.stat-metric-node p {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+
+/* Metric Context Colors */
+.stat-metric-node p.positive { color: #34d399; }
+.stat-metric-node p.neutral { color: #e2e8f0; }
+.stat-metric-node p.negative { color: #f87171; }
+.stat-metric-node p.warning-text { color: #fbbf24; }
+.stat-metric-node p.danger-text { color: #f87171; animation: pulse-danger 2s infinite; }
+
+@keyframes pulse-danger {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+@media (max-width: 768px) {
+  .financial-sub-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+  .balance-amount {
+    font-size: 2.2rem;
+  }
+}
+
 
 .progress-text {
   font-size: 0.85rem;

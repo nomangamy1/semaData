@@ -11,6 +11,7 @@ import TemplateManager from '../components/TemplateManager';
 import PayoutManagement from '../components/PayoutManagement';
 import JobPostModal from '../components/JobPostModal';
 import DomainsTable from '../components/DomainsTable';
+import SubmissionReview from '../components/SubmissionReview';
 
 const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('overview');
@@ -24,6 +25,7 @@ const AdminDashboard = () => {
         { id: 'jobs', label: 'Manage Jobs & Tasks', icon: '💼' },
         { id: 'templates', label: 'Data Templates', icon: '📝' },
         { id: 'domains', label: 'Registered Domains', icon: '🌐' },
+        { id: 'review', label: 'Submission Review', icon: '🎙️' },
         { id: 'payouts', label: 'Financials & Payouts', icon: '💳' }
     ];
 
@@ -61,6 +63,8 @@ const AdminDashboard = () => {
                         <DomainsTable />
                     </div>
                 );
+            case 'review':
+                return <SubmissionReview />;
             case 'payouts':
                 return <PayoutManagement />;
             default:
