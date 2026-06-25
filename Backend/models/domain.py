@@ -21,7 +21,7 @@ class Domain(db.Model):
     datasets = db.relationship('Dataset', backref='domain', lazy=True)
     requirements = db.Column(db.Text)
     collector_bounty = db.Column(db.Float, nullable=False, default=10.0)
-    # Domain features can be defined by the owner  
+    assigned_user_id = db.Column(db.Integer, db.ForeignKey('Users.id'))
      
 
     def update_payment(self,new_amount):

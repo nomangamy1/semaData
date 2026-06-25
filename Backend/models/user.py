@@ -24,7 +24,8 @@ class User(db.Model, UserMixin):
 
     domain_name      = db.Column(db.String(64), nullable=True)
     area_of_interest = db.Column(db.String(100), nullable=True)
-    # area_of_interest is only populated for community members
+    assigned_domains = db.relationship('Domain', backref='assigned_user', lazy=True)
+    
 
     reference_number = db.Column(db.String(64), nullable=True)
 
