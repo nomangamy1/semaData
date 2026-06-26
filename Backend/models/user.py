@@ -25,6 +25,7 @@ class User(db.Model, UserMixin):
     domain_name      = db.Column(db.String(64), nullable=True)
     area_of_interest = db.Column(db.String(100), nullable=True)
     assigned_domains = db.relationship('Domain', backref='assigned_user', lazy=True)
+    is_super_admin = db.Column(db.Boolean, default=False)
     
 
     reference_number = db.Column(db.String(64), nullable=True)

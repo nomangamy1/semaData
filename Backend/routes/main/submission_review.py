@@ -4,7 +4,7 @@ from models.user import User
 from models.dataset import Dataset
 from models.Transcription import Transcription
 from models.domain import Domain
-from models.payments import Payment
+from models.payments import Payment,AdminDisbursement
 from extensions import db
 from datetime import datetime
 import json
@@ -35,11 +35,13 @@ def list_submissions():
     user = User.query.get(int(admin_id))
     if not require_admin(admin_id):
         return jsonify({"error": "Unauthorized"}), 403
-
+        
+    total_pending = Dataset.query.filter_by(status='pending_review').count()
+   
     query = Dataset.query
     
     # Apply domain filtering for non-super admins
-    if user.role != 'super_admin':
+    if user.is_super_admin and total_pending > 5:
         domain_ids = [d.id for d in user.assigned_domains]
         query = query.filter(Dataset.domain_id.in_(domain_ids))
 
@@ -145,24 +147,31 @@ def approve_submission(dataset_id):
     multiplier = 1.2 if rate >= 0.95 else 1.0 if rate >= 0.85 else 0.85 if rate >= 0.70 else 0.7
     earned = round(collector_rate * multiplier, 2)
 
-    earning = Payment(
-        collector_id=ds.collector_id,
-        domain_id=ds.domain_id,
-        amount=earned,
-        transaction_ref=f"EARN-{dataset_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}",
-        status='earned',
-        processed_at=datetime.utcnow()
-    )
-    db.session.add(earning)
-    db.session.commit()
 
-    return jsonify({
-        "message":      f"Submission approved. Collector credited KES {earned}",
-        "dataset_id":   dataset_id,
-        "earned":       earned,
-        "multiplier":   multiplier,
-        "status":       "Verified"
-    }), 200
+    payout_ref = f"PAYOUT-DS-{ds.id}"
+    existing_disbursement = AdminDisbursement.query.filter_by(transaction_note=payout_ref).first()
+
+
+    if not existing_disbursement:
+        earning = AdminDisbursement(
+            collector_id=ds.collector_id,
+            amount=earned,
+            transaction_note=payout_ref,
+            status='PENDING',
+            processed_at=datetime.utcnow()
+        )
+        db.session.add(earning)
+        db.session.commit()
+
+        return jsonify({
+            "message":      f"Submission approved. Collector credited KES {earned}",
+            "dataset_id":   dataset_id,
+            "earned":       earned,
+            "multiplier":   multiplier,
+            "status":       "Verified"
+        }), 200
+    else:
+        return{"message": "Payment for this entry already Processed"},400
 
 
 # ─── POST /api/admin/submission/<id>/reject ───────────────────────────────────
