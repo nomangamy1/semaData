@@ -113,7 +113,7 @@ def get_pending_payouts():
         output.append({
             "id": req.id,
             "collector_id": req.collector_id,
-            "username": req.collector.username,
+            "username": f"{req.collector.first_name} {req.collector.second_name}",
             "amount": req.amount,
             "initiated_at": req.initiated_at.strftime('%Y-%m-%d %H:%M:%S'),
             "preferred_gateway": req.collector.preferred_gateway or "MPESA",

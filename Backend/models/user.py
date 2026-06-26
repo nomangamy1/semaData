@@ -17,6 +17,9 @@ class User(db.Model, UserMixin):
     second_name      = db.Column(db.String(64), index=True)
     email            = db.Column(db.String(120), unique=True, index=True, nullable=False)
     password_hash    = db.Column(db.String(256), nullable=False)
+    preferred_gateway = db.Column(db.String(20), default="MPESA")
+    mpesa_number = db.Column(db.String(20), nullable=True)
+    paypal_email = db.Column(db.String(100), nullable=True)
 
     is_verified      = db.Column(db.Boolean, nullable=False, default=False)
     role             = db.Column(db.String(80))
