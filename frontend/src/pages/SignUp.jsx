@@ -25,6 +25,14 @@ const Signup = () => {
     : 'community';
 
   const [role, setRole] = useState(initialRole);
+  const [spotsLeft, setSpotsLeft] = useState(null);
+
+  useEffect(() => {
+    fetch('http://localhost:8000/api/Auth/community-spots')
+      .then(r => r.json())
+      .then(d => setSpotsLeft(d.spots_remaining))
+      .catch(() => {});
+  }, []);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -82,7 +90,11 @@ const Signup = () => {
           setSubmitted(true);
         }
       } else {
-        setError(data.error || 'Signup failed. Please try again.');
+        if (data.error === 'founding_limit_reached') {
+          setError('🎯 SemaData V1 founding community is full (500 members). You\'ve been added to the V2 waitlist.');
+        } else {
+          setError(data.error || 'Signup failed. Please try again.');
+        }
       }
     } catch {
       setError('Server is down. Please try again later.');
@@ -139,6 +151,18 @@ const Signup = () => {
         </div>
 
         <p className="signup-role-hint">{ROLE_HINTS[role]}</p>
+        {role === 'community' && spotsLeft !== null && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: spotsLeft < 50 ? '#fef3c7' : '#f0fdf4',
+            border: `1px solid ${spotsLeft < 50 ? '#fde68a' : '#bbf7d0'}`,
+            borderRadius: 10, padding: '8px 14px', marginBottom: 12,
+            fontSize: '0.82rem', fontWeight: 700,
+            color: spotsLeft < 50 ? '#92400e' : '#166534'
+          }}>
+            {spotsLeft < 50 ? '🔥' : '✅'} {spotsLeft} founding spots remaining out of 500
+          </div>
+        )}
 
         {error && <div className="signup-error">{error}</div>}
 

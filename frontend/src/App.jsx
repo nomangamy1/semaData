@@ -1,3 +1,4 @@
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
@@ -94,6 +95,7 @@ function AppShell() {
             </div>
           } />
         </Routes>
+        <PWAInstallPrompt />
       </main>
       {!isStandalone && <Footer />}
     </>

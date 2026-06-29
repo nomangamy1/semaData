@@ -249,3 +249,32 @@ def invite_reviewer():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"System fault: {str(e)}"}), 500
+@admin_bp.route("/post-job", methods=["POST"])
+@jwt_required()
+def post_job():
+    admin_id = get_jwt_identity()
+    if not require_admin(admin_id):
+        return jsonify({"error": "Unauthorized"}), 403
+
+    data = request.get_json()
+    
+    try:
+        new_job = Job(
+            title=data.get('title'),
+            domain_id=data.get('domain_id'),
+            domain_name=data.get('domain_name'),
+            location=data.get('location'),
+            compensation=data.get('compensation'),
+            duration=data.get('duration'),
+            description=data.get('description'),
+            required_skills=str(data.get('required_skills')), # Ensure this is a string
+            field=data.get('field'),
+            status='published',
+            posted_at=datetime.utcnow()
+        )
+        db.session.add(new_job)
+        db.session.commit()
+        return jsonify({"status": "success", "message": "Job posted successfully"}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500

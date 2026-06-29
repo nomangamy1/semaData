@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './SubmissionReview.css';
+import EmptyState from './EmptyState';
 
 const BASE = 'http://localhost:8000/api';
 
 const statusColor = {
   pending_review: { bg: '#fef3c7', color: '#92400e', label: 'Pending Review' },
-  processing:     { bg: '#dbeafe', color: '#1e40af', label: 'Processing'     },
-  Verified:       { bg: '#d1fae5', color: '#065f46', label: 'Verified'       },
-  AI_Passed:      { bg: '#d1fae5', color: '#065f46', label: 'AI Passed'      },
-  rejected:       { bg: '#fee2e2', color: '#991b1b', label: 'Rejected'       },
+  processing:     { bg: '#dbeafe', color: '#1e40af', label: 'Processing'       },
+  Verified:       { bg: '#d1fae5', color: '#065f46', label: 'Verified'         },
+  AI_Passed:      { bg: '#d1fae5', color: '#065f46', label: 'AI Passed'        },
+  rejected:       { bg: '#fee2e2', color: '#991b1b', label: 'Rejected'         },
 };
 
 const StatusBadge = ({ status }) => {
@@ -54,15 +55,18 @@ const SubmissionReview = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(null);
-  const [rejectId, setRejectId] = useState(null);
-  const [rejectReason, setRejectReason] = useState('');
   const [filter, setFilter] = useState('pending_review');
+  const [editing, setEditing] = useState(null);
+  const [editData, setEditData] = useState({});
+  const [setRejectId] = useState(null);
 
   const token = localStorage.getItem('token');
   
-  // Directly pull the ID from local storage set during login
-  const currentUserId = parseInt(localStorage.getItem('userId'));
-  
+  const startEdit = (sub) => {
+    setEditing(sub.id);
+    setEditData({ transcription: sub.transcription || sub.combined_text || "" });
+  };
+
   const fetchSubmissions = async () => {
     setLoading(true);
     try {
@@ -78,43 +82,13 @@ const SubmissionReview = () => {
   useEffect(() => { fetchSubmissions(); }, [filter]);
 
   const handleApprove = async (datasetId) => {
-    // 1. Lock first
-    const lockRes = await fetch(`${BASE}/admin/submission/${datasetId}/lock`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    if (!lockRes.ok) {
-      alert('This submission is currently being reviewed by another admin.');
-      fetchSubmissions();
-      return;
-    }
-
-    // 2. Then Approve
     setProcessing(datasetId);
     try {
       const res = await fetch(`${BASE}/admin/submission/${datasetId}/approve`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
-      if (!res.ok) throw new Error('Approval failed');
-      setSubmissions(prev => prev.filter(s => s.id !== datasetId));
-    } catch (e) { alert(e.message); }
-    finally { setProcessing(null); }
-  };
-
-  const handleReject = async () => {
-    if (!rejectId) return;
-    setProcessing(rejectId);
-    try {
-      const res = await fetch(`${BASE}/admin/submission/${rejectId}/reject`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: rejectReason })
-      });
-      if (!res.ok) throw new Error('Rejection failed');
-      setSubmissions(prev => prev.filter(s => s.id !== rejectId));
-      setRejectId(null);
+      if (res.ok) setSubmissions(prev => prev.filter(s => s.id !== datasetId));
     } catch (e) { alert(e.message); }
     finally { setProcessing(null); }
   };
@@ -134,41 +108,45 @@ const SubmissionReview = () => {
       </div>
 
       <div className="card-list">
-        {submissions.map(sub => (
-          <div key={sub.id} className="submission-card">
-            <div className="card-header">
-              <span>#{sub.id} - {sub.contributor_name}</span>
-              <StatusBadge status={sub.status} />
-            </div>
-
-            {sub.is_locked && sub.locked_by !== currentUserId && (
-              <div className="locked-badge" style={{color: 'red', fontWeight: 'bold'}}>
-                Locked by another Admin
+        {submissions.length > 0 ? (
+          submissions.map(sub => (
+            <div key={sub.id} className="submission-card">
+              <div className="card-body">
+                <AudioPlayer path={sub.audio_file_path} datasetId={sub.id} />
+                {editing === sub.id ? (
+                  <textarea
+                    rows={4} value={editData.transcription}
+                    onChange={e => setEditData(d => ({ ...d, transcription: e.target.value }))}
+                    style={{ width: '100%', padding: '10px', borderRadius: 10, border: '1.5px solid #489c8c' }}
+                  />
+                ) : (
+                  <div className="transcription-box">
+                    {sub.transcription || sub.combined_text || 'No transcription yet.'}
+                  </div>
+                )}
               </div>
-            )}
-
-            <div className="card-body">
-              <AudioPlayer path={sub.audio_file_path} datasetId={sub.id} />
-              <div className="transcription-box">{sub.transcription}</div>
-            </div>
-
-            {sub.status === 'pending_review' && (
               <div className="card-footer">
-                <button onClick={() => setRejectId(sub.id)} className="btn btn-reject">Reject</button>
-                <button
-                  disabled={processing === sub.id || sub.is_locked}
-                  className={`btn ${sub.is_locked ? 'btn-disabled' : 'btn-approve'}`}
-                  onClick={() => handleApprove(sub.id)}
-                >
-                  {sub.is_locked ? 'In Review...' : '✓ Approve & Credit'}
-                </button>
+                {editing === sub.id ? (
+                  <>
+                    <button onClick={() => setEditing(null)} className="btn">Cancel</button>
+                    <button className="btn btn-approve">Save Changes</button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => startEdit(sub)} className="btn">Edit</button>
+                    <button className="btn btn-reject">Reject</button>
+                    <button disabled={processing === sub.id} className="btn btn-approve" onClick={() => handleApprove(sub.id)}>
+                      {processing === sub.id ? 'Processing...' : '✓ Approve'}
+                    </button>
+                  </>
+                )}
               </div>
-            )}
-          </div>
-        ))}
+            </div>
+          ))
+        ) : (
+          <EmptyState message="No pending submissions found." actionLabel="Refresh" onAction={fetchSubmissions} />
+        )}
       </div>
-      
-      {/* ... (Keep your existing Reject Modal code here) ... */}
     </div>
   );
 };

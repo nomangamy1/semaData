@@ -148,30 +148,42 @@ def approve_submission(dataset_id):
     earned = round(collector_rate * multiplier, 2)
 
 
-    payout_ref = f"PAYOUT-DS-{ds.id}"
-    existing_disbursement = AdminDisbursement.query.filter_by(transaction_note=payout_ref).first()
+    # ✅ Write to collector_earnings — this is the earning ledger
+    # AdminDisbursement is only created when collector REQUESTS withdrawal
+    earning_ref = f"EARN-DS-{ds.id}"
+    already_earned = db.session.execute(
+        db.text("SELECT id FROM collector_earnings WHERE transaction_ref = :ref"),
+        {"ref": earning_ref}
+    ).fetchone()
 
-
-    if not existing_disbursement:
-        earning = AdminDisbursement(
-            collector_id=ds.collector_id,
-            amount=earned,
-            transaction_note=payout_ref,
-            status='PENDING',
-            processed_at=datetime.utcnow()
+    if not already_earned:
+        db.session.execute(
+            db.text("""
+                INSERT INTO collector_earnings
+                    (collector_id, dataset_id, domain_id, amount, quality_multiplier, status, transaction_ref, processed_at)
+                VALUES
+                    (:cid, :did, :dmid, :amount, :mult, 'earned', :ref, NOW())
+            """),
+            {
+                "cid":    ds.collector_id,
+                "did":    ds.id,
+                "dmid":   ds.domain_id,
+                "amount": earned,
+                "mult":   multiplier,
+                "ref":    earning_ref
+            }
         )
-        db.session.add(earning)
         db.session.commit()
 
         return jsonify({
-            "message":      f"Submission approved. Collector credited KES {earned}",
-            "dataset_id":   dataset_id,
-            "earned":       earned,
-            "multiplier":   multiplier,
-            "status":       "Verified"
+            "message":    f"Submission approved. KES {earned} credited to collector balance.",
+            "dataset_id": dataset_id,
+            "earned":     earned,
+            "multiplier": multiplier,
+            "status":     "Verified"
         }), 200
     else:
-        return{"message": "Payment for this entry already Processed"},400
+        return jsonify({"message": "Earning already recorded for this submission"}), 200
 
 
 # ─── POST /api/admin/submission/<id>/reject ───────────────────────────────────
@@ -244,3 +256,54 @@ def lock_submission(dataset_id):
     ds.locked_at = datetime.utcnow()
     db.session.commit()
     return jsonify({"message": "Locked"}), 200
+
+
+# ─── PATCH /api/admin/submission/<id>/edit ────────────────────────────────────
+@submission_bp.route('/submission/<int:dataset_id>/edit', methods=['PATCH'])
+@jwt_required()
+def edit_submission(dataset_id):
+    """
+    Reviewer edits transcription text and/or extracted features.
+    This is the human-in-the-loop correction step before approval.
+    The corrected data is what gets exported to the domain owner.
+    """
+    admin_id = get_jwt_identity()
+    if not require_admin(admin_id):
+        return jsonify({"error": "Unauthorized"}), 403
+
+    ds   = Dataset.query.get_or_404(dataset_id)
+    data = request.get_json() or {}
+
+    corrected_text     = data.get('transcription')
+    corrected_features = data.get('features')
+
+    if corrected_text is not None:
+        ds.combined_text = corrected_text.strip()
+        # Also update the transcription record
+        t = Transcription.query.filter_by(
+            dataset_id=dataset_id
+        ).order_by(Transcription.created_at.desc()).first()
+        if t:
+            t.transcription_text = corrected_text.strip()
+
+    if corrected_features is not None:
+        if isinstance(corrected_features, dict):
+            ds.segmented_text = json.dumps(corrected_features)
+            # Update transcription domain_features too
+            t = Transcription.query.filter_by(
+                dataset_id=dataset_id
+            ).order_by(Transcription.created_at.desc()).first()
+            if t:
+                t.domain_features = json.dumps(corrected_features)
+        else:
+            return jsonify({"error": "features must be a JSON object"}), 400
+
+    ds.status = 'pending_review'  # Keep as pending until explicitly approved
+    db.session.commit()
+
+    return jsonify({
+        "message":    "Submission updated successfully",
+        "dataset_id": dataset_id,
+        "transcription": ds.combined_text,
+        "features":   json.loads(ds.segmented_text) if ds.segmented_text else {}
+    }), 200

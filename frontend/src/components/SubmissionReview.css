@@ -175,6 +175,79 @@
   gap: 8px;
 }
 
+/* Container for the transcription box to ensure consistency */
+.transcription-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.6;
+  max-height: 120px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+/* Button group styles for the card footer */
+.card-footer {
+  padding: 12px 20px;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Base button styles */
+.btn {
+  padding: 8px 16px;
+  border-radius: 9px;
+  border: 1px solid #cbd5e1;
+  background: white;
+  color: #475569;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:hover {
+  background: #f1f5f9;
+}
+
+.btn-approve {
+  border-color: #10b981;
+  background: #10b981;
+  color: white;
+}
+
+.btn-approve:hover {
+  background: #059669;
+}
+
+.btn-reject {
+  border-color: #fca5a5;
+  background: white;
+  color: #ef4444;
+}
+
+.btn-reject:hover {
+  background: #fef2f2;
+}
+
+.btn-disabled {
+  background: #e2e8f0;
+  border-color: #e2e8f0;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* Ensure the textarea doesn't break the card layout */
+textarea:focus {
+  border-color: #489c8c !important;
+  box-shadow: 0 0 0 2px rgba(72, 156, 140, 0.2);
+}
 .card-header-left {
   display: flex;
   align-items: center;

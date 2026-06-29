@@ -35,6 +35,17 @@ def signUp():
         # ROLE: COMMUNITY
         # ─────────────────────────────────────────────────────
         if role == 'community':
+            # ✅ V1 Community limit — 500 founding members
+            COMMUNITY_LIMIT = 500
+            community_count = User.query.filter_by(role='community').count()
+            if community_count >= COMMUNITY_LIMIT:
+                return jsonify({
+                    "error": "founding_limit_reached",
+                    "message": "SemaData V1 community is at capacity. Join the waitlist for V2.",
+                    "limit": COMMUNITY_LIMIT,
+                    "waitlist_url": "/waitlist"
+                }), 403
+
             area_of_interest = data.get('area_of_interest', '').strip()
             first_name = data.get('first_name', '').strip()
             last_name  = data.get('last_name', '').strip()
@@ -213,3 +224,15 @@ def email_verification(token):
         return redirect(f"{frontend_base}/login?verified=true&next=/community")
     else:
         return redirect(f"{frontend_base}/login?verified=true&next=/userDashboard")
+
+@register_bp.route('/community-spots', methods=['GET'])
+def community_spots():
+    COMMUNITY_LIMIT = 500
+    current_count   = User.query.filter_by(role='community').count()
+    spots_remaining = max(COMMUNITY_LIMIT - current_count, 0)
+    return jsonify({
+        "limit":           COMMUNITY_LIMIT,
+        "current":         current_count,
+        "spots_remaining": spots_remaining,
+        "is_full":         spots_remaining == 0
+    }), 200

@@ -126,7 +126,23 @@ const AdminDashboard = () => {
                 <JobPostModal 
                     isOpen={isJobModalOpen} 
                     onClose={() => setIsJobModalOpen(false)} 
-                />
+
+                    onPublish={async (data) => {
+            // Add the API call here
+            const response = await fetch('/api/admin/post-job', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(data)
+            });
+            if (response.ok) {
+                setIsJobModalOpen(false); // Close modal on success
+                // Optionally: trigger a re-fetch of your JobsTable
+            }
+        }}
+                                                        />
             )}
 
             {/* Programmatic Reviewer Provisioning Portal */}

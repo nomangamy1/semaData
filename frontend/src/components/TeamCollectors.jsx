@@ -15,7 +15,7 @@ const TeamCollectors = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/admin/applications', {
+            const response = await fetch('http://localhost:8000/api/admin/applications', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {

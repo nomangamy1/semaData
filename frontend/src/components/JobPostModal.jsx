@@ -73,7 +73,7 @@ const JobPostModal = ({ isOpen, onClose, domains = [], onPublish }) => {
         </header>
 
         {/* Form elements utilizing admin-scroll custom utility */}
-        <form onSubmit={handleSubmit} className="modal-body admin-scroll">
+        <form id="job-post-form"   onSubmit={handleSubmit} className="modal-body admin-scroll">
           
           {/* Target Knowledge Domain */}
           <div style={{ marginBottom: '1.75rem' }}>
@@ -206,14 +206,15 @@ const JobPostModal = ({ isOpen, onClose, domains = [], onPublish }) => {
 
         {/* Modal Actions Footer styling wrapper */}
         <footer className="modal-footer">
-          <button type="button" onClick={onClose}>
-            Cancel
+         <button type="button" onClick={onClose}>
+         Cancel
           </button>
-          <button type="submit" onClick={handleSubmit}>
+           {/* Add the form="job-post-form" attribute and ensure the form has that ID */}
+            <button type="submit" form="job-post-form">
             Deploy to Careers Page
-          </button>
-        </footer>
-      </div>
+             </button>
+             </footer>
+              </div>
     </div>
   );
 };

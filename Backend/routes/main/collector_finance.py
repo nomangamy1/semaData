@@ -67,14 +67,22 @@ def _calc_earnings(collector_id, domain_id=None):
     penalty          = rejected * (collector_rate * 0.1)
     net_earnings     = max(gross_earnings - penalty, 0)
 
-    # Total withdrawn from DB
-    from models.payments import Payment
-    total_withdrawn = db.session.query(
-        db.func.coalesce(db.func.sum(Payment.amount), 0)
-    ).filter_by(
-        collector_id=collector_id,
-        status='Success'
+    # Total earned from collector_earnings table
+    total_earned_db = db.session.execute(
+        db.text("SELECT COALESCE(SUM(amount), 0) FROM collector_earnings WHERE collector_id = :uid AND status = 'earned'"),
+        {"uid": collector_id}
     ).scalar() or 0
+
+    # Total withdrawn — read from AdminDisbursement (the actual withdrawal model)
+    from models.payments import AdminDisbursement
+    total_withdrawn = db.session.query(
+        db.func.coalesce(db.func.sum(AdminDisbursement.amount), 0.0)
+    ).filter(
+        AdminDisbursement.collector_id == collector_id,
+        AdminDisbursement.status == "DISBURSED"
+    ).scalar() or 0.0
+
+    total_withdrawn = float(total_withdrawn)
 
     current_balance = max(net_earnings - float(total_withdrawn), 0)
     rejection_rate  = round((rejected / total * 100), 2) if total else 0
@@ -196,16 +204,22 @@ def request_withdrawal():
     # Generate withdrawal reference
     ref = 'WD-' + ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
 
-    from models.payments import Payment
-    withdrawal = Payment(
-        collector_id=user.id,
-        amount=amount,
-        transaction_ref=ref,
-        status='pending',
-        phone_number=getattr(user, 'mpesa_number', None),
-        processed_at=None
+    db.session.execute(
+        db.text("""
+            INSERT INTO withdrawal_requests 
+                (collector_id, amount, gateway, phone_number, paypal_email, status, reference, requested_at)
+            VALUES 
+                (:uid, :amount, :gateway, :phone, :paypal, 'pending', :ref, NOW())
+        """),
+        {
+            "uid":    user.id,
+            "amount": amount,
+            "gateway": getattr(user, 'preferred_gateway', 'MPESA'),
+            "phone":   getattr(user, 'mpesa_number', ''),
+            "paypal":  getattr(user, 'paypal_email', ''),
+            "ref":     ref
+        }
     )
-    db.session.add(withdrawal)
     db.session.commit()
 
     return jsonify({

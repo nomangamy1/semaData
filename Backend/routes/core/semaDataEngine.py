@@ -54,7 +54,7 @@ if os.environ.get('FLASK_ENV') != 'migration' and os.environ.get('DISABLE_ML_MOD
             print(f"Failed to load semantic model: {e}")
     if WhisperModel:
         try:
-            MODEL_NAME = os.environ.get('MODEL_NAME', 'small')
+            MODEL_NAME = os.environ.get('MODEL_NAME', 'tiny')
             print(f"Loading Whisper Model ({MODEL_NAME})...")
             semaData_model = WhisperModel(MODEL_NAME, device="cpu", compute_type="int8")
         except Exception as e:

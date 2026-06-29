@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
+import EmptyState from '../components/EmptyState';
 
 // --- SUB-COMPONENT: DETAIL MODAL ---
 const DetailModal = ({ isOpen, onClose, dataset, features }) => {
@@ -131,7 +132,17 @@ const InsightsTable = ({ datasets, features }) => {
                         <p className="text-xs text-slate-400 mt-0.5">Real-time captured field voice-to-text extractions</p>
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto">
-                        <button className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-emerald-50/40 border border-slate-200 rounded-xl transition-all">
+                        <button
+                            onClick={() => {
+                                const token = localStorage.getItem('token');
+                                const domainId = selectedDomain?.domain_id;
+                                if (!domainId) { alert('Please select a domain first'); return; }
+                                window.open(
+                                    `http://localhost:8000/api/export/domain/${domainId}/export`,
+                                    '_blank'
+                                );
+                            }}
+                            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-emerald-50/40 border border-slate-200 rounded-xl transition-all">
                             <Download size={16} /> Export CSV
                         </button>
                         <button onClick={() => window.print()}
