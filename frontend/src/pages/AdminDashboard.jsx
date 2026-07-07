@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../pages/AdminDashboard.css';
 import '../components/AdminShared.css';
 import ReviewerOnboardingModal from '../components/ReviewerOnboardingModal';
@@ -14,12 +14,59 @@ import DomainsTable from '../components/DomainsTable';
 import SubmissionReview from '../components/SubmissionReview';
 import ChallengeManager from '../components/ChallengeManager';
 
+/**
+ * useAuthToken: Production-level custom hook for auth token management
+ * Handles token retrieval, validation, and refresh logic
+ */
+const useAuthToken = () => {
+    const [token, setToken] = useState(null);
+    const [isTokenValid, setIsTokenValid] = useState(false);
+
+    useEffect(() => {
+        const initializeToken = () => {
+            try {
+                const storedToken = localStorage.getItem('token');
+                if (storedToken && isValidJWT(storedToken)) {
+                    setToken(storedToken);
+                    setIsTokenValid(true);
+                } else {
+                    localStorage.removeItem('token');
+                    setIsTokenValid(false);
+                }
+            } catch (error) {
+                console.error('Error initializing auth token:', error);
+                setIsTokenValid(false);
+            }
+        };
+        initializeToken();
+    }, []);
+
+    const isValidJWT = (jwt) => {
+        if (!jwt || typeof jwt !== 'string') return false;
+        try {
+            const parts = jwt.split('.');
+            if (parts.length !== 3) return false;
+            const payload = JSON.parse(atob(parts[1]));
+            if (payload.exp && typeof payload.exp === 'number') {
+                return Date.now() < payload.exp * 1000;
+            }
+            return true;
+        } catch (error) {
+            console.error('JWT validation error:', error);
+            return false;
+        }
+    };
+
+    return { token, isTokenValid };
+};
+
 const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('overview');
     const [isJobModalOpen, setIsJobModalOpen] = useState(false);
     const [isReviewerModalOpen, setIsReviewerModalOpen] = useState(false);
+    
+    const { token, isTokenValid } = useAuthToken();
 
-    // Sidebar navigation configuration
     const menuItems = [
         { id: 'overview', label: 'Analytics Overview', icon: '📊' },
         { id: 'collectors', label: 'Team Collectors', icon: '👥' },
@@ -31,7 +78,6 @@ const AdminDashboard = () => {
         { id: 'payouts', label: 'Financials & Payouts', icon: '💳' }
     ];
 
-    // Core content router based on the active state selection
     const renderContent = () => {
         switch (activeTab) {
             case 'overview':
@@ -68,7 +114,19 @@ const AdminDashboard = () => {
             case 'review':
                 return <SubmissionReview />;
             case 'challenges':
-                return <ChallengeManager token={token} />;
+                return isTokenValid && token ? (
+                    <ChallengeManager token={token} />
+                ) : (
+                    <div style={{
+                        padding: '2rem',
+                        background: '#fee2e2',
+                        borderRadius: '12px',
+                        color: '#991b1b',
+                        fontWeight: 600
+                    }}>
+                        ⚠️ Authentication required. Please refresh and log in again.
+                    </div>
+                );
             case 'payouts':
                 return <PayoutManagement />;
             default:
@@ -78,7 +136,6 @@ const AdminDashboard = () => {
 
     return (
         <div className="admin-dashboard-layout">
-            {/* Sidebar Navigation Control Plane */}
             <aside className="admin-sidebar">
                 <div className="sidebar-brand">
                     <h2>semaData <span>Admin</span></h2>
@@ -97,14 +154,12 @@ const AdminDashboard = () => {
                 </nav>
             </aside>
 
-            {/* Main Application Content Window */}
             <main className="admin-main-viewport">
                 <header className="admin-top-navbar flex justify-between items-center px-6 py-4 bg-white border-b border-slate-100">
                     <div className="welcome-text">
                         <h3>System Controller Workspace</h3>
                     </div>
                     
-                    {/* Action Panel: Triggers the new onboarding modal */}
                     <div className="flex items-center gap-4">
                         <button 
                             className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
@@ -115,7 +170,9 @@ const AdminDashboard = () => {
 
                         <div className="admin-profile-badge flex items-center gap-2">
                             <span className="status-indicator online"></span>
-                            <p className="text-sm font-semibold text-slate-700">Platform Admin</p>
+                            <p className="text-sm font-semibold text-slate-700">
+                                {isTokenValid ? '✅ Authenticated' : '⚠️ Not Authenticated'}
+                            </p>
                         </div>
                     </div>
                 </header>
@@ -125,31 +182,35 @@ const AdminDashboard = () => {
                 </div>
             </main>
 
-            {/* Dynamic Job Posting Modal Overlay */}
             {isJobModalOpen && (
                 <JobPostModal 
                     isOpen={isJobModalOpen} 
                     onClose={() => setIsJobModalOpen(false)} 
-
                     onPublish={async (data) => {
-            // Add the API call here
-            const response = await fetch('/api/admin/post-job', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify(data)
-            });
-            if (response.ok) {
-                setIsJobModalOpen(false); // Close modal on success
-                // Optionally: trigger a re-fetch of your JobsTable
-            }
-        }}
-                                                        />
+                        try {
+                            const response = await fetch('/api/admin/post-job', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify(data)
+                            });
+                            
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            
+                            setIsJobModalOpen(false);
+                            window.dispatchEvent(new Event('jobsUpdated'));
+                        } catch (error) {
+                            console.error('Error posting job:', error);
+                            alert('Failed to post job. Please try again.');
+                        }
+                    }}
+                />
             )}
 
-            {/* Programmatic Reviewer Provisioning Portal */}
             {isReviewerModalOpen && (
                 <ReviewerOnboardingModal 
                     isOpen={isReviewerModalOpen} 
