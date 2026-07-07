@@ -5,23 +5,50 @@ from datetime import datetime
 class CommunityPost(db.Model):
     __tablename__ = "community_posts"
 
-    id          = db.Column(db.Integer, primary_key=True)
-    author_id   = db.Column(db.Integer, db.ForeignKey("Users.id"), nullable=False)
-    author_type = db.Column(db.String(20), nullable=False, default="user")
-    post_type   = db.Column(db.String(20), nullable=False, default="post")
-    title       = db.Column(db.String(255), nullable=True)
-    body = db.Column(db.Text, nullable=False)
-    likes       = db.Column(db.Integer, default=0)
-    domain_ref  = db.Column(db.String(100), nullable=True)
-    domain_name = db.Column(db.String(100), nullable=True)
-    attachment = db.Column(db.String(500),nullable=True)
-    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at  = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id                    = db.Column(db.Integer, primary_key=True)
+    author_id             = db.Column(db.Integer, db.ForeignKey("Users.id"), nullable=False)
+    author_type           = db.Column(db.String(20), nullable=False, default="user")  # 'user', 'admin', 'verified_user'
+    post_type             = db.Column(db.String(20), nullable=False, default="post")   # 'post', 'challenge', 'idea'
+    title                 = db.Column(db.String(255), nullable=True)
+    body                  = db.Column(db.Text, nullable=False)
+    likes                 = db.Column(db.Integer, default=0)
+    domain_ref            = db.Column(db.String(100), nullable=True)
+    domain_name           = db.Column(db.String(100), nullable=True)
+    attachment            = db.Column(db.String(500), nullable=True)
+    
+    # Challenge-specific fields
+    is_pinned             = db.Column(db.Boolean, default=False, index=True)
+    reward_description    = db.Column(db.Text, nullable=True)
+    challenge_deadline    = db.Column(db.DateTime, nullable=True)
+    allow_community_posts = db.Column(db.Boolean, default=False)  # Allow verified users to post challenges
+    
+    # Timestamps
+    created_at            = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    updated_at            = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     author = db.relationship("User", foreign_keys=[author_id])
 
     def __repr__(self):
         return f"<CommunityPost {self.id} [{self.post_type}] by {self.author_id}>"
+
+    def to_dict(self):
+        """Convert model to dictionary for API responses"""
+        return {
+            'id': self.id,
+            'title': self.title,
+            'body': self.body,
+            'author_id': self.author_id,
+            'author_type': self.author_type,
+            'post_type': self.post_type,
+            'is_pinned': self.is_pinned,
+            'reward_description': self.reward_description,
+            'challenge_deadline': self.challenge_deadline.isoformat() if self.challenge_deadline else None,
+            'likes': self.likes or 0,
+            'domain_ref': self.domain_ref,
+            'domain_name': self.domain_name,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
 
 
 class QualityFlag(db.Model):
