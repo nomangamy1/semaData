@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, url_for
 from werkzeug.security import check_password_hash
 from utils.tokens import generate_verification_token
-from utils.email import send_email
+from utils.mailer import send_approval_email as send_mail
 from models import User, Domain, DomainOwner
 from models.JobApplication import JobApplication
 from models.Job import Job
@@ -117,7 +117,7 @@ def login():
                     verify_token = generate_verification_token(collector.email)
                     confirm_url  = url_for('register.email_verification',
                                           token=verify_token, _external=True)
-                    send_email(collector.email, "Please verify your account",
+                    send_mail(collector.email, "Please verify your account",
                         f"<p>Please verify: <a href='{confirm_url}'>{confirm_url}</a></p>")
                 except Exception:
                     pass

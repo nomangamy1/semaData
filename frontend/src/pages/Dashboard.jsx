@@ -325,10 +325,27 @@ const Dashboard = () => {
                         className="w-full bg-[#489c8c] hover:bg-[#3d8577] text-white p-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition shadow-md shadow-[#489c8c]/5 text-sm">
                         <PlusCircle size={18} /> New Domain
                     </button>
+                        <div className="mt-4 mb-2 p-3 border border-slate-800 rounded-xl bg-slate-900/30 text-center">
+                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Support Center</p>
+                            <p className="text-xs text-[#489c8c] font-medium mt-1">support@semadata.app</p>
+                        </div>
                     <button onClick={handleLogout}
-                        className="w-full bg-slate-800/40 hover:bg-rose-950/40 border border-slate-800 Tri hover:border-rose-900/50 text-slate-400 hover:text-rose-400 p-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition text-sm">
+                        className="w-full bg-slate-800/40 hover:bg-rose-950/40 border border-slate-800 hover:border-rose-900/50 text-slate-400 hover:text-rose-400 p-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition text-sm">
                         <LogOut size={18} /> Logout
                     </button>
+                    <div style={{
+                        marginTop: 12, padding: "12px 14px", background: "rgba(72,156,140,0.08)",
+                        border: "1px solid rgba(72,156,140,0.2)", borderRadius: 12, textAlign: "center"
+                    }}>
+                        <p style={{ fontSize: "0.7rem", color: "#94a3b8", margin: "0 0 4px", fontWeight: 700 }}>
+                            Need help with your domain?
+                        </p>
+                        <a href="mailto:support@semadata.co" style={{
+                            fontSize: "0.75rem", color: "#489c8c", fontWeight: 700, textDecoration: "none"
+                        }}>
+                            support@semadata.co
+                        </a>
+                    </div>
                 </div>
             </aside>
 
@@ -452,6 +469,15 @@ const Dashboard = () => {
                                         >
                                             Enter Stream <ExternalLink size={12} className="transition-transform group-hover:translate-x-0.5" />
                                         </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/edit-schema/${domain.domain_id || domain.reference_number}`);
+                                        }}
+                                        className="w-full mt-2 py-2 bg-transparent border border-[#489c8c]/30 text-[#489c8c] hover:bg-[#489c8c]/5 rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold transition-all"
+                                    >
+                                        Edit Schema
+                                    </button>
                                     </div>
                                 </div>
                             ))}

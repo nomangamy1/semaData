@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import WalletTab from '../components/WalletTab';
-import PersonalProfile from '../components/PersonalProfile';
+import CollectorProfileTab from '../components/CollectorProfileTab';
 import './userDashboard.css';
 import db from './db';
 
@@ -247,7 +246,7 @@ const UserDashboard = () => {
       </header>
 
       {/* Modular Balance Card Panel Component Integration */}
-      <WalletTab finance={finance} token={token} onRefresh={fetchFinancialSummary} />
+      <CollectorProfileTab sessionData={sessionData} onLogout={handleLogout} />
 
       <div className="dashboard-grid">
         <div className="main-content-flow">
@@ -299,7 +298,7 @@ const UserDashboard = () => {
           )}
 
           {/* Modular Account Personal Details Meta Card Component Integration */}
-          <PersonalProfile sessionData={sessionData} onLogout={handleLogout} />
+          
         </div>
 
         {/* Sidebar Guidelines Panel Layout */}

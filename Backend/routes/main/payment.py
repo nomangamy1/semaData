@@ -277,7 +277,27 @@ def request_withdrawal():
         db.session.add(new_intent)
         db.session.commit()
 
-        return jsonify({"status": "success", "message": "Cashout request logged successfully."}), 200
+        # ✅ Notify collector with SLA commitment
+        try:
+            from utils.mailer import send_approval_email as send_email
+            collector = User.query.get(collector_id)
+            if collector and collector.email:
+                send_email(
+                    collector.email,
+                    "Withdrawal Request Received — SemaData",
+                    f"""<h3>Withdrawal Requested</h3>
+                        <p>Your request for KES {requested_amount} has been received.</p>
+                        <p><strong>Expected processing time: within 48 hours.</strong></p>
+                        <p>You will receive a confirmation once payment is sent to your registered M-Pesa or PayPal account.</p>"""
+                )
+        except Exception as e:
+            current_app.logger.warning(f"Withdrawal notification failed: {e}")
+
+        return jsonify({
+            "status": "success",
+            "message": "Cashout request logged successfully.",
+            "sla_hours": 48
+        }), 200
 
     except Exception as e:
         db.session.rollback()
@@ -447,11 +467,28 @@ def finance_b2c_result_callback():
             if hasattr(intent, 'processed_at'):
                 intent.processed_at = datetime.utcnow()
             current_app.logger.info(f"Disbursement transaction success for Intent ID #{intent.id}")
+            db.session.commit()
+
+            # ✅ Notify collector their payout was successful
+            try:
+                from utils.mailer import send_approval_email as send_email
+                from models.user import User
+                collector = User.query.get(intent.collector_id)
+                if collector and collector.email:
+                    send_email(
+                        collector.email,
+                        "Payment Sent — SemaData",
+                        f"""<h3>Your payout has been sent!</h3>
+                            <p>KES {intent.amount} has been disbursed to your registered M-Pesa number.</p>
+                            <p>Reference: {getattr(intent, 'transaction_note', None) or intent.id}</p>
+                            <p>Thank you for contributing to SemaData.</p>"""
+                    )
+            except Exception as mail_err:
+                current_app.logger.warning(f"Payout email notification failed: {mail_err}")
         else:
             intent.status = "FAILED"
             current_app.logger.warning(f"Disbursement transaction failed. Reason Code: {result_code}")
-            
-        db.session.commit()
+            db.session.commit()
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Callback status tracking update database error: {str(e)}")
@@ -484,7 +521,7 @@ def get_pending_payouts():
     """
     # 1. Enforce Role-Based Access Control (RBAC) via Custom JWT Claims
     claims = get_jwt()
-    if not claims.get("is_admin", False) and claims.get("role") != "ADMIN":
+    if not claims.get("is_admin", False) and claims.get("role", "").lower() != "admin":
         current_app.logger.warning(f"Unauthorized access attempt to pending financial ledger by User ID: {get_jwt_identity()}")
         return jsonify({"error": "Access denied. Administrative credentials required."}), 403
 
@@ -503,12 +540,22 @@ def get_pending_payouts():
 
         results = []
         for disbursement, user in pending_records:
+            is_overdue = False
+            hours_pending = 0
+            if disbursement.initiated_at:
+                elapsed = (datetime.utcnow() - disbursement.initiated_at).total_seconds()
+                hours_pending = round(elapsed / 3600, 1)
+                is_overdue = elapsed > 48 * 3600
+
             results.append({
                 "id": disbursement.id,
                 "collector_id": disbursement.collector_id,
                 "username": user.username if hasattr(user, 'username') else f"user_{user.id}",
-                "preferred_gateway": "MPESA",  
+                "preferred_gateway": "MPESA",
                 "target_coordinate": user.phone_number if hasattr(user, 'phone_number') else "No linked contact",
+                "is_overdue": is_overdue,
+                "hours_pending": hours_pending,
+                "sla_hours": 48,
                 "amount": float(disbursement.amount),
                 "initiated_at": disbursement.initiated_at.strftime("%Y-%m-%d %H:%M:%S") if disbursement.initiated_at else "N/A"
             })
@@ -529,7 +576,7 @@ def approve_manual_payout(request_id):
     """
     # 1. Enforce Role-Based Access Control (RBAC) via Custom JWT Claims
     claims = get_jwt()
-    if not claims.get("is_admin", False) and claims.get("role") != "ADMIN":
+    if not claims.get("is_admin", False) and claims.get("role", "").lower() != "admin":
         current_app.logger.error(f"CRITICAL: Unauthorized manual payout verification payload fired by non-admin identity token!")
         return jsonify({"error": "Access denied. Administrative privileges required."}), 403
 
@@ -566,6 +613,24 @@ def approve_manual_payout(request_id):
         db.session.commit()
 
         current_app.logger.info(f"Payout ID #{request_id} manually cleared by Admin ID {get_jwt_identity()} with reference {clean_note}")
+
+        # ✅ Notify collector their payout was manually processed
+        try:
+            from utils.mailer import send_approval_email as send_email
+            from models.user import User
+            collector = User.query.get(intent.collector_id)
+            if collector and collector.email:
+                send_email(
+                    collector.email,
+                    "Payment Sent — SemaData",
+                    f"""<h3>Your payout has been processed!</h3>
+                        <p>KES {intent.amount} has been sent to your registered payment account.</p>
+                        <p>Reference: {clean_note}</p>
+                        <p>Thank you for contributing to SemaData.</p>"""
+                )
+        except Exception as mail_err:
+            current_app.logger.warning(f"Manual payout email notification failed: {mail_err}")
+
         return jsonify({
             "status": "success",
             "message": f"Ledger Request #{request_id} successfully authenticated and marked as DISBURSED.",

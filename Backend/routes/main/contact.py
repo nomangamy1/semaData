@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from extensions import db
-from utils.email import send_email
+from utils.mailer import send_approval_email as send_email
 from models.ContactUs import ContactInquiry
 from datetime import datetime
 import logging

@@ -20,6 +20,20 @@ const LandingPage = () => {
     <div className="lp">
 
       {/* ── NAV ── */}
+      <nav className="lp-nav">
+        <div className="lp-nav-brand">
+          <span className="lp-nav-dot" /> semaData
+        </div>
+        <div className="lp-nav-links">
+          <a href="#how">How it works</a>
+          <a href="#roles">Who it's for</a>
+          <a href="#community">Community</a>
+        </div>
+        <div className="lp-nav-actions">
+          <Link to="/login?fresh=true" className="lp-nav-login">Sign in</Link>
+          <Link to="/signup" className="lp-nav-cta">Get started</Link>
+        </div>
+      </nav>
 
       {/* ── HERO ── */}
       <section className="lp-hero reveal">
@@ -50,15 +64,15 @@ const LandingPage = () => {
           </div>
           <div className="lp-hero-stats reveal">
             <div className="lp-stat">
-              <strong>8+</strong><span>African languages</span>
+              <strong>500</strong><span>Founding member spots</span>
             </div>
             <div className="lp-stat-divider" />
             <div className="lp-stat">
-              <strong>1,500+</strong><span>Verified recordings</span>
+              <strong>Open</strong><span>Now accepting applications</span>
             </div>
             <div className="lp-stat-divider" />
             <div className="lp-stat">
-              <strong>3</strong><span>Active research domains</span>
+              <strong>Nakuru</strong><span>Built in Kenya</span>
             </div>
           </div>
         </div>

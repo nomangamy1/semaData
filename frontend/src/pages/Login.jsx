@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Database, Loader2, CheckCircle, AlertCircle, Briefcase, User, Globe } from 'lucide-react';
 import './Login.css';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -146,6 +147,30 @@ const handleSubmit = async (e) => {
           </div>
         )}
 
+        {(loginRole === 'community' || loginRole === 'domainowner') && (
+          <>
+            <GoogleAuthButton
+              mode="login"
+              role={loginRole === 'domainowner' ? 'domain_owner' : 'community'}
+              onSuccess={(data) => {
+                const role = (data.role || '').toLowerCase();
+                if (role === 'admin') navigate('/AdminDashboard', { replace: true });
+                else if (role === 'domain_owner') navigate('/Dashboard', { replace: true });
+                else if (role === 'community') navigate('/community', { replace: true });
+              }}
+              onError={(msg) => setError(msg)}
+            />
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              margin: '1.25rem 0', color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600
+            }}>
+              <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+              or continue with email
+              <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+            </div>
+          </>
+        )}
+
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="login-field">
             <label className="login-label">Email</label>
@@ -169,6 +194,11 @@ const handleSubmit = async (e) => {
             </div>
           )}
 
+          <div style={{ textAlign: "right", marginBottom: 8 }}>
+            <a href="/forgot-password" style={{ fontSize: "0.8rem", color: "#489c8c", fontWeight: 600, textDecoration: "none" }}>
+              Forgot password?
+            </a>
+          </div>
           <button type="submit" className="login-btn" disabled={isLoading}>
             {isLoading
               ? <><Loader2 size={18} className="spin" /> Signing in...</>

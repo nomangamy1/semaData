@@ -153,3 +153,57 @@ def get_my_domains():
             "domain_id":        d.id
         })
     return jsonify(output), 200
+
+
+# ─── PATCH /api/domain/<id>/features ──────────────────────────────────────────
+@domain_bp.route('/domain/<int:domain_id>/features', methods=['PATCH'])
+@jwt_required()
+def edit_domain_features(domain_id):
+    """
+    Domain owner edits feature schema after creation.
+    Allows adding new features and removing unused ones.
+    Existing data is preserved — removing a feature just stops asking for it
+    in future submissions, it does not delete historical data.
+    """
+    current_user_id = get_jwt_identity()
+    domain = Domain.query.get_or_404(domain_id)
+
+    if str(domain.owner_id) != str(current_user_id):
+        return jsonify({"error": "Unauthorized — not your domain"}), 403
+
+    data = request.get_json() or {}
+    add_features    = data.get('add_features', [])
+    remove_feature_ids = data.get('remove_feature_ids', [])
+
+    if not isinstance(add_features, list) or not isinstance(remove_feature_ids, list):
+        return jsonify({"error": "add_features and remove_feature_ids must be lists"}), 400
+
+    # Remove specified features
+    removed = []
+    for fid in remove_feature_ids:
+        feat = Feature.query.filter_by(id=fid, domain_id=domain_id).first()
+        if feat:
+            removed.append(feat.name)
+            db.session.delete(feat)
+
+    # Add new features
+    added = []
+    existing_names = {f.name.lower() for f in domain.domain_features}
+    for name in add_features:
+        name = name.strip()
+        if name and name.lower() not in existing_names:
+            new_feat = Feature(name=name, domain_id=domain_id)
+            db.session.add(new_feat)
+            added.append(name)
+            existing_names.add(name.lower())
+
+    db.session.commit()
+
+    current_features = [f.name for f in Domain.query.get(domain_id).domain_features]
+
+    return jsonify({
+        "message":          "Feature schema updated",
+        "added":            added,
+        "removed":          removed,
+        "current_features": current_features
+    }), 200

@@ -3,7 +3,7 @@ from werkzeug.security import generate_password_hash
 from models import User, Domain, DomainOwner, Dataset
 from extensions import db
 from utils.tokens import generate_verification_token, confirm_token_verification
-from utils.email import send_email
+from utils.mailer import send_approval_email as send_mail
 from flask import url_for, redirect, current_app
 from itsdangerous import SignatureExpired, BadTimeSignature
 from models.JobApplication import JobApplication
@@ -69,7 +69,7 @@ def signUp():
 
             token = generate_verification_token(new_member.email)
             confirm_url = url_for('register.email_verification', token=token, _external=True)
-            send_email(
+            send_mail(
                 new_member.email,
                 "Welcome to semaData — please verify your email",
                 f"""<h3>Welcome, {new_member.first_name}!</h3>

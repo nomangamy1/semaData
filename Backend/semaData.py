@@ -14,6 +14,7 @@ from flask_jwt_extended import JWTManager
 from routes.Auth.signUp import register_bp
 from routes.Auth.domain import domain_bp
 from routes.Auth.login import login_bp
+from routes.Auth.forgot_password import forgot_bp
 from routes.Auth.google_login import google_login_bp
 from routes.Auth.google_sign_up import auth_bp  
 from routes.core import semaData_engine_bp  
@@ -67,6 +68,7 @@ def semaData_app():
     semaData.register_blueprint(register_bp, url_prefix='/api/Auth')
     semaData.register_blueprint(domain_bp,url_prefix='/api')
     semaData.register_blueprint(login_bp, url_prefix='/api/Auth')
+    semaData.register_blueprint(forgot_bp, url_prefix='/api/Auth')
     semaData.register_blueprint(google_login_bp, url_prefix='/api/Auth')
     semaData.register_blueprint(auth_bp, url_prefix='/api/Auth')
     semaData.register_blueprint(semaData_engine_bp, url_prefix='/api/core')
@@ -82,7 +84,7 @@ def semaData_app():
     semaData.register_blueprint(collector_finance_bp,url_prefix='/api/collector')
     semaData.register_blueprint(submission_bp,url_prefix='/api/admin')
     semaData.register_blueprint(AdminCareers_bp,url_prefix='/api/admin')
-    semaData.register_blueprint(community_bp,url_prefix='/api')
+    semaData.register_blueprint(community_bp,url_prefix='/api/community')
     semaData.register_blueprint(payment_bp,url_prefix='/api/collector',name='collector_payment')
     @login_manager.user_loader
     def load_user(user_id):

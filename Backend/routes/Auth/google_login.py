@@ -8,56 +8,88 @@ from Config import config
 
 google_login_bp = Blueprint("google_login", __name__)
 
-@google_login_bp.route('/google_login', methods=['POST'])
+
+@google_login_bp.route("/google_login", methods=["POST"])
 def google_login():
     try:
         data = request.get_json()
-        token = data.get('token')
-        role_type = data.get('role')  # 'user' or 'domain_owner'
+        token = data.get("token")
+        role_type = data.get("role")
 
         if not token or not role_type:
-            return {"error": "Token and role are required"}, 400
+            return jsonify({"error": "Token and role are required"}), 400
 
-        idinfo = id_token.verify_oauth2_token(token, google_requests.Request(), config['default'].GOOGLE_CLIENT_ID)
-        email = idinfo['email']
+        idinfo = id_token.verify_oauth2_token(
+            token, google_requests.Request(), config["default"].GOOGLE_CLIENT_ID
+        )
+        email = idinfo["email"]
 
-        if role_type == 'user':
-            # For users, require reference_number to identify the domain
-            reference_number = data.get('reference_number')
+        # ───────────────────────────────────────────
+        # ROLE: COMMUNITY
+        # ───────────────────────────────────────────
+        if role_type == "community":
+            user = User.query.filter_by(email=email, user_type="community").first()
+            if not user:
+                return jsonify({"error": "No community account found. Please sign up first."}), 404
+
+            access_token = create_access_token(
+                identity=str(user.id),
+                additional_claims={"role": "community"}
+            )
+            return jsonify({
+                "token":  access_token,
+                "role":   "community",
+                "userId": user.id,
+                "email":  user.email,
+                "fullName": f"{user.first_name} {user.second_name or ' '}".strip(),
+            }), 200
+
+        # ───────────────────────────────────────────
+        # ROLE: COLLECTOR (User)
+        # ───────────────────────────────────────────
+        elif role_type == "user":
+            reference_number = data.get("reference_number")
             if not reference_number:
-                return {"error": "Reference number is required for user login"}, 400
+                return jsonify({"error": "Reference number is required for collector login"}), 400
 
             user = User.query.filter_by(email=email, reference_number=reference_number).first()
             if not user:
-                return {"error": "User not found or not registered with this email and reference number"}, 404
+                return jsonify({"error": "User not found or not registered with this email and reference number"}), 404
 
-            # Generate JWT token
-            access_token = create_access_token(identity=user.id)
-            return {
-                "message": "User login successful via Google",
-                "access_token": access_token,
-                "role": "user",
-                "user_id": user.id
-            }, 200
+            access_token = create_access_token(
+                identity=str(user.id),
+                additional_claims={"role": "user"}
+            )
+            return jsonify({
+                "token":  access_token,
+                "role":   "user",
+                "userId": user.id,
+                "email":  user.email,
+            }), 200
 
-        elif role_type == 'domain_owner':
+        # ───────────────────────────────────────────
+        # ROLE: DOMAIN OWNER
+        # ───────────────────────────────────────────
+        elif role_type == "domain_owner":
             domain_owner = DomainOwner.query.filter_by(email=email).first()
             if not domain_owner:
-                return {"error": "Domain Owner not found"}, 404
+                return jsonify({"error": "Domain Owner not found"}), 404
 
-            # Generate JWT token
-            access_token = create_access_token(identity=domain_owner.id)
-            return {
-                "message": "Domain Owner login successful via Google",
-                "access_token": access_token,
-                "role": "domain_owner",
-                "user_id": domain_owner.id
-            }, 200
+            access_token = create_access_token(
+                identity=str(domain_owner.id),
+                additional_claims={"role": "domain_owner"}
+            )
+            return jsonify({
+                "token":  access_token,
+                "role":   "domain_owner",
+                "ownerId": domain_owner.id,
+                "email":  domain_owner.email,
+            }), 200
 
         else:
-            return {"error": "Invalid role type"}, 400
+            return jsonify({"error": "Invalid role type"}), 400
 
     except ValueError:
-        return {"error": "Invalid token"}, 400
+        return jsonify({"error": "Invalid Google token"}), 400
     except Exception as e:
-        return {"error": str(e)}, 500
+        return jsonify({"error": str(e)}), 500

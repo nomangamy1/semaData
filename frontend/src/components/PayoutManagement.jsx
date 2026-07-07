@@ -175,6 +175,16 @@ const PayoutManagement = () => {
                   </td>
                   <td>
                     <small className="date-string-lbl">{req.initiated_at}</small>
+                    {req.is_overdue && (
+                      <div style={{
+                        marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 4,
+                        background: '#fee2e2', color: '#991b1b',
+                        padding: '2px 8px', borderRadius: 9999,
+                        fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase'
+                      }}>
+                        ⚠ Overdue ({req.hours_pending}h)
+                      </div>
+                    )}
                   </td>
                   <td>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

@@ -12,6 +12,7 @@ import PayoutManagement from '../components/PayoutManagement';
 import JobPostModal from '../components/JobPostModal';
 import DomainsTable from '../components/DomainsTable';
 import SubmissionReview from '../components/SubmissionReview';
+import ChallengeManager from '../components/ChallengeManager';
 
 const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('overview');
@@ -26,6 +27,7 @@ const AdminDashboard = () => {
         { id: 'templates', label: 'Data Templates', icon: '📝' },
         { id: 'domains', label: 'Registered Domains', icon: '🌐' },
         { id: 'review', label: 'Submission Review', icon: '🎙️' },
+        { id: 'challenges', label: 'Challenges', icon: '🧩' },
         { id: 'payouts', label: 'Financials & Payouts', icon: '💳' }
     ];
 
@@ -65,6 +67,8 @@ const AdminDashboard = () => {
                 );
             case 'review':
                 return <SubmissionReview />;
+            case 'challenges':
+                return <ChallengeManager token={token} />;
             case 'payouts':
                 return <PayoutManagement />;
             default:

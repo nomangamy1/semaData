@@ -8,6 +8,8 @@ import LandingPage from './pages/LandingPage';
 import AboutUs from './pages/AboutUs';
 import ContactUs from './pages/ContactUs';
 import Community from './pages/Community';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import CareersPage from './pages/careersPublic';
 import JobDescriptionView from './pages/JobDescription';
 import Login from './pages/Login';
@@ -62,6 +64,8 @@ function AppShell() {
           <Route path="/AboutUs" element={<AboutUs />} />
           <Route path="/ContactUs" element={<ContactUs />} />
           <Route path="/community" element={<Community />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/careers" element={<CareersPage />} />
           <Route path="/careers/:id" element={<JobDescriptionView />} />
           <Route path="/profile" element={<CollectorProfile />} />

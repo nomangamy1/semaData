@@ -1,4 +1,4 @@
-from flask_mail import Message
+from flask_mailman import EmailMessage
 from flask import current_app
 from extensions import mail
 
@@ -12,7 +12,7 @@ def send_approval_email(recipient_email, first_name, job_title,
     domain_html = f"under <strong>{domain_name}</strong>" if domain_name else ""
 
     try:
-        msg = Message(
+        msg = EmailMessage(
             subject="Your SemaData Application Has Been Approved!",
             recipients=[recipient_email],
             body=f"""
@@ -93,7 +93,7 @@ SemaData Admin Team
         if 'flask-mail' not in current_app.extensions and 'mail' in current_app.extensions:
             current_app.extensions['flask-mail'] = current_app.extensions['mail']
             
-        mail.send(msg)
+        msg.send()
         return True
     except Exception as e:
         print(f"[mailer] Email failed for {recipient_email}: {e}")

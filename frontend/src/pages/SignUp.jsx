@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { User, Briefcase, Globe, ArrowRight, CheckCircle2 } from 'lucide-react';
 import './signUp.css';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 
 const INTERESTS = [
   'Machine Learning', 'Natural Language Processing', 'AI Research',
@@ -165,6 +166,25 @@ const Signup = () => {
         )}
 
         {error && <div className="signup-error">{error}</div>}
+
+        {(role === 'community' || role === 'domainowner') && (
+          <>
+            <GoogleAuthButton
+              mode="signup"
+              role={role === 'domainowner' ? 'domain_owner' : 'community'}
+              onSuccess={(data) => setSubmitted(true)}
+              onError={(msg) => setError(msg)}
+            />
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              margin: '1.25rem 0', color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600
+            }}>
+              <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+              or continue with email
+              <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+            </div>
+          </>
+        )}
 
         <form className="signup-form" onSubmit={handleSubmit}>
           <div className="signup-grid">

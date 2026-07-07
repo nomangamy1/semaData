@@ -17,12 +17,16 @@ export default function CommunityPostForm() {
         formData.append('body', body);
         formData.append('domainName', domain);
         if (attachment) formData.append('attachment', attachment);
-        formData.append('authorName', 'Norman');
+        
 
         try {
             const response = await fetch('http://localhost:5000/api/community/post', {
                 method: 'POST',
-                body: formData
+                headers: {
+                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                 'Content-Type': 'application/json'
+                  },
+                body: JSON.stringify({ title, body ,domainName:domain })
             });
 
             if (response.ok) {
