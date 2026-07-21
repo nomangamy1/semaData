@@ -9,9 +9,12 @@ class CommunityPost(db.Model):
     author_id             = db.Column(db.Integer, db.ForeignKey("Users.id"), nullable=False)
     author_type           = db.Column(db.String(20), nullable=False, default="user")  # 'user', 'admin', 'verified_user'
     post_type             = db.Column(db.String(20), nullable=False, default="post")   # 'post', 'challenge', 'idea'
+    topic_category        = db.Column(db.String(50), nullable=True, default="General")
+    tags                  = db.Column(db.JSON, nullable=True)
     title                 = db.Column(db.String(255), nullable=True)
     body                  = db.Column(db.Text, nullable=False)
     likes                 = db.Column(db.Integer, default=0)
+    reply_count           = db.Column(db.Integer, default=0, nullable=False)
     domain_ref            = db.Column(db.String(100), nullable=True)
     domain_name           = db.Column(db.String(100), nullable=True)
     attachment            = db.Column(db.String(500), nullable=True)
@@ -40,6 +43,8 @@ class CommunityPost(db.Model):
             'author_id': self.author_id,
             'author_type': self.author_type,
             'post_type': self.post_type,
+            'topic_category': self.topic_category,
+            'tags': self.tags or [],
             'is_pinned': self.is_pinned,
             'reward_description': self.reward_description,
             'challenge_deadline': self.challenge_deadline.isoformat() if self.challenge_deadline else None,
@@ -91,19 +96,20 @@ class CommunityResponse(db.Model):
 
     id          = db.Column(db.Integer, primary_key=True)
     post_id     = db.Column(db.Integer, db.ForeignKey("community_posts.id"), nullable=False)
-    user_id     = db.Column(db.Integer, db.ForeignKey("Users.id"), nullable=False)
+    author_id   = db.Column(db.Integer, db.ForeignKey("Users.id"), nullable=False)
     body        = db.Column(db.Text, nullable=False)
+    upvotes     = db.Column(db.Integer, default=0, nullable=False)
     attachment  = db.Column(db.String(500), nullable=True)
     created_at  = db.Column(db.DateTime, default=datetime.utcnow)
 
     post = db.relationship("CommunityPost", backref=db.backref("responses", lazy=True, cascade="all, delete-orphan"))
-    user = db.relationship("User", foreign_keys=[user_id])
+    user = db.relationship("User", foreign_keys=[author_id])
 
     def to_dict(self):
         return {
             'id': self.id,
             'post_id': self.post_id,
-            'user_id': self.user_id,
+            'author_id': self.author_id,
             'body': self.body,
             'attachment': self.attachment,
             'created_at': self.created_at.isoformat() if self.created_at else None,

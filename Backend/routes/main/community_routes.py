@@ -12,17 +12,20 @@ community_bp = Blueprint('community', __name__)
 @community_bp.route('/feed', methods=['GET'])
 def get_feed():
     feed_type = request.args.get('type', 'all')
+    topic_category = request.args.get('topic_category')
     page = request.args.get('page', 1, type=int)
     per_page = 20
-    
+
     query = CommunityPost.query.options(joinedload(CommunityPost.author))
     if feed_type != 'all':
         query = query.filter_by(post_type=feed_type)
-        
+    if topic_category:
+        query = query.filter_by(topic_category=topic_category)
+
     pagination = query.order_by(CommunityPost.created_at.desc()).paginate(
         page=page, per_page=per_page, error_out=False
     )
-    
+
     return jsonify({
         'posts': [{
             'id': p.id,
@@ -31,6 +34,7 @@ def get_feed():
             'title': p.title,
             'body': p.body,
             'postType': p.post_type,
+            'topicCategory': getattr(p, 'topic_category', None),
             'attachment': p.attachment,
             'likes': p.likes,
             'domainName': p.domain_name,
@@ -46,7 +50,7 @@ def add_post():
     if request.content_type and 'multipart/form-data' in request.content_type:
         title = request.form.get('title')
         body = request.form.get('body')
-        author_id = get_jwt_identity()
+        author_id = int(get_jwt_identity())
         
         attachment_path = None
         if 'attachment' in request.files:
@@ -61,14 +65,21 @@ def add_post():
         req_data = request.get_json() or {}
         title = req_data.get('title')
         body = req_data.get('body')
-        author_id = req_data.get('author_id')
+        author_id = int(req_data.get('author_id') or get_jwt_identity())
         attachment_path = req_data.get('attachment')
+
+    if not title or not body:
+        return jsonify({'error': 'Title and body are required'}), 400
+
+    user = User.query.get(author_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
 
     new_post = CommunityPost(
         title=title,
         body=body,
         author_id=author_id,
-        author_type='user',
+        author_type=getattr(user, 'user_type', 'user'),
         post_type='post',
         attachment=attachment_path
     )
@@ -143,6 +154,7 @@ def get_challenges():
             "id":                 c.id,
             "title":              c.title,
             "body":               c.body,
+            "topic_category":     c.topic_category or "General",
             "is_pinned":          c.is_pinned,
             "reward_description": c.reward_description,
             "deadline":           c.challenge_deadline.isoformat() if c.challenge_deadline else None,
@@ -164,7 +176,7 @@ def get_responses(post_id):
             SELECT r.id, r.body, r.upvotes, r.created_at,
                    u.first_name, u.second_name, u.id as uid
             FROM community_responses r
-            JOIN "Users" u ON u.id = r.user_id
+            JOIN "Users" u ON u.id = r.author_id
             WHERE r.post_id = :pid
             ORDER BY r.upvotes DESC, r.created_at ASC
         """),
@@ -276,6 +288,8 @@ def create_challenge():
     title              = data.get('title', '').strip()
     body               = data.get('body', '').strip()
     reward_description = data.get('reward', '').strip()
+    topic_category     = (data.get('topic_category') or 'General').strip() or 'General'
+    tags               = data.get('tags') or []
     is_pinned          = data.get('is_pinned', False) if is_admin else False  # Only admins can pin
     deadline           = data.get('deadline')  # Optional deadline for challenges
 
@@ -310,6 +324,8 @@ def create_challenge():
         post_type=post_type,
         title=title,
         body=body,
+        topic_category=topic_category,
+        tags=tags,
         is_pinned=is_pinned,
         reward_description=reward_description or None,
         challenge_deadline=challenge_deadline,
@@ -401,7 +417,6 @@ def get_public_profile(user_id):
     if user.user_type not in ('community', 'User'):
         return jsonify({"error": "Profile not found"}), 404
 
-    # Count challenge responses and upvotes received
     response_stats = db.session.execute(
         db.text("""
             SELECT COUNT(*) as total_responses,
@@ -413,15 +428,13 @@ def get_public_profile(user_id):
     ).fetchone()
 
     total_responses = response_stats[0] if response_stats else 0
-    total_upvotes   = response_stats[1] if response_stats else 0
+    total_upvotes = response_stats[1] if response_stats else 0
 
-    # Count posts
     post_count = db.session.execute(
         db.text("SELECT COUNT(*) FROM community_posts WHERE author_id = :uid"),
         {"uid": user_id}
     ).scalar() or 0
 
-    # Get recent contributions
     recent = db.session.execute(
         db.text("""
             SELECT r.body, r.upvotes, r.created_at, p.title
@@ -435,21 +448,28 @@ def get_public_profile(user_id):
     ).fetchall()
 
     return jsonify({
-        "id":             user.id,
-        "name":           f"{user.first_name} {user.second_name or ''}".strip(),
-        "role":           user.user_type,
-        "joined":         user.id,
+        "id": user.id,
+        "name": f"{user.first_name} {user.second_name or ''}".strip(),
+        "role": user.user_type,
+        "headline": user.headline or "Researcher and problem solver",
+        "bio": user.bio or "",
+        "area_of_interest": user.area_of_interest or "",
+        "expertise": user.expertise or [],
+        "research_interests": user.research_interests or [],
+        "skills": user.skills or [],
+        "social_links": user.social_links or {},
+        "joined_at": user.created_at.isoformat() if getattr(user, 'created_at', None) else None,
         "stats": {
             "total_responses": total_responses,
-            "total_upvotes":   int(total_upvotes),
-            "post_count":      post_count,
+            "total_upvotes": int(total_upvotes),
+            "post_count": post_count,
         },
         "recent_contributions": [
             {
                 "challenge_title": row[3],
                 "response_preview": row[0][:100] + "..." if len(row[0]) > 100 else row[0],
-                "upvotes":         row[1],
-                "date":            row[2].isoformat() if row[2] else None
+                "upvotes": row[1],
+                "date": row[2].isoformat() if row[2] else None
             }
             for row in recent
         ]

@@ -13,8 +13,16 @@ from datetime import datetime  # <-- Crucial Missing Import
 admin_bp = Blueprint("admin", __name__)
 
 def require_admin(identity):
-    user = User.query.filter(User.id == int(identity)).first()
-    if user and user.role == "admin":
+    try:
+        user = User.query.filter(User.id == int(identity)).first()
+    except (TypeError, ValueError):
+        return None
+    if not user:
+        return None
+
+    role_name = (getattr(user, 'role', '') or '').strip().lower()
+    user_type = (getattr(user, 'user_type', '') or '').strip().lower()
+    if user.is_super_admin or role_name == 'admin' or user_type == 'admin':
         return user
     return None
 

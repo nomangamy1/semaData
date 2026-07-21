@@ -47,6 +47,12 @@ def signUp():
                 }), 403
 
             area_of_interest = data.get('area_of_interest', '').strip()
+            headline = data.get('headline', '').strip()
+            bio = data.get('bio', '').strip()
+            expertise = data.get('expertise') or []
+            research_interests = data.get('research_interests') or []
+            skills = data.get('skills') or []
+            social_links = data.get('social_links') or {}
             first_name = data.get('first_name', '').strip()
             last_name  = data.get('last_name', '').strip()
 
@@ -60,7 +66,13 @@ def signUp():
                 password_hash=generate_password_hash(data['password']),
                 role='community',
                 user_type='community',
-                area_of_interest=area_of_interest,
+                area_of_interest=area_of_interest or None,
+                headline=headline or None,
+                bio=bio or None,
+                expertise=expertise,
+                research_interests=research_interests,
+                skills=skills,
+                social_links=social_links or None,
                 reference_number=None,
                 is_verified=False,
             )
@@ -140,7 +152,7 @@ def signUp():
 
             token = generate_verification_token(new_user.email)
             confirm_url = url_for('register.email_verification', token=token, _external=True)
-            send_email(
+            send_mail(
                 new_user.email,
                 "You've been added to the team",
                 f"""<h3>Welcome, {new_user.first_name}!</h3>
@@ -173,7 +185,7 @@ def signUp():
 
             token = generate_verification_token(new_owner.email)
             confirm_url = url_for('register.email_verification', token=token, _external=True)
-            send_email(
+            send_mail(
                 new_owner.email,
                 "Please confirm your domain owner email",
                 f"""<h3>Welcome, {new_owner.first_name}!</h3>

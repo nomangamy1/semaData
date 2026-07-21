@@ -51,7 +51,13 @@ def google_sign_up():
                 password_hash="",  # Google-authenticated — no password
                 role="community",
                 user_type="community",
-                area_of_interest=data.get("area_of_interest", ""),
+                area_of_interest=data.get("area_of_interest", "") or None,
+                headline=data.get("headline") or None,
+                bio=data.get("bio") or None,
+                expertise=data.get("expertise") or [],
+                research_interests=data.get("research_interests") or [],
+                skills=data.get("skills") or [],
+                social_links=data.get("social_links") or {},
                 reference_number=None,
                 is_verified=True,  # Google email is already verified
             )

@@ -1,6 +1,7 @@
 from extensions import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 
 
 class User(db.Model, UserMixin):
@@ -27,7 +28,14 @@ class User(db.Model, UserMixin):
 
     domain_name      = db.Column(db.String(64), nullable=True)
     area_of_interest = db.Column(db.String(100), nullable=True)
-    assigned_domains = db.relationship('Domain', backref='assigned_user', lazy=True)
+    headline          = db.Column(db.String(140), nullable=True)
+    bio              = db.Column(db.Text, nullable=True)
+    expertise         = db.Column(db.JSON, nullable=True)
+    research_interests = db.Column(db.JSON, nullable=True)
+    skills            = db.Column(db.JSON, nullable=True)
+    social_links      = db.Column(db.JSON, nullable=True)
+    created_at        = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    reputation_score = db.Column(db.Integer, default=0, nullable=False)
     is_super_admin = db.Column(db.Boolean, default=False)
     
 
@@ -56,3 +64,20 @@ class User(db.Model, UserMixin):
 
     def __repr__(self):
         return f"<User {self.id} [{self.user_type}] {self.email}>"
+
+    @property
+    def normalized_role(self):
+        return (self.role or "").strip().lower()
+
+    @property
+    def normalized_type(self):
+        return (self.user_type or "").strip().lower()
+
+    def is_admin_user(self):
+        return self.is_super_admin or self.normalized_role == 'admin' or self.normalized_type == 'admin'
+
+    def is_collector_user(self):
+        return self.normalized_role in {'user', 'collector'} or self.normalized_type in {'user', 'collector'}
+
+    def is_community_user(self):
+        return self.normalized_role == 'community' or self.normalized_type == 'community'
