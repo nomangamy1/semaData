@@ -354,3 +354,66 @@ def get_all_ideas():
         })
 
     return jsonify({"ideas": result}), 200
+
+
+@community_bp.route('/profile/<int:user_id>', methods=['GET'])
+def get_public_profile(user_id):
+    """Public profile for community members — shows contributions and rank."""
+    user = User.query.get_or_404(user_id)
+
+    if user.user_type not in ('community', 'User'):
+        return jsonify({"error": "Profile not found"}), 404
+
+    # Count challenge responses and upvotes received
+    response_stats = db.session.execute(
+        db.text("""
+            SELECT COUNT(*) as total_responses,
+                   COALESCE(SUM(upvotes), 0) as total_upvotes
+            FROM community_responses
+            WHERE author_id = :uid
+        """),
+        {"uid": user_id}
+    ).fetchone()
+
+    total_responses = response_stats[0] if response_stats else 0
+    total_upvotes   = response_stats[1] if response_stats else 0
+
+    # Count posts
+    post_count = db.session.execute(
+        db.text("SELECT COUNT(*) FROM community_posts WHERE author_id = :uid"),
+        {"uid": user_id}
+    ).scalar() or 0
+
+    # Get recent contributions
+    recent = db.session.execute(
+        db.text("""
+            SELECT r.body, r.upvotes, r.created_at, p.title
+            FROM community_responses r
+            JOIN community_posts p ON p.id = r.post_id
+            WHERE r.author_id = :uid
+            ORDER BY r.upvotes DESC, r.created_at DESC
+            LIMIT 5
+        """),
+        {"uid": user_id}
+    ).fetchall()
+
+    return jsonify({
+        "id":             user.id,
+        "name":           f"{user.first_name} {user.second_name or ''}".strip(),
+        "role":           user.user_type,
+        "joined":         user.id,
+        "stats": {
+            "total_responses": total_responses,
+            "total_upvotes":   int(total_upvotes),
+            "post_count":      post_count,
+        },
+        "recent_contributions": [
+            {
+                "challenge_title": row[3],
+                "response_preview": row[0][:100] + "..." if len(row[0]) > 100 else row[0],
+                "upvotes":         row[1],
+                "date":            row[2].isoformat() if row[2] else None
+            }
+            for row in recent
+        ]
+    }), 200

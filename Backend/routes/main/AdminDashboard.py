@@ -221,10 +221,11 @@ def invite_reviewer():
     if not email or not first_name or not second_name:
         return jsonify({"error": "Missing required fields."}), 400
 
-    if User.find_by_email(email):
+    if User.query.filter_by(email=email).first():
         return jsonify({"error": f"An account with email {email} already exists."}), 400
 
     try:
+        from werkzeug.security import generate_password_hash
         alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
         temp_password = ''.join(secrets.choice(alphabet) for _ in range(12))
 
@@ -232,14 +233,31 @@ def invite_reviewer():
             email=email,
             first_name=first_name,
             second_name=second_name,
+            password_hash=generate_password_hash(temp_password),
             user_type='admin',
             role='admin',
             is_verified=True
         )
-        new_reviewer.set_password(temp_password)
-        new_reviewer.create()
+        db.session.add(new_reviewer)
+        db.session.commit()
 
-        current_app.logger.info(f"SUCCESS: Created reviewer account for {email} with temp password: {temp_password}")
+        # Send credentials email
+        try:
+            from utils.email import send_email
+            send_email(
+                email,
+                "Your SemaData Reviewer Account",
+                f"""<h3>Welcome to SemaData Review Team</h3>
+                    <p>Your reviewer account has been created.</p>
+                    <p><strong>Email:</strong> {email}</p>
+                    <p><strong>Temporary Password:</strong> {temp_password}</p>
+                    <p>Login at: http://localhost:5173/login</p>
+                    <p>Please change your password after first login.</p>"""
+            )
+        except Exception as mail_err:
+            current_app.logger.warning(f"Reviewer email failed: {mail_err}")
+
+        current_app.logger.info(f"SUCCESS: Created reviewer account for {email}")
 
         return jsonify({
             "status": "success",

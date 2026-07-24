@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import "../styles/community.css";
 
 const BASE      = "http://localhost:8000/api/community";
-const getToken  = () => localStorage.getItem("token");
-const getRole   = () => (localStorage.getItem("userRole") || "").toLowerCase();
-const isLogged  = () => !!getToken();
-const authHdr   = () => ({ Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" });
+const getToken    = () => localStorage.getItem("token");
+const getRole     = () => (localStorage.getItem("userRole") || "").toLowerCase();
+const getUsername = () => localStorage.getItem("username") || "Member";
+const getUserId   = () => localStorage.getItem("ownerId") || null;
+const isLogged    = () => !!getToken();
+const authHdr     = () => ({ Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" });
 
 const getBadge = (n) => {
   if (n >= 250) return { label: "Guardian",    color: "#489c8c" };
@@ -277,6 +279,33 @@ const Community = () => {
           )}
         </div>
       </header>
+
+      {isLogged() && (
+        <div style={{
+          background: "#0f172a", padding: "0.875rem 2rem",
+          display: "flex", alignItems: "center", gap: 12
+        }}>
+          <div style={{
+            width: 34, height: 34, borderRadius: 9,
+            background: "#489c8c", display: "flex",
+            alignItems: "center", justifyContent: "center",
+            fontWeight: 800, fontSize: "0.8rem", color: "white", flexShrink: 0
+          }}>
+            {getUsername().slice(0,2).toUpperCase()}
+          </div>
+          <div>
+            <p style={{ margin: 0, fontWeight: 700, fontSize: "0.85rem", color: "white" }}>
+              {getUsername()}
+            </p>
+            <p style={{ margin: 0, fontSize: "0.72rem", color: "#64748b" }}>
+              {getRole() === "community" ? "Community Member" : getRole()}
+            </p>
+          </div>
+          <div style={{ marginLeft: "auto", fontSize: "0.72rem", color: "#489c8c", fontWeight: 700 }}>
+            Founding Member
+          </div>
+        </div>
+      )}
 
       <div className="comm-tabs">
         <button className={"comm-tab " + (tab === "challenges" ? "comm-tab--active" : "")} onClick={() => { setTab("challenges"); setActiveChallenge(null); }}>

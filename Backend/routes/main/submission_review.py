@@ -19,7 +19,7 @@ MIN_PAYOUT_KES = 100.0
 
 def require_admin(identity):
     user = User.query.filter(User.id == int(identity)).first()
-    return user if (user and user.role == 'admin') else None
+    return user if (user and user.role.lower() == 'admin') else None
 
 
 def _collector_rate(domain):

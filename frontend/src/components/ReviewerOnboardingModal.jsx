@@ -17,7 +17,7 @@ const ReviewerOnboardingModal = ({ isOpen, onClose }) => {
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:8000/api/manage-team/invite', {
+            const response = await fetch('http://localhost:8000/api/admin/manage-team/invite', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
