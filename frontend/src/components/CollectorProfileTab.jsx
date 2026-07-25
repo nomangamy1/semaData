@@ -26,12 +26,12 @@ const CollectorProfileTab = ({ sessionData, onLogout, walletOnly = false, profil
       .then(r => r.json())
       .then(data => {
         setFinance({
-          currentBalance:         data.current_balance        || 0,
-          grossEarnings:          data.gross_earnings         || 0,
-          totalWithdrawn:         data.total_withdrawn        || 0,
-          penaltyDeduction:       data.penalty_deduction      || 0,
-          totalApproved:          data.total_approved         || 0,
-          rejectionRate:          data.rejection_rate         || 0,
+          currentBalance:         data.current_balance         || 0,
+          grossEarnings:          data.gross_earnings          || 0,
+          totalWithdrawn:         data.total_withdrawn         || 0,
+          penaltyDeduction:       data.penalty_deduction       || 0,
+          totalApproved:          data.total_approved          || 0,
+          rejectionRate:          data.rejection_rate          || 0,
           minimumPayoutThreshold: data.minimum_payout_threshold || 100,
         });
         if (data.profile) {
@@ -132,48 +132,51 @@ const CollectorProfileTab = ({ sessionData, onLogout, walletOnly = false, profil
       )}
 
       {(!profileOnly) && (
-      <section className="cp-earnings-grid">
-        <div className="cp-earn-card cp-earn-card--primary">
-          <label>Withdrawable Balance</label>
-          <div className="cp-earn-value">KES {finance.currentBalance.toLocaleString("en-KE", { minimumFractionDigits: 2 })}</div>
-          <button className="cp-withdraw-trigger-btn" disabled={!canWithdraw} onClick={() => setShowWithdraw(s => !s)}>
-            {canWithdraw ? "Request Withdrawal" : "Min KES " + finance.minimumPayoutThreshold + " required"}
-          </button>
-        </div>
-        <div className="cp-earn-card">
-          <label>Total Earned</label>
-          <div className="cp-earn-sub">KES {finance.grossEarnings.toLocaleString()}</div>
-          <small className="cp-earn-note">✅ {finance.totalApproved} verified</small>
-        </div>
-        <div className="cp-earn-card">
-          <label>Quality Score</label>
-          <div className="cp-earn-sub" style={{ color: finance.rejectionRate > 15 ? "#ef4444" : "#489c8c" }}>
-            {(100 - finance.rejectionRate).toFixed(1)}%
+      <>
+        <section className="cp-earnings-grid">
+          <div className="cp-earn-card cp-earn-card--primary">
+            <label>Withdrawable Balance</label>
+            <div className="cp-earn-value">KES {finance.currentBalance.toLocaleString("en-KE", { minimumFractionDigits: 2 })}</div>
+            <button className="cp-withdraw-trigger-btn" disabled={!canWithdraw} onClick={() => setShowWithdraw(s => !s)}>
+              {canWithdraw ? "Request Withdrawal" : "Min KES " + finance.minimumPayoutThreshold + " required"}
+            </button>
           </div>
-          <small className="cp-earn-note">{finance.rejectionRate.toFixed(1)}% rejection rate</small>
-        </div>
-      </section>
-
-      {showWithdraw && (
-        <section className="cp-card">
-          <h3 className="cp-section-title">Request Withdrawal</h3>
-          <p className="cp-section-sub">Minimum KES {finance.minimumPayoutThreshold}. Processed within 48 hours.</p>
-          <form onSubmit={requestWithdrawal} className="cp-withdraw-form">
-            <div className="cp-currency-input">
-              <span className="cp-currency-tag">KES</span>
-              <input type="number" placeholder="0.00" value={withdrawAmt}
-                onChange={e => setWithdrawAmt(e.target.value)}
-                max={finance.currentBalance} min={finance.minimumPayoutThreshold} />
+          <div className="cp-earn-card">
+            <label>Total Earned</label>
+            <div className="cp-earn-sub">KES {finance.grossEarnings.toLocaleString()}</div>
+            <small className="cp-earn-note">✅ {finance.totalApproved} verified</small>
+          </div>
+          <div className="cp-earn-card">
+            <label>Quality Score</label>
+            <div className="cp-earn-sub" style={{ color: finance.rejectionRate > 15 ? "#ef4444" : "#489c8c" }}>
+              {(100 - finance.rejectionRate).toFixed(1)}%
             </div>
-            <p className="cp-balance-hint">Available: KES {finance.currentBalance.toLocaleString()}</p>
-            <div className="cp-form-actions">
-              <button type="button" className="cp-btn-cancel" onClick={() => setShowWithdraw(false)}>Cancel</button>
-              <button type="submit" className="cp-btn-primary" disabled={withdrawing}>
-                {withdrawing ? "Submitting..." : "Confirm Withdrawal"}
-              </button>
-            </div>
-          </form>
+            <small className="cp-earn-note">{finance.rejectionRate.toFixed(1)}% rejection rate</small>
+          </div>
         </section>
+
+        {showWithdraw && (
+          <section className="cp-card">
+            <h3 className="cp-section-title">Request Withdrawal</h3>
+            <p className="cp-section-sub">Minimum KES {finance.minimumPayoutThreshold}. Processed within 48 hours.</p>
+            <form onSubmit={requestWithdrawal} className="cp-withdraw-form">
+              <div className="cp-currency-input">
+                <span className="cp-currency-tag">KES</span>
+                <input type="number" placeholder="0.00" value={withdrawAmt}
+                  onChange={e => setWithdrawAmt(e.target.value)}
+                  max={finance.currentBalance} min={finance.minimumPayoutThreshold} />
+              </div>
+              <p className="cp-balance-hint">Available: KES {finance.currentBalance.toLocaleString()}</p>
+              <div className="cp-form-actions">
+                <button type="button" className="cp-btn-cancel" onClick={() => setShowWithdraw(false)}>Cancel</button>
+                <button type="submit" className="cp-btn-primary" disabled={withdrawing}>
+                  {withdrawing ? "Submitting..." : "Confirm Withdrawal"}
+                </button>
+              </div>
+            </form>
+          </section>
+        )}
+      </>
       )}
 
       <section className="cp-card">
