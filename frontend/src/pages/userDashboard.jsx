@@ -16,6 +16,7 @@ const UserDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [drafts, setDrafts] = useState([]);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
   const [error, setError] = useState('');
 
   // Financial State Management Context
@@ -215,108 +216,119 @@ const UserDashboard = () => {
   }
 
   return (
-    <div className="dashboard-wrapper">
+    <div className="ud-page">
 
-      {/* Sync Warning Banner */}
+      {/* ── Compact Header ── */}
+      <header className="ud-header">
+        <div className="ud-header-left">
+          <div className="ud-avatar">{getCollectorInitials(sessionData.name)}</div>
+          <div>
+            <p className="ud-name">{sessionData.name || 'Collector'}</p>
+            <p className="ud-domain">{sessionData.domain || 'Unassigned'}</p>
+          </div>
+        </div>
+        <div className="ud-ref">
+          <span className="ud-ref-label">Ref</span>
+          <span className="ud-ref-code">{sessionData.refNum || 'N/A'}</span>
+        </div>
+      </header>
+
+      {/* ── Sync Banner ── */}
       {drafts.length > 0 && (
-        <div className="sync-warning-box">
-          <span>⚠️ {drafts.length} record{drafts.length > 1 ? 's' : ''} saved locally. Connect to sync.</span>
-          <button onClick={handleSyncData} disabled={isSyncing} className="sync-btn">
+        <div className="ud-sync-banner">
+          <span>⚠️ {drafts.length} draft{drafts.length > 1 ? 's' : ''} pending sync</span>
+          <button onClick={handleSyncData} disabled={isSyncing} className="ud-sync-btn">
             {isSyncing ? 'Syncing...' : 'Sync Now'}
           </button>
         </div>
       )}
 
-      {/* Header */}
-      <header className="dashboard-header">
-        <div className="profile-intro">
-          <div className="collector-avatar">{getCollectorInitials(sessionData.name)}</div>
-          <div className="header-text-group">
-            <h1>Collector Profile</h1>
-            <p className="status-badge">● System Agent: Verified</p>
-          </div>
-        </div>
-
-        <div className="profile-id-shield">
-          <div className="id-content">
-            <span className="id-label">Official Domain Reference</span>
-            <span className="id-number">{sessionData.refNum || 'N/A'}</span>
-          </div>
-        </div>
-      </header>
-
-      {/* Modular Balance Card Panel Component Integration */}
-      <CollectorProfileTab sessionData={sessionData} onLogout={handleLogout} />
-
-      <div className="dashboard-grid">
-        <div className="main-content-flow">
-
-          {/* Active Task Allocation */}
-          <section className="task-card">
-            <h2>Work Allocation</h2>
-            <div className="active-assignment-box">
-              <div className="assignment-header">
-                <h3>{activeTask.title || 'No task assigned'}</h3>
-                <span className="domain-pill">{sessionData.domain}</span>
-              </div>
-              {activeTask.language && (
-                <p className="task-meta"><strong>Dialect Focus:</strong> {activeTask.language}</p>
-              )}
-              <p className="task-desc">{activeTask.description}</p>
-
-              <div className="progress-container">
-                <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
-              </div>
-              <p className="progress-text">
-                {activeTask.currentCount} / {activeTask.targetCount} — {progressPercent}% Complete
-              </p>
-            </div>
-
-            <button className="start-session-btn" onClick={handleStartRecording}>
-              🚀 Launch Collection Engine
-            </button>
-          </section>
-
-          {/* Local Drafts Vault */}
-          {drafts.length > 0 && (
-            <section className="drafts-vault-card">
-              <h3>Local Vault (Pending Sync)</h3>
-              <div className="draft-list">
-                {drafts.map((draft) => (
-                  <div key={draft.id} className="draft-item">
-                    <div className="draft-info">
-                      <span className="draft-task">{draft.task}</span>
-                      <span className="draft-meta">
-                        {draft.duration} • {new Date(draft.timestamp).toLocaleTimeString()}
-                      </span>
-                    </div>
-                    <span className="draft-status-pill">Pending</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Modular Account Personal Details Meta Card Component Integration */}
-          
-        </div>
-
-        {/* Sidebar Guidelines Panel Layout */}
-        <aside className="instructions-aside">
-          <h4>Operational Guidelines</h4>
-          <ul>
-            <li><strong>Environment:</strong> Background noise below 20dB.</li>
-            <li><strong>Hardware:</strong> Calibrate microphone before starting.</li>
-            <li><strong>Integrity:</strong> Cross-verify dialect markers.</li>
-            <li><strong>Security:</strong> Do not share your Reference Number.</li>
-          </ul>
-          <div className="support-box">
-            <p>Need Technical Support?</p>
-            <small>Contact your Domain Owner</small>
-          </div>
-        </aside>
+      {/* ── Tab Navigation ── */}
+      <div className="ud-tabs">
+        {['overview', 'wallet', 'profile'].map(tab => (
+          <button
+            key={tab}
+            className={"ud-tab " + (activeTab === tab ? "ud-tab--active" : "")}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab === 'overview' ? '🎙️ Overview' : tab === 'wallet' ? '💰 Wallet' : '👤 Profile'}
+          </button>
+        ))}
       </div>
 
+      {/* ── Tab Content ── */}
+      <main className="ud-content">
+
+        {/* OVERVIEW */}
+        {activeTab === 'overview' && (
+          <div className="ud-section">
+            <div className="ud-task-card">
+              <div className="ud-task-header">
+                <div>
+                  <h2 className="ud-task-title">{activeTask.title || 'No task assigned'}</h2>
+                  <span className="ud-domain-pill">{sessionData.domain}</span>
+                </div>
+              </div>
+              <p className="ud-task-desc">{activeTask.description || 'Your assigned data collection task will appear here.'}</p>
+              <div className="ud-progress-track">
+                <div className="ud-progress-fill" style={{ width: `${progressPercent}%` }} />
+              </div>
+              <p className="ud-progress-text">
+                {activeTask.currentCount || 0} of {activeTask.targetCount || 0} submissions — {progressPercent}%
+              </p>
+              <button className="ud-launch-btn" onClick={handleStartRecording}>
+                🚀 Start Recording Session
+              </button>
+            </div>
+
+            {drafts.length > 0 && (
+              <div className="ud-drafts-card">
+                <h3 className="ud-card-title">Local Drafts</h3>
+                <div className="ud-draft-list">
+                  {drafts.map(draft => (
+                    <div key={draft.id} className="ud-draft-row">
+                      <div>
+                        <p className="ud-draft-name">{draft.task || 'Recording'}</p>
+                        <p className="ud-draft-meta">{draft.duration} · {new Date(draft.timestamp).toLocaleTimeString()}</p>
+                      </div>
+                      <span className="ud-draft-pill">Pending</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="ud-tips-card">
+              <h3 className="ud-card-title">Recording Tips</h3>
+              <ul className="ud-tips-list">
+                <li>Find a quiet space with background noise below 20dB</li>
+                <li>Test your microphone before starting</li>
+                <li>Speak clearly and at a natural pace</li>
+                <li>Never share your reference number</li>
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* WALLET */}
+        {activeTab === 'wallet' && (
+          <CollectorProfileTab
+            sessionData={sessionData}
+            onLogout={handleLogout}
+            walletOnly={true}
+          />
+        )}
+
+        {/* PROFILE */}
+        {activeTab === 'profile' && (
+          <CollectorProfileTab
+            sessionData={sessionData}
+            onLogout={handleLogout}
+            profileOnly={true}
+          />
+        )}
+
+      </main>
     </div>
   );
 };

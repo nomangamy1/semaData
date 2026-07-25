@@ -3,7 +3,7 @@ import "./collectorProfile.css";
 
 const BASE = "http://localhost:8000/api/collector";
 
-const CollectorProfileTab = ({ sessionData, onLogout }) => {
+const CollectorProfileTab = ({ sessionData, onLogout, walletOnly = false, profileOnly = false }) => {
   const token = localStorage.getItem("token");
   const [finance, setFinance] = useState({
     currentBalance: 0, grossEarnings: 0, totalWithdrawn: 0,
@@ -110,6 +110,7 @@ const CollectorProfileTab = ({ sessionData, onLogout }) => {
     <div className="cp-root">
       {msg.text && <div className={"cp-banner cp-banner--" + msg.type}>{msg.text}</div>}
 
+      {(!walletOnly) && (
       <section className="cp-card">
         <div className="cp-card-head">
           <div className="cp-avatar">
@@ -128,7 +129,9 @@ const CollectorProfileTab = ({ sessionData, onLogout }) => {
         </div>
         <button className="cp-logout-btn" onClick={onLogout}>Sign out</button>
       </section>
+      )}
 
+      {(!profileOnly) && (
       <section className="cp-earnings-grid">
         <div className="cp-earn-card cp-earn-card--primary">
           <label>Withdrawable Balance</label>
