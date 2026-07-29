@@ -8,16 +8,21 @@ from datetime import datetime
 
 community_bp = Blueprint('community', __name__)
 
-@community_bp.route('/community/feed', methods=['GET'])
+
+@community_bp.route('/feed', methods=['GET'])
 def get_feed():
     feed_type = request.args.get('type', 'all')
     page = request.args.get('page', 1, type=int)
     per_page = 20
     
-    query = CommunityPost.query
+    query = CommunityPost.query.options(joinedload(CommunityPost.author))
     if feed_type != 'all':
         query = query.filter_by(post_type=feed_type)
-    posts = CommunityPost.query.options(joinedload(CommunityPost.author)).order_by(CommunityPost.created_at.desc()).all()    
+        
+    pagination = query.order_by(CommunityPost.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
     return jsonify({
         'posts': [{
             'id': p.id,
@@ -29,12 +34,13 @@ def get_feed():
             'attachment': p.attachment,
             'likes': p.likes,
             'domainName': p.domain_name,
-            'createdAt': p.created_at.isoformat()
-        } for p in posts.items],
-        'total': posts.total
+            'createdAt': p.created_at.isoformat() if p.created_at else None
+        } for p in pagination.items],
+        'total': pagination.total,
+        'pages': pagination.pages,
+        'current_page': pagination.page
     })
-
-@community_bp.route('/community/post', methods=['POST'])
+@community_bp.route('/post', methods=['POST'])
 @jwt_required()
 def add_post():
     if request.content_type and 'multipart/form-data' in request.content_type:
@@ -81,7 +87,7 @@ def add_post():
 
     }), 201
 
-@community_bp.route('/community/post/<int:post_id>/comment', methods=['POST'])
+@community_bp.route('/post/<int:post_id>/comment', methods=['POST'])
 def add_comment(post_id):
     data = request.get_json() or {}
     author_id = data.get('author_id')
@@ -100,7 +106,7 @@ def add_comment(post_id):
     db.session.commit()
     return jsonify({'message': 'Comment added successfully'}), 201
 
-@community_bp.route('/community/post/<int:post_id>/like', methods=['POST'])
+@community_bp.route('/post/<int:post_id>/like', methods=['POST'])
 def like_post(post_id):
     post = CommunityPost.query.get_or_404(post_id)
     post.likes += 1
@@ -151,7 +157,6 @@ def get_challenges():
         })
     return jsonify({"challenges": result}), 200
 
-
 @community_bp.route('/challenge/<int:post_id>/responses', methods=['GET'])
 def get_responses(post_id):
     rows = db.session.execute(
@@ -159,7 +164,7 @@ def get_responses(post_id):
             SELECT r.id, r.body, r.upvotes, r.created_at,
                    u.first_name, u.second_name, u.id as uid
             FROM community_responses r
-            JOIN "Users" u ON u.id = r.author_id
+            JOIN "Users" u ON u.id = r.user_id
             WHERE r.post_id = :pid
             ORDER BY r.upvotes DESC, r.created_at ASC
         """),
@@ -178,7 +183,6 @@ def get_responses(post_id):
             for row in rows
         ]
     }), 200
-
 
 @community_bp.route('/challenge/<int:post_id>/respond', methods=['POST'])
 @jwt_required()
@@ -206,13 +210,46 @@ def post_response(post_id):
 @community_bp.route('/response/<int:response_id>/upvote', methods=['POST'])
 @jwt_required()
 def upvote_response(response_id):
-    db.session.execute(
-        db.text("UPDATE community_responses SET upvotes = upvotes+1 WHERE id=:rid"),
-        {"rid": response_id}
-    )
+    current_user_id = int(get_jwt_identity())
+    
+    # Check if user already upvoted this response
+    existing_vote = db.session.execute(
+        db.text("SELECT 1 FROM response_upvotes WHERE user_id = :uid AND response_id = :rid"),
+        {"uid": current_user_id, "rid": response_id}
+    ).fetchone()
+    
+    if existing_vote:
+        # Toggle off (Remove upvote)
+        db.session.execute(
+            db.text("DELETE FROM response_upvotes WHERE user_id = :uid AND response_id = :rid"),
+            {"uid": current_user_id, "rid": response_id}
+        )
+        db.session.execute(
+            db.text("UPDATE community_responses SET upvotes = GREATEST(upvotes - 1, 0) WHERE id = :rid"),
+            {"rid": response_id}
+        )
+        action = "unvoted"
+    else:
+        # Add upvote
+        db.session.execute(
+            db.text("INSERT INTO response_upvotes (user_id, response_id) VALUES (:uid, :rid)"),
+            {"uid": current_user_id, "rid": response_id}
+        )
+        db.session.execute(
+            db.text("UPDATE community_responses SET upvotes = upvotes + 1 WHERE id = :rid"),
+            {"rid": response_id}
+        )
+        action = "upvoted"
+        
     db.session.commit()
-    return jsonify({"message": "Upvoted"}), 200
-
+    
+    # Fetch updated count to return to frontend
+    updated_votes = db.session.execute(
+        db.text("SELECT upvotes FROM community_responses WHERE id = :rid"),
+        {"rid": response_id}
+    ).scalar()
+    
+    return jsonify({"message": f"Successfully {action}", "upvotes": updated_votes}), 200
 
 @community_bp.route('/admin/challenge', methods=['POST'])
 @jwt_required()

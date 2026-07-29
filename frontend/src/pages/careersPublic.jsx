@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Search, MapPin, Clock, ArrowRight, Briefcase, Loader } from 'lucide-react';
 import './careersPublic.css';
+import JobApplicationModal from '../components/JobApplicationModal';
 
 const CareersPage = () => {
   const [jobs, setJobs] = useState([]);
@@ -9,6 +10,7 @@ const CareersPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [category, setCategory] = useState('All');
   const navigate = useNavigate();
+  const [selectedJob, setSelectedJob] = useState(null);
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -86,7 +88,7 @@ const CareersPage = () => {
               <article 
                 key={job.id} 
                 className="job-card"
-                onClick={() => navigate(`/careers/${job.id}`)}
+                onClick={() => setSelectedJob(job)}
               >
                 <div className="card-header">
                   <div className="icon-box"><Briefcase size={22} /></div>
@@ -105,6 +107,14 @@ const CareersPage = () => {
           </div>
         )}
       </main>
+    </div>
+
+      {selectedJob && (
+        <JobApplicationModal
+          job={selectedJob}
+          onClose={() => setSelectedJob(null)}
+        />
+      )}
     </div>
   );
 };

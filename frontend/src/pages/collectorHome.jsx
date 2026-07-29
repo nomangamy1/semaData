@@ -45,7 +45,92 @@ const AudioVisualizer = ({ stream, isPaused }) => {
 
     draw();
 
-    return () => {
+    // ── Feature conversation guide ──
+  const generateConversationGuide = (features) => {
+    const questionMap = {
+      'age':        'Ask: "How old are you?" / "Una miaka mingapi?"',
+      'name':       'Ask: "What is your name?" / "Jina lako ni nani?"',
+      'location':   'Ask: "Where do you live?" / "Unaishi wapi?"',
+      'gender':     'Ask: "Are you male or female?" / "Wewe ni mwanaume au mwanamke?"',
+      'occupation': 'Ask: "What do you do for work?" / "Unafanya kazi gani?"',
+      'crop':       'Ask: "What crops do you grow?" / "Unalima nini?"',
+      'income':     'Ask: "What is your monthly income?" / "Mapato yako ni ngapi?"',
+      'education':  'Ask: "What is your education level?" / "Elimu yako ni ngapi?"',
+    };
+    return features.map(f => ({
+      feature: f,
+      question: questionMap[f.toLowerCase()] || `Ask about: ${f}`
+    }));
+  };
+
+  // ── Client-side feature detection ──
+  const detectFeaturesInText = (text, features) => {
+    if (!text || !features.length) return {};
+    const lower = text.toLowerCase();
+    const results = {};
+    const patterns = {
+      'age':        [/\d+\s*(miaka|years|yr|yrs|years old)/i, /nina\s*miaka/i, /am\s*\d+/i],
+      'name':       [/naitwa|jina\s*langu|my\s*name\s*is|i\s*am\s*called/i],
+      'location':   [/naishi|ninaishi|i\s*live|ninakaa|from\s*\w+|mtaa|kaunti|county/i],
+      'gender':     [/mwanaume|mwanamke|male|female|man|woman|boy|girl/i],
+      'occupation': [/nafanya|kazi|work|farmer|mkulima|teacher|nurse|driver/i],
+      'crop':       [/mahindi|unga|corn|maize|ngano|wheat|sukari|beans|maharagwe/i],
+      'income':     [/\d+\s*(ksh|kes|shilling|bob|mapato)/i, /earn|pata|income/i],
+    };
+
+    features.forEach(f => {
+      const key = f.toLowerCase();
+      const pats = patterns[key] || [new RegExp(key, 'i')];
+      results[f] = pats.some(p => p.test(lower)) ? 'detected' : null;
+    });
+    return results;
+  };
+
+  // ── Pre-submission quality gate ──
+  const getQualityWarnings = () => {
+    if (!domainFeatures.length) return [];
+    const warnings = [];
+
+    // Use transcript text if available, fall back to segments
+    const textToCheck = transcription && transcription.length > 20 ? transcription : '';
+    const detected    = textToCheck
+      ? detectFeaturesInText(textToCheck, domainFeatures)
+      : {};
+
+    // Also check Ollama segments if available
+    const segmentNulls = segments
+      ? Object.entries(segments).filter(([k,v]) => !v || v === 'Not mentioned' || v === 'null' || v === 'Not Mentioned').map(([k]) => k)
+      : [];
+
+    // Combine both checks — a feature passes if detected in text OR in segments
+    const missingFields = domainFeatures.filter(f => {
+      const inSegment  = !segmentNulls.includes(f);
+      const inText     = detected[f] === 'detected';
+      return !inSegment && !inText;
+    });
+
+    const missingPercent = (missingFields.length / domainFeatures.length) * 100;
+
+    if (missingPercent > 50) {
+      warnings.push({
+        type: 'high_null',
+        message: `${missingFields.length} of ${domainFeatures.length} features not captured`,
+        fields: missingFields
+      });
+    } else if (missingPercent > 0) {
+      warnings.push({
+        type: 'partial_null',
+        message: `${missingFields.length} feature${missingFields.length > 1 ? 's' : ''} may be missing`,
+        fields: missingFields
+      });
+    }
+    return warnings;
+  };
+
+  const qualityWarnings = segments ? getQualityWarnings() : [];
+  const qualityBlocked  = qualityWarnings.some(w => w.type === 'high_null');
+
+  return () => {
       cancelAnimationFrame(animationFrameId);
       if (audioContext.state !== 'closed') audioContext.close();
     };
@@ -69,7 +154,8 @@ const CollectorHome = () => {
 
   // ─── State ───
   const [task, setTask] = useState(location.state?.task || null);
-  const [domainFeatures, setDomainFeatures] = useState([]); // features to collect
+  const [domainFeatures, setDomainFeatures] = useState([]);
+  const [segments, setSegments] = useState({}); // features to collect
   const [taskLoading, setTaskLoading] = useState(!location.state?.task);
   const [taskError, setTaskError] = useState('');
 
@@ -141,7 +227,92 @@ const CollectorHome = () => {
     const handleStatus = () => setIsOnline(navigator.onLine);
     window.addEventListener('online', handleStatus);
     window.addEventListener('offline', handleStatus);
-    return () => {
+    // ── Feature conversation guide ──
+  const generateConversationGuide = (features) => {
+    const questionMap = {
+      'age':        'Ask: "How old are you?" / "Una miaka mingapi?"',
+      'name':       'Ask: "What is your name?" / "Jina lako ni nani?"',
+      'location':   'Ask: "Where do you live?" / "Unaishi wapi?"',
+      'gender':     'Ask: "Are you male or female?" / "Wewe ni mwanaume au mwanamke?"',
+      'occupation': 'Ask: "What do you do for work?" / "Unafanya kazi gani?"',
+      'crop':       'Ask: "What crops do you grow?" / "Unalima nini?"',
+      'income':     'Ask: "What is your monthly income?" / "Mapato yako ni ngapi?"',
+      'education':  'Ask: "What is your education level?" / "Elimu yako ni ngapi?"',
+    };
+    return features.map(f => ({
+      feature: f,
+      question: questionMap[f.toLowerCase()] || `Ask about: ${f}`
+    }));
+  };
+
+  // ── Client-side feature detection ──
+  const detectFeaturesInText = (text, features) => {
+    if (!text || !features.length) return {};
+    const lower = text.toLowerCase();
+    const results = {};
+    const patterns = {
+      'age':        [/\d+\s*(miaka|years|yr|yrs|years old)/i, /nina\s*miaka/i, /am\s*\d+/i],
+      'name':       [/naitwa|jina\s*langu|my\s*name\s*is|i\s*am\s*called/i],
+      'location':   [/naishi|ninaishi|i\s*live|ninakaa|from\s*\w+|mtaa|kaunti|county/i],
+      'gender':     [/mwanaume|mwanamke|male|female|man|woman|boy|girl/i],
+      'occupation': [/nafanya|kazi|work|farmer|mkulima|teacher|nurse|driver/i],
+      'crop':       [/mahindi|unga|corn|maize|ngano|wheat|sukari|beans|maharagwe/i],
+      'income':     [/\d+\s*(ksh|kes|shilling|bob|mapato)/i, /earn|pata|income/i],
+    };
+
+    features.forEach(f => {
+      const key = f.toLowerCase();
+      const pats = patterns[key] || [new RegExp(key, 'i')];
+      results[f] = pats.some(p => p.test(lower)) ? 'detected' : null;
+    });
+    return results;
+  };
+
+  // ── Pre-submission quality gate ──
+  const getQualityWarnings = () => {
+    if (!domainFeatures.length) return [];
+    const warnings = [];
+
+    // Use transcript text if available, fall back to segments
+    const textToCheck = transcription && transcription.length > 20 ? transcription : '';
+    const detected    = textToCheck
+      ? detectFeaturesInText(textToCheck, domainFeatures)
+      : {};
+
+    // Also check Ollama segments if available
+    const segmentNulls = segments
+      ? Object.entries(segments).filter(([k,v]) => !v || v === 'Not mentioned' || v === 'null' || v === 'Not Mentioned').map(([k]) => k)
+      : [];
+
+    // Combine both checks — a feature passes if detected in text OR in segments
+    const missingFields = domainFeatures.filter(f => {
+      const inSegment  = !segmentNulls.includes(f);
+      const inText     = detected[f] === 'detected';
+      return !inSegment && !inText;
+    });
+
+    const missingPercent = (missingFields.length / domainFeatures.length) * 100;
+
+    if (missingPercent > 50) {
+      warnings.push({
+        type: 'high_null',
+        message: `${missingFields.length} of ${domainFeatures.length} features not captured`,
+        fields: missingFields
+      });
+    } else if (missingPercent > 0) {
+      warnings.push({
+        type: 'partial_null',
+        message: `${missingFields.length} feature${missingFields.length > 1 ? 's' : ''} may be missing`,
+        fields: missingFields
+      });
+    }
+    return warnings;
+  };
+
+  const qualityWarnings = segments ? getQualityWarnings() : [];
+  const qualityBlocked  = qualityWarnings.some(w => w.type === 'high_null');
+
+  return () => {
       window.removeEventListener('online', handleStatus);
       window.removeEventListener('offline', handleStatus);
     };
@@ -154,7 +325,92 @@ const CollectorHome = () => {
     } else {
       clearInterval(timerRef.current);
     }
-    return () => clearInterval(timerRef.current);
+    // ── Feature conversation guide ──
+  const generateConversationGuide = (features) => {
+    const questionMap = {
+      'age':        'Ask: "How old are you?" / "Una miaka mingapi?"',
+      'name':       'Ask: "What is your name?" / "Jina lako ni nani?"',
+      'location':   'Ask: "Where do you live?" / "Unaishi wapi?"',
+      'gender':     'Ask: "Are you male or female?" / "Wewe ni mwanaume au mwanamke?"',
+      'occupation': 'Ask: "What do you do for work?" / "Unafanya kazi gani?"',
+      'crop':       'Ask: "What crops do you grow?" / "Unalima nini?"',
+      'income':     'Ask: "What is your monthly income?" / "Mapato yako ni ngapi?"',
+      'education':  'Ask: "What is your education level?" / "Elimu yako ni ngapi?"',
+    };
+    return features.map(f => ({
+      feature: f,
+      question: questionMap[f.toLowerCase()] || `Ask about: ${f}`
+    }));
+  };
+
+  // ── Client-side feature detection ──
+  const detectFeaturesInText = (text, features) => {
+    if (!text || !features.length) return {};
+    const lower = text.toLowerCase();
+    const results = {};
+    const patterns = {
+      'age':        [/\d+\s*(miaka|years|yr|yrs|years old)/i, /nina\s*miaka/i, /am\s*\d+/i],
+      'name':       [/naitwa|jina\s*langu|my\s*name\s*is|i\s*am\s*called/i],
+      'location':   [/naishi|ninaishi|i\s*live|ninakaa|from\s*\w+|mtaa|kaunti|county/i],
+      'gender':     [/mwanaume|mwanamke|male|female|man|woman|boy|girl/i],
+      'occupation': [/nafanya|kazi|work|farmer|mkulima|teacher|nurse|driver/i],
+      'crop':       [/mahindi|unga|corn|maize|ngano|wheat|sukari|beans|maharagwe/i],
+      'income':     [/\d+\s*(ksh|kes|shilling|bob|mapato)/i, /earn|pata|income/i],
+    };
+
+    features.forEach(f => {
+      const key = f.toLowerCase();
+      const pats = patterns[key] || [new RegExp(key, 'i')];
+      results[f] = pats.some(p => p.test(lower)) ? 'detected' : null;
+    });
+    return results;
+  };
+
+  // ── Pre-submission quality gate ──
+  const getQualityWarnings = () => {
+    if (!domainFeatures.length) return [];
+    const warnings = [];
+
+    // Use transcript text if available, fall back to segments
+    const textToCheck = transcription && transcription.length > 20 ? transcription : '';
+    const detected    = textToCheck
+      ? detectFeaturesInText(textToCheck, domainFeatures)
+      : {};
+
+    // Also check Ollama segments if available
+    const segmentNulls = segments
+      ? Object.entries(segments).filter(([k,v]) => !v || v === 'Not mentioned' || v === 'null' || v === 'Not Mentioned').map(([k]) => k)
+      : [];
+
+    // Combine both checks — a feature passes if detected in text OR in segments
+    const missingFields = domainFeatures.filter(f => {
+      const inSegment  = !segmentNulls.includes(f);
+      const inText     = detected[f] === 'detected';
+      return !inSegment && !inText;
+    });
+
+    const missingPercent = (missingFields.length / domainFeatures.length) * 100;
+
+    if (missingPercent > 50) {
+      warnings.push({
+        type: 'high_null',
+        message: `${missingFields.length} of ${domainFeatures.length} features not captured`,
+        fields: missingFields
+      });
+    } else if (missingPercent > 0) {
+      warnings.push({
+        type: 'partial_null',
+        message: `${missingFields.length} feature${missingFields.length > 1 ? 's' : ''} may be missing`,
+        fields: missingFields
+      });
+    }
+    return warnings;
+  };
+
+  const qualityWarnings = segments ? getQualityWarnings() : [];
+  const qualityBlocked  = qualityWarnings.some(w => w.type === 'high_null');
+
+  return () => clearInterval(timerRef.current);
   }, [isRecording, isPaused]);
 
   const formatTime = (s) => {
@@ -270,6 +526,91 @@ const stopRecording = () => {
       console.error('IndexedDB write failure:', err);
     }
   };
+  // ── Feature conversation guide ──
+  const generateConversationGuide = (features) => {
+    const questionMap = {
+      'age':        'Ask: "How old are you?" / "Una miaka mingapi?"',
+      'name':       'Ask: "What is your name?" / "Jina lako ni nani?"',
+      'location':   'Ask: "Where do you live?" / "Unaishi wapi?"',
+      'gender':     'Ask: "Are you male or female?" / "Wewe ni mwanaume au mwanamke?"',
+      'occupation': 'Ask: "What do you do for work?" / "Unafanya kazi gani?"',
+      'crop':       'Ask: "What crops do you grow?" / "Unalima nini?"',
+      'income':     'Ask: "What is your monthly income?" / "Mapato yako ni ngapi?"',
+      'education':  'Ask: "What is your education level?" / "Elimu yako ni ngapi?"',
+    };
+    return features.map(f => ({
+      feature: f,
+      question: questionMap[f.toLowerCase()] || `Ask about: ${f}`
+    }));
+  };
+
+  // ── Client-side feature detection ──
+  const detectFeaturesInText = (text, features) => {
+    if (!text || !features.length) return {};
+    const lower = text.toLowerCase();
+    const results = {};
+    const patterns = {
+      'age':        [/\d+\s*(miaka|years|yr|yrs|years old)/i, /nina\s*miaka/i, /am\s*\d+/i],
+      'name':       [/naitwa|jina\s*langu|my\s*name\s*is|i\s*am\s*called/i],
+      'location':   [/naishi|ninaishi|i\s*live|ninakaa|from\s*\w+|mtaa|kaunti|county/i],
+      'gender':     [/mwanaume|mwanamke|male|female|man|woman|boy|girl/i],
+      'occupation': [/nafanya|kazi|work|farmer|mkulima|teacher|nurse|driver/i],
+      'crop':       [/mahindi|unga|corn|maize|ngano|wheat|sukari|beans|maharagwe/i],
+      'income':     [/\d+\s*(ksh|kes|shilling|bob|mapato)/i, /earn|pata|income/i],
+    };
+
+    features.forEach(f => {
+      const key = f.toLowerCase();
+      const pats = patterns[key] || [new RegExp(key, 'i')];
+      results[f] = pats.some(p => p.test(lower)) ? 'detected' : null;
+    });
+    return results;
+  };
+
+  // ── Pre-submission quality gate ──
+  const getQualityWarnings = () => {
+    if (!domainFeatures.length) return [];
+    const warnings = [];
+
+    // Use transcript text if available, fall back to segments
+    const textToCheck = transcription && transcription.length > 20 ? transcription : '';
+    const detected    = textToCheck
+      ? detectFeaturesInText(textToCheck, domainFeatures)
+      : {};
+
+    // Also check Ollama segments if available
+    const segmentNulls = segments
+      ? Object.entries(segments).filter(([k,v]) => !v || v === 'Not mentioned' || v === 'null' || v === 'Not Mentioned').map(([k]) => k)
+      : [];
+
+    // Combine both checks — a feature passes if detected in text OR in segments
+    const missingFields = domainFeatures.filter(f => {
+      const inSegment  = !segmentNulls.includes(f);
+      const inText     = detected[f] === 'detected';
+      return !inSegment && !inText;
+    });
+
+    const missingPercent = (missingFields.length / domainFeatures.length) * 100;
+
+    if (missingPercent > 50) {
+      warnings.push({
+        type: 'high_null',
+        message: `${missingFields.length} of ${domainFeatures.length} features not captured`,
+        fields: missingFields
+      });
+    } else if (missingPercent > 0) {
+      warnings.push({
+        type: 'partial_null',
+        message: `${missingFields.length} feature${missingFields.length > 1 ? 's' : ''} may be missing`,
+        fields: missingFields
+      });
+    }
+    return warnings;
+  };
+
+  const qualityWarnings = segments ? getQualityWarnings() : [];
+  const qualityBlocked  = qualityWarnings.some(w => w.type === 'high_null');
+
   return (
     <div className="collector-focus-mode">
 
@@ -294,6 +635,34 @@ const stopRecording = () => {
           <h2>SemaData Dialect Conversation Engine</h2>
           <p className="engine-subtitle">Acoustic Signal Telemetry</p>
         </header>
+
+        {/* ── Conversation Guide — shown before recording ── */}
+        {!isRecording && duration === 0 && domainFeatures.length > 0 && (
+          <div style={{
+            background: '#f0fdf4', border: '1px solid #bbf7d0',
+            borderRadius: 14, padding: '1rem 1.25rem', marginBottom: 16
+          }}>
+            <p style={{ fontSize: '0.72rem', fontWeight: 800, color: '#489c8c', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 10px' }}>
+              📋 Conversation Guide — Cover These Points
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {generateConversationGuide(domainFeatures).map(({ feature, question }) => (
+                <div key={feature} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <span style={{
+                    background: '#489c8c', color: 'white',
+                    padding: '2px 8px', borderRadius: 9999,
+                    fontSize: '0.65rem', fontWeight: 800, flexShrink: 0, marginTop: 1
+                  }}>
+                    {feature}
+                  </span>
+                  <span style={{ fontSize: '0.8rem', color: '#475569', lineHeight: 1.4 }}>
+                    {question}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="visualizer-box">
           <div className="timer-display">{formatTime(duration)}</div>

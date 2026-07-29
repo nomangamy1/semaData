@@ -15,7 +15,7 @@ class CommunityPost(db.Model):
     domain_ref            = db.Column(db.String(100), nullable=True)
     domain_name           = db.Column(db.String(100), nullable=True)
     attachment            = db.Column(db.String(500), nullable=True)
-    
+    upvotes     = db.Column(db.Integer, default=0)
     # Challenge-specific fields
     is_pinned             = db.Column(db.Boolean, default=False, index=True)
     reward_description    = db.Column(db.Text, nullable=True)
@@ -49,6 +49,22 @@ class CommunityPost(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }
+class ResponseUpvote(db.Model):
+    __tablename__ = "response_upvotes"
+
+    user_id     = db.Column(db.Integer, db.ForeignKey("Users.id"), primary_key=True)
+    response_id = db.Column(db.Integer, db.ForeignKey("community_responses.id"), primary_key=True)
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user     = db.relationship("User", foreign_keys=[user_id])
+    response = db.relationship("CommunityResponse", backref=db.backref("upvote_records", cascade="all, delete-orphan"))
+
+    def __repr__(self):
+        return f"<ResponseUpvote user={self.user_id} response={self.response_id}>"
+
+
+
+
 
 
 class QualityFlag(db.Model):
@@ -68,3 +84,28 @@ class QualityFlag(db.Model):
 
     def __repr__(self):
         return f"<QualityFlag {self.id} on post {self.post_id}>"
+
+
+class CommunityResponse(db.Model):
+    __tablename__ = "community_responses"
+
+    id          = db.Column(db.Integer, primary_key=True)
+    post_id     = db.Column(db.Integer, db.ForeignKey("community_posts.id"), nullable=False)
+    user_id     = db.Column(db.Integer, db.ForeignKey("Users.id"), nullable=False)
+    body        = db.Column(db.Text, nullable=False)
+    attachment  = db.Column(db.String(500), nullable=True)
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
+
+    post = db.relationship("CommunityPost", backref=db.backref("responses", lazy=True, cascade="all, delete-orphan"))
+    user = db.relationship("User", foreign_keys=[user_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'post_id': self.post_id,
+            'user_id': self.user_id,
+            'body': self.body,
+            'attachment': self.attachment,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'author_name': f"{self.user.first_name} {self.user.second_name}" if self.user else "Unknown"
+        }
