@@ -43,71 +43,72 @@ const CareersPage = () => {
   );
 
   return (
-    <div className="careers-container">
-      <header className="careers-hero">
-        <div className="hero-content">
-          <div className="badge">
-            <Sparkles size={14} />
-            <span>Join the SemaData Mission</span>
+    <>
+      <div className="careers-container">
+        <header className="careers-hero">
+          <div className="hero-content">
+            <div className="badge">
+              <Sparkles size={14} />
+              <span>Join the SemaData Mission</span>
+            </div>
+            <h1>Build the future of <span className="highlight">African AI.</span></h1>
+            <p>Join a team working on high-impact linguistic datasets.</p>
           </div>
-          <h1>Build the future of <span className="highlight">African AI.</span></h1>
-          <p>Join a team working on high-impact linguistic datasets.</p>
-        </div>
-      </header>
+        </header>
 
-      <section className="search-wrapper">
-        <div className="search-card">
-          <div className="search-input-group">
-            <Search className="icon" size={20} />
-            <input 
-              type="text" 
-              placeholder="Search roles or languages..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+        <section className="search-wrapper">
+          <div className="search-card">
+            <div className="search-input-group">
+              <Search className="icon" size={20} />
+              <input 
+                type="text" 
+                placeholder="Search roles or languages..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <select onChange={(e) => setCategory(e.target.value)} className="category-select">
+              <option value="All">All Categories</option>
+              <option value="Linguistics">Linguistics</option>
+              <option value="Data">Data Collection</option>
+              <option value="Engineering">Engineering</option>
+            </select>
           </div>
-          <select onChange={(e) => setCategory(e.target.value)} className="category-select">
-            <option value="All">All Categories</option>
-            <option value="Linguistics">Linguistics</option>
-            <option value="Data">Data Collection</option>
-            <option value="Engineering">Engineering</option>
-          </select>
-        </div>
-      </section>
+        </section>
 
-      <main className="jobs-grid-container">
-        {loading ? (
-          <div className="loader-box"><Loader className="spinner" size={40} /></div>
-        ) : (
-          <div className="jobs-grid">
-            {filteredJobs.length === 0 ? (
-              <div className="w-full text-center py-12 text-slate-500 font-medium">
-                No active openings found matching your filters.
-              </div>
-            ) : filteredJobs.map((job) => (
-              <article 
-                key={job.id} 
-                className="job-card"
-                onClick={() => setSelectedJob(job)}
-              >
-                <div className="card-header">
-                  <div className="icon-box"><Briefcase size={22} /></div>
-                  <span className="job-type">{job.type || 'Contract'}</span>
+        <main className="jobs-grid-container">
+          {loading ? (
+            <div className="loader-box"><Loader className="spinner" size={40} /></div>
+          ) : (
+            <div className="jobs-grid">
+              {filteredJobs.length === 0 ? (
+                <div className="w-full text-center py-12 text-slate-500 font-medium">
+                  No active openings found matching your filters.
                 </div>
-                <h3>{job.title}</h3>
-                <div className="card-meta">
-                  <span><MapPin size={14}/> {job.location || 'Remote'}</span>
-                  <span className="text-emerald-600 font-bold">{job.compensation || 'Negotiable'}</span>
-                </div>
-                <button className="apply-btn">
-                  View & Apply <ArrowRight size={16} />
-                </button>
-              </article>
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
+              ) : filteredJobs.map((job) => (
+                <article 
+                  key={job.id} 
+                  className="job-card"
+                  onClick={() => setSelectedJob(job)}
+                >
+                  <div className="card-header">
+                    <div className="icon-box"><Briefcase size={22} /></div>
+                    <span className="job-type">{job.type || 'Contract'}</span>
+                  </div>
+                  <h3>{job.title}</h3>
+                  <div className="card-meta">
+                    <span><MapPin size={14}/> {job.location || 'Remote'}</span>
+                    <span className="text-emerald-600 font-bold">{job.compensation || 'Negotiable'}</span>
+                  </div>
+                  <button className="apply-btn">
+                    View & Apply <ArrowRight size={16} />
+                  </button>
+                </article>
+              ))}
+            </div>
+          )}
+        </main>
+      </div>
 
       {selectedJob && (
         <JobApplicationModal
@@ -115,7 +116,7 @@ const CareersPage = () => {
           onClose={() => setSelectedJob(null)}
         />
       )}
-    </div>
+    </>
   );
 };
 

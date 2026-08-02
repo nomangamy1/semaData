@@ -65,7 +65,64 @@ const AdminDashboard = () => {
     const [isJobModalOpen, setIsJobModalOpen] = useState(false);
     const [isReviewerModalOpen, setIsReviewerModalOpen] = useState(false);
     
+    // Jobs state management for dashboard table
+    const [jobs, setJobs] = useState([]);
+    const [jobsLoading, setJobsLoading] = useState(false);
+    
     const { token, isTokenValid } = useAuthToken();
+
+    // Fetch active jobs from backend
+    const fetchJobs = async () => {
+        if (!token) return;
+        setJobsLoading(true);
+        try {
+            const response = await fetch('/api/admin/jobs', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setJobs(data);
+            } else {
+                console.error('Failed to load admin jobs');
+            }
+        } catch (error) {
+            console.error('Error fetching jobs:', error);
+        } finally {
+            setJobsLoading(false);
+        }
+    };
+
+    // Trigger jobs fetch when tab switches to 'jobs' or token updates, and listen to post events
+    useEffect(() => {
+        if (activeTab === 'jobs' && isTokenValid) {
+            fetchJobs();
+        }
+
+        const handleJobsUpdated = () => {
+            if (activeTab === 'jobs') fetchJobs();
+        };
+
+        window.addEventListener('jobsUpdated', handleJobsUpdated);
+        return () => window.removeEventListener('jobsUpdated', handleJobsUpdated);
+    }, [activeTab, isTokenValid, token]);
+
+    // Handle job record deletion
+    const handleDeleteJob = async (jobId) => {
+        if (!window.confirm('Are you sure you want to delete this job posting?')) return;
+        try {
+            const response = await fetch(`/api/admin/jobs/${jobId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                setJobs(jobs.filter(job => job.id !== jobId));
+            } else {
+                alert('Failed to delete job.');
+            }
+        } catch (error) {
+            console.error('Error deleting job:', error);
+        }
+    };
 
     const menuItems = [
         { id: 'overview', label: 'Analytics Overview', icon: '📊' },
@@ -87,8 +144,11 @@ const AdminDashboard = () => {
             case 'jobs':
                 return (
                     <div className="admin-section-container">
-                        <div className="section-header-actions">
-                            <h2>Platform Active Jobs</h2>
+                        <div className="section-header-actions flex justify-between items-center mb-6">
+                            <div>
+                                <h2 className="text-2xl font-black text-slate-800">Platform Active Jobs</h2>
+                                <p className="text-sm text-slate-500 mt-1">Manage career listings, task configurations, and active roles.</p>
+                            </div>
                             <button 
                                 className="admin-btn-primary" 
                                 onClick={() => setIsJobModalOpen(true)}
@@ -96,7 +156,11 @@ const AdminDashboard = () => {
                                 ➕ Post New Job
                             </button>
                         </div>
-                        <JobsTable />
+                        {jobsLoading ? (
+                            <div className="py-12 text-center text-slate-400 font-medium">Loading jobs database...</div>
+                        ) : (
+                            <JobsTable jobs={jobs} onDelete={handleDeleteJob} />
+                        )}
                     </div>
                 );
             case 'templates':

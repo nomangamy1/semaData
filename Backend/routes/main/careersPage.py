@@ -73,14 +73,33 @@ def apply_for_job(job_id):
     if not job or job.status != 'published':
         return jsonify({"error": "Job not found or no longer available"}), 404
 
-    # Get ALL data from form (text fields) and files (CV)
-    first_name = request.form.get('first_name')
-    second_name = request.form.get('second_name')
-    email = request.form.get('email')
-    relevant_experience = request.form.get('relevant_experience')
-    cover_letter = request.form.get('cover_letter')  # optional
+    # Check if request is JSON or Multipart Form Data
+    if request.is_json:
+        data = request.get_json() or {}
+        first_name = data.get('first_name')
+        second_name = data.get('second_name')
+        email = data.get('email')
+        relevant_experience = data.get('relevant_experience')
+        cover_letter = data.get('cover_letter')
+        cv_path = None
+    else:
+        first_name = request.form.get('first_name')
+        second_name = request.form.get('second_name')
+        email = request.form.get('email')
+        relevant_experience = request.form.get('relevant_experience')
+        cover_letter = request.form.get('cover_letter')
+        cv_file = request.files.get('cv_file_path')
 
-    cv_file = request.files.get('cv_file_path')  # matches frontend key
+        # Save CV file if uploaded
+        cv_path = None
+        if cv_file and cv_file.filename:
+            import os
+            upload_dir = 'uploads/cvs'
+            os.makedirs(upload_dir, exist_ok=True)
+            safe_email = email.replace('@', '_').replace('.', '_')
+            filename = f"cv_{safe_email}_{job_id}_{cv_file.filename}"
+            cv_path = os.path.join(upload_dir, filename)
+            cv_file.save(cv_path)
 
     # Validation
     if not all([first_name, second_name, email]):
@@ -91,17 +110,6 @@ def apply_for_job(job_id):
     if existing_app:
         return jsonify({"error": "You have already applied for this job"}), 400
 
-    # Save CV file
-    cv_path = None
-    if cv_file and cv_file.filename:
-        import os
-        upload_dir = 'uploads/cvs'
-        os.makedirs(upload_dir, exist_ok=True)
-        safe_email = email.replace('@', '_').replace('.', '_')
-        filename = f"cv_{safe_email}_{job_id}_{cv_file.filename}"
-        cv_path = os.path.join(upload_dir, filename)
-        cv_file.save(cv_path)
-
     try:
         application = JobApplication(
             job_id=job_id,
@@ -110,7 +118,7 @@ def apply_for_job(job_id):
             second_name=second_name,
             cover_letter=cover_letter,
             relevant_experience=relevant_experience,
-            self_assessment_skills=[],  # add parsing later if needed
+            self_assessment_skills=[],
             cv_file_path=cv_path,
             status='submitted',
             applied_at=datetime.utcnow()
@@ -131,6 +139,7 @@ def apply_for_job(job_id):
         db.session.rollback()
         print(f"Apply error: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
 
 @careers_bp.route('/my-application/<int:app_id>', methods=['GET'])
 def get_application_status(app_id):

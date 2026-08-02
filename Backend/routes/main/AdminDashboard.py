@@ -8,7 +8,7 @@ from models.JobApplication import JobApplication
 from extensions import db
 import string
 import secrets
-from datetime import datetime  # <-- FIXED: Crucial Missing Import
+from datetime import datetime  # <-- Crucial Missing Import
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -31,13 +31,13 @@ def get_dashboard_stats():
     return jsonify({
         "stats": {
             "pending_applications": JobApplication.query.filter_by(status="submitted").count(),
-            "active_jobs":           Job.query.filter_by(status="published").count(),
+            "active_jobs":             Job.query.filter_by(status="published").count(),
             "total_collectors":      total_collectors,
-            "total_domains":         Domain.query.count(),
+            "total_domains":           Domain.query.count(),
         }
     }), 200
 
-# ─── NEW: COLLECTOR APPLICATION MANAGEMENT FOR FRONTEND ───
+# ─── COLLECTOR APPLICATION MANAGEMENT FOR FRONTEND ───
 
 @admin_bp.route("/applications", methods=["GET"])
 @jwt_required()
@@ -70,7 +70,6 @@ def approve_collector_application(app_id):
     application = JobApplication.query.get_or_404(app_id)
     try:
         application.status = "approved"
-        # Mirroring role upgrade on user table context if required
         if application.user:
             application.user.role = "collector"
         db.session.commit()
@@ -136,11 +135,11 @@ def approve_payout(request_id):
     if not payout_record:
         return jsonify({"error": "Disbursement log record matching target ID not found."}), 404
     if payout_record.status == "DISBURSED":
-        return jsonify({"message": "This layout instance has already been processed."}), 400
+        return jsonify({"message": "This payout instance has already been processed."}), 400
 
     try:
         payout_record.status = "DISBURSED"
-        payout_record.processed_at = datetime.utcnow()  # <-- Safe now with import
+        payout_record.processed_at = datetime.utcnow()
         payout_record.transaction_note = txn_note
         db.session.commit()
         return jsonify({"status": "success", "message": f"Successfully updated request {request_id} to DISBURSED."}), 200
@@ -148,11 +147,9 @@ def approve_payout(request_id):
         db.session.rollback()
         return jsonify({"error": f"Database mutation crash: {str(e)}"}), 500
 
-# ─── NEW: REJECT/DECLINE PAYOUT TRANSFERS ───
 @admin_bp.route("/payouts/reject/<int:request_id>", methods=["POST"])
 @jwt_required()
 def reject_payout(request_id):
-    """ Rejects payout intent and flags record to prevent loss of collector state """
     admin_id = get_jwt_identity()
     if not require_admin(admin_id):
         return jsonify({"error": "Unauthorized"}), 403
@@ -181,9 +178,9 @@ def get_all_domain_owners():
     return jsonify({
         "domain_owners": [
             {
-                "id":           o.id,
-                "name":         f"{o.first_name} {getattr(o, 'last_name', '') or ''}".strip(),
-                "email":        o.email,
+                "id":         o.id,
+                "name":       f"{o.first_name} {getattr(o, 'last_name', '') or ''}".strip(),
+                "email":      o.email,
                 "domain_count": len(o.domains) if hasattr(o, "domains") else 0,
             } for o in owners
         ]
@@ -197,13 +194,13 @@ def get_all_domains():
         return jsonify({"error": "Unauthorized"}), 403
     domains = Domain.query.all()
     return jsonify([{
-        "id":                d.id,
-        "name":              d.domain_name,
-        "status":            d.payment_status,
-        "is_active":         d.is_active,
-        "owner_id":          d.owner_id,
-        "target":            d.target_goal,
-        "reference_number":  d.reference_number or "Pending payment",
+        "id":                  d.id,
+        "name":                d.domain_name,
+        "status":              d.payment_status,
+        "is_active":           d.is_active,
+        "owner_id":            d.owner_id,
+        "target":              d.target_goal,
+        "reference_number":    d.reference_number or "Pending payment",
     } for d in domains]), 200
 
 @admin_bp.route("/manage-team/invite", methods=["POST"])
@@ -241,7 +238,6 @@ def invite_reviewer():
         db.session.add(new_reviewer)
         db.session.commit()
 
-        # Send credentials email
         try:
             from utils.email import send_email
             send_email(
@@ -257,8 +253,6 @@ def invite_reviewer():
         except Exception as mail_err:
             current_app.logger.warning(f"Reviewer email failed: {mail_err}")
 
-        current_app.logger.info(f"SUCCESS: Created reviewer account for {email}")
-
         return jsonify({
             "status": "success",
             "message": f"Account for {first_name} successfully created!",
@@ -267,6 +261,7 @@ def invite_reviewer():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"System fault: {str(e)}"}), 500
+
 @admin_bp.route("/post-job", methods=["POST"])
 @jwt_required()
 def post_job():
@@ -285,7 +280,7 @@ def post_job():
             compensation=data.get('compensation'),
             duration=data.get('duration'),
             description=data.get('description'),
-            required_skills=str(data.get('required_skills')), # Ensure this is a string
+            required_skills=str(data.get('required_skills')),
             field=data.get('field'),
             status='published',
             posted_at=datetime.utcnow()
@@ -293,6 +288,56 @@ def post_job():
         db.session.add(new_job)
         db.session.commit()
         return jsonify({"status": "success", "message": "Job posted successfully"}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@admin_bp.route("/jobs", methods=["GET"])
+@jwt_required()
+def get_all_admin_jobs():
+    """Fetches all jobs for the admin management table with applicant counts."""
+    admin_id = get_jwt_identity()
+    if not require_admin(admin_id):
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    try:
+        jobs = Job.query.order_by(Job.posted_at.desc()).all()
+        job_list = []
+        
+        for job in jobs:
+            job_list.append({
+                "id": job.id,
+                "title": job.title,
+                "field": job.field,
+                "location": job.location,
+                "status": job.status,
+                "posted_at": job.posted_at.strftime('%Y-%m-%d') if job.posted_at else None,
+                "applicant_count": len(job.applications) if job.applications else 0,
+                "applications": [{
+                    "id": app.id,
+                    "status": app.status,
+                    "applicant_name": f"{app.user.first_name} {app.user.second_name}" if app.user else "Unknown",
+                    "email": app.user.email if app.user else ""
+                } for app in job.applications]
+            })
+            
+        return jsonify(job_list), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@admin_bp.route("/jobs/<int:job_id>", methods=["DELETE"])
+@jwt_required()
+def delete_admin_job(job_id):
+    """Deletes a job posting and its associated references."""
+    admin_id = get_jwt_identity()
+    if not require_admin(admin_id):
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    try:
+        job = Job.query.get_or_404(job_id)
+        db.session.delete(job)
+        db.session.commit()
+        return jsonify({"status": "success", "message": "Job deleted successfully"}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
