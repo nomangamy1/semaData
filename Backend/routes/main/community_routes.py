@@ -474,3 +474,140 @@ def get_public_profile(user_id):
             for row in recent
         ]
     }), 200
+
+
+@community_bp.route('/topics', methods=['GET'])
+def get_topic_directory():
+    """List the topic areas available in the community feed and challenge board."""
+    topics = db.session.execute(
+        db.text("""
+            SELECT topic_category, COUNT(*)
+            FROM community_posts
+            WHERE topic_category IS NOT NULL
+            GROUP BY topic_category
+            ORDER BY COUNT(*) DESC, topic_category ASC
+        """)
+    ).fetchall()
+
+    directory = [
+        {"name": topic, "count": count}
+        for topic, count in topics
+    ]
+
+    default_topics = [
+        "General",
+        "Machine Learning",
+        "Data Science",
+        "NLP",
+        "Computer Vision",
+        "MLOps",
+        "AI Product",
+        "Research",
+        "Generative AI",
+        "Data Engineering"
+    ]
+
+    seen = {item["name"] for item in directory}
+    for topic in default_topics:
+        if topic not in seen:
+            directory.append({"name": topic, "count": 0})
+
+    return jsonify({"topics": directory}), 200
+
+
+@community_bp.route('/discover', methods=['GET'])
+def discover_experts_by_area():
+    """Discover community members by area of interest or role."""
+    area = (request.args.get('area') or '').strip()
+    role = (request.args.get('role') or '').strip().lower()
+    limit = request.args.get('limit', default=12, type=int)
+
+    query = User.query.filter(User.user_type == 'community')
+
+    if area:
+        area_term = f"%{area.lower()}%"
+        query = query.filter(
+            (User.area_of_interest.ilike(area_term)) |
+            (User.expertise.cast(db.String).ilike(area_term)) |
+            (User.research_interests.cast(db.String).ilike(area_term))
+        )
+
+    if role:
+        valid_roles = {'researcher', 'data scientist', 'ml engineer', 'ai product thinker', 'student'}
+        if role in valid_roles:
+            query = query.filter(User.community_role == role)
+
+    members = query.order_by(User.reputation_score.desc(), User.created_at.desc()).limit(limit).all()
+
+    return jsonify({
+        "experts": [
+            {
+                "id": member.id,
+                "name": f"{member.first_name} {member.second_name or ''}".strip(),
+                "role": member.community_role or 'student',
+                "area_of_interest": member.area_of_interest,
+                "headline": member.headline,
+                "expertise": member.expertise or [],
+                "skills": member.skills or [],
+                "reputation_score": member.reputation_score,
+                "profile_url": f"/community/profile/{member.id}"
+            }
+            for member in members
+        ]
+    }), 200
+
+
+@community_bp.route('/top-contributors', methods=['GET'])
+def get_top_contributors():
+    """Return the most active and valuable community members."""
+    limit = request.args.get('limit', default=10, type=int)
+
+    members = User.query.filter(User.user_type == 'community').order_by(
+        User.reputation_score.desc(),
+        User.created_at.desc()
+    ).limit(limit).all()
+
+    return jsonify({
+        "contributors": [
+            {
+                "id": member.id,
+                "name": f"{member.first_name} {member.second_name or ''}".strip(),
+                "role": member.community_role or 'student',
+                "area_of_interest": member.area_of_interest,
+                "reputation_score": member.reputation_score,
+                "profile_url": f"/community/profile/{member.id}"
+            }
+            for member in members
+        ]
+    }), 200
+
+
+@community_bp.route('/featured-insights', methods=['GET'])
+def get_featured_insights():
+    """Featured posts and insights from high-value community contributions."""
+    limit = request.args.get('limit', default=6, type=int)
+
+    posts = CommunityPost.query.filter(
+        CommunityPost.post_type.in_(['challenge', 'idea', 'post'])
+    ).order_by(
+        CommunityPost.likes.desc(),
+        CommunityPost.created_at.desc()
+    ).limit(limit).all()
+
+    result = []
+    for post in posts:
+        author = User.query.get(post.author_id)
+        result.append({
+            "id": post.id,
+            "title": post.title,
+            "body": post.body[:180] + "..." if len(post.body) > 180 else post.body,
+            "topic_category": post.topic_category or "General",
+            "author": f"{author.first_name} {author.second_name or ''}".strip() if author else "SemaData",
+            "author_role": getattr(author, 'community_role', 'student') if author else 'admin',
+            "likes": post.likes or 0,
+            "created_at": post.created_at.isoformat() if post.created_at else None,
+            "post_type": post.post_type,
+            "url": f"/community/feed?post={post.id}"
+        })
+
+    return jsonify({"featured": result}), 200

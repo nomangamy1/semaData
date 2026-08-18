@@ -47,6 +47,7 @@ def signUp():
                 }), 403
 
             area_of_interest = data.get('area_of_interest', '').strip()
+            community_role = (data.get('community_role') or 'student').strip().lower()
             headline = data.get('headline', '').strip()
             bio = data.get('bio', '').strip()
             expertise = data.get('expertise') or []
@@ -67,6 +68,7 @@ def signUp():
                 role='community',
                 user_type='community',
                 area_of_interest=area_of_interest or None,
+                community_role=community_role if community_role in {'researcher','data scientist','ml engineer','ai product thinker','student'} else 'student',
                 headline=headline or None,
                 bio=bio or None,
                 expertise=expertise,

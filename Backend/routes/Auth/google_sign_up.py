@@ -52,6 +52,7 @@ def google_sign_up():
                 role="community",
                 user_type="community",
                 area_of_interest=data.get("area_of_interest", "") or None,
+                community_role=(data.get("community_role") or "student").strip().lower() if (data.get("community_role") or "student").strip().lower() in {'researcher','data scientist','ml engineer','ai product thinker','student'} else 'student',
                 headline=data.get("headline") or None,
                 bio=data.get("bio") or None,
                 expertise=data.get("expertise") or [],

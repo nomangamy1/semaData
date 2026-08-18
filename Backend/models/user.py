@@ -28,6 +28,7 @@ class User(db.Model, UserMixin):
 
     domain_name      = db.Column(db.String(64), nullable=True)
     area_of_interest = db.Column(db.String(100), nullable=True)
+    community_role = db.Column(db.String(50), nullable=False, default='student')
     headline          = db.Column(db.String(140), nullable=True)
     bio              = db.Column(db.Text, nullable=True)
     expertise         = db.Column(db.JSON, nullable=True)
