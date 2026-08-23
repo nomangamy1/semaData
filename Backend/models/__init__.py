@@ -1,5 +1,6 @@
 from extensions import db
 from models.CommunityPost import CommunityPost
+from models.AuditLog import AuditLog
 from models.Comment import Comment
 from models.InboxMessage import InboxMessage
 from models.user import User

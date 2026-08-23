@@ -17,6 +17,8 @@ class Domain(db.Model):
     #is_verified  
     #total_cost_per_response =
     reference_number = db.Column(db.String(64), unique=True, nullable=False)
+    is_paused        = db.Column(db.Boolean, default=False, nullable=False)
+    rate_per_submission = db.Column(db.Float, default=20.0, nullable=False)
     domain_features = db.relationship('Feature',lazy =True,backref = 'domain')
     datasets = db.relationship('Dataset', backref='domain', lazy=True)
     requirements = db.Column(db.Text)

@@ -41,6 +41,7 @@ class User(db.Model, UserMixin):
     
 
     reference_number = db.Column(db.String(64), nullable=True)
+    is_suspended     = db.Column(db.Boolean, default=False, nullable=False)
 
     # ── Instance methods ───────────────────────────────────
     def set_password(self, password):

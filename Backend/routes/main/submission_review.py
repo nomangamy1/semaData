@@ -4,8 +4,9 @@ from models.user import User
 from models.dataset import Dataset
 from models.Transcription import Transcription
 from models.domain import Domain
-from models.payments import Payment,AdminDisbursement
+from models.payments import Payment, AdminDisbursement
 from extensions import db
+from utils.audit import record_audit
 from datetime import datetime
 import json
 import os
@@ -18,8 +19,11 @@ MIN_PAYOUT_KES = 100.0
 
 
 def require_admin(identity):
-    user = User.query.filter(User.id == int(identity)).first()
-    return user if (user and user.role.lower() == 'admin') else None
+    try:
+        user = User.query.get(int(identity))
+    except (TypeError, ValueError):
+        return None
+    return user if (user and user.is_admin_user()) else None
 
 
 def _collector_rate(domain):
@@ -35,15 +39,16 @@ def list_submissions():
     user = User.query.get(int(admin_id))
     if not require_admin(admin_id):
         return jsonify({"error": "Unauthorized"}), 403
-        
+
     total_pending = Dataset.query.filter_by(status='pending_review').count()
-   
+
     query = Dataset.query
-    
-    # Apply domain filtering for non-super admins
-    if user.is_super_admin and total_pending > 5:
-        domain_ids = [d.id for d in user.assigned_domains]
-        query = query.filter(Dataset.domain_id.in_(domain_ids))
+
+    # Super admins see everything; scoped admins see only their assigned domains
+    if not user.is_super_admin:
+        domain_ids = [d.id for d in getattr(user, 'assigned_domains', [])]
+        if domain_ids:
+            query = query.filter(Dataset.domain_id.in_(domain_ids))
 
     status_filter = request.args.get('status', 'pending_review')
     domain_id     = request.args.get('domain_id')
@@ -175,6 +180,15 @@ def approve_submission(dataset_id):
         )
         db.session.commit()
 
+        record_audit(
+            actor_id=int(admin_id),
+            action='approve_submission',
+            target_table='datasets',
+            target_id=dataset_id,
+            before={'status': 'pending_review'},
+            after={'status': 'Verified', 'earned': earned, 'multiplier': multiplier}
+        )
+
         return jsonify({
             "message":    f"Submission approved. KES {earned} credited to collector balance.",
             "dataset_id": dataset_id,
@@ -200,6 +214,15 @@ def reject_submission(dataset_id):
 
     ds.status = 'rejected'
     db.session.commit()
+
+    record_audit(
+        actor_id=int(admin_id),
+        action='reject_submission',
+        target_table='datasets',
+        target_id=dataset_id,
+        before={'status': 'pending_review'},
+        after={'status': 'rejected', 'reason': reason}
+    )
 
     return jsonify({
         "message":    "Submission rejected",
@@ -244,18 +267,20 @@ def get_pending_payouts():
 @jwt_required()
 def lock_submission(dataset_id):
     admin_id = get_jwt_identity()
+    if not require_admin(admin_id):
+        return jsonify({"error": "Unauthorized"}), 403
+
     ds = Dataset.query.get_or_404(dataset_id)
-    
-    # If already locked, check if it's expired (e.g., 10 mins)
-    if ds.locked_by and ds.locked_at:
+
+    # If locked by a DIFFERENT admin and lock is still fresh, refuse
+    if ds.locked_by and ds.locked_by != int(admin_id) and ds.locked_at:
         if (datetime.utcnow() - ds.locked_at).total_seconds() < 600:
-            return jsonify({"error": "Submission is currently being reviewed by another admin"}), 409
-            
-    # Lock the submission
+            return jsonify({"error": "Submission is currently locked by another reviewer."}), 409
+
     ds.locked_by = int(admin_id)
     ds.locked_at = datetime.utcnow()
     db.session.commit()
-    return jsonify({"message": "Locked"}), 200
+    return jsonify({"message": "Locked", "locked_by": int(admin_id)}), 200
 
 
 # ─── PATCH /api/admin/submission/<id>/edit ────────────────────────────────────

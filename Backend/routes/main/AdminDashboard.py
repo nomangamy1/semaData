@@ -6,6 +6,8 @@ from models.Job import Job
 from models.domainowner import DomainOwner
 from models.JobApplication import JobApplication
 from extensions import db
+from utils.audit import audit_action, record_audit
+from utils.permissions import requires_admin
 import string
 import secrets
 from datetime import datetime  # <-- Crucial Missing Import
@@ -25,6 +27,7 @@ def require_admin(identity):
     if user.is_super_admin or role_name == 'admin' or user_type == 'admin':
         return user
     return None
+
 
 @admin_bp.route("/dashboard-stats", methods=["GET"])
 @jwt_required()
@@ -69,6 +72,8 @@ def get_pending_applications():
 
 @admin_bp.route("/applications/<int:app_id>/approve", methods=["POST"])
 @jwt_required()
+@requires_admin
+@audit_action(action="approve_application", target_table="JobApplication", get_target_id=lambda app_id: app_id)
 def approve_collector_application(app_id):
     """ Approves collector application and maps their operational tracking routes """
     admin_id = get_jwt_identity()
@@ -81,6 +86,12 @@ def approve_collector_application(app_id):
         if application.user:
             application.user.role = "collector"
         db.session.commit()
+        # record a rich audit entry
+        try:
+            actor = get_jwt_identity()
+            record_audit(actor_id=actor, action='approve_application', target_table='JobApplication', target_id=application.id, after={'status': application.status, 'assigned_user_id': application.assigned_user_id})
+        except Exception:
+            pass
         return jsonify({"status": "success", "message": "Collector approved successfully."}), 200
     except Exception as e:
         db.session.rollback()
@@ -88,6 +99,8 @@ def approve_collector_application(app_id):
 
 @admin_bp.route("/applications/<int:app_id>/reject", methods=["POST"])
 @jwt_required()
+@requires_admin
+@audit_action(action="reject_application", target_table="JobApplication", get_target_id=lambda app_id: app_id)
 def reject_collector_application(app_id):
     admin_id = get_jwt_identity()
     if not require_admin(admin_id):
@@ -96,7 +109,15 @@ def reject_collector_application(app_id):
     application = JobApplication.query.get_or_404(app_id)
     try:
         application.status = "rejected"
+        # optional reason from payload
+        payload = request.get_json(silent=True) or {}
+        reason = payload.get('reason')
         db.session.commit()
+        try:
+            actor = get_jwt_identity()
+            record_audit(actor_id=actor, action='reject_application', target_table='JobApplication', target_id=application.id, after={'status': application.status}, reason=reason)
+        except Exception:
+            pass
         return jsonify({"status": "success", "message": "Collector application rejected."}), 200
     except Exception as e:
         db.session.rollback()
@@ -130,6 +151,8 @@ def get_pending_payouts():
 
 @admin_bp.route("/payouts/approve/<int:request_id>", methods=["POST"])
 @jwt_required()
+@requires_admin
+@audit_action(action="approve_payout", target_table="admin_disbursement", get_target_id=lambda request_id: request_id)
 def approve_payout(request_id):
     admin_id = get_jwt_identity()
     if not require_admin(admin_id):
@@ -150,6 +173,11 @@ def approve_payout(request_id):
         payout_record.processed_at = datetime.utcnow()
         payout_record.transaction_note = txn_note
         db.session.commit()
+        try:
+            actor = get_jwt_identity()
+            record_audit(actor_id=actor, action='approve_payout', target_table='admin_disbursement', target_id=payout_record.id, after={'status': payout_record.status, 'transaction_note': txn_note})
+        except Exception:
+            pass
         return jsonify({"status": "success", "message": f"Successfully updated request {request_id} to DISBURSED."}), 200
     except Exception as e:
         db.session.rollback()
@@ -157,6 +185,8 @@ def approve_payout(request_id):
 
 @admin_bp.route("/payouts/reject/<int:request_id>", methods=["POST"])
 @jwt_required()
+@requires_admin
+@audit_action(action="reject_payout", target_table="admin_disbursement", get_target_id=lambda request_id: request_id)
 def reject_payout(request_id):
     admin_id = get_jwt_identity()
     if not require_admin(admin_id):
@@ -171,6 +201,11 @@ def reject_payout(request_id):
         payout_record.status = "REJECTED"
         payout_record.processed_at = datetime.utcnow()
         db.session.commit()
+        try:
+            actor = get_jwt_identity()
+            record_audit(actor_id=actor, action='reject_payout', target_table='admin_disbursement', target_id=payout_record.id, after={'status': payout_record.status})
+        except Exception:
+            pass
         return jsonify({"status": "success", "message": "Payout instruction rejected safely."}), 200
     except Exception as e:
         db.session.rollback()

@@ -1,18 +1,21 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models.dataset import Dataset 
-from models.user import User  # Added to verify administrative credentials
+from models.dataset import Dataset
+from models.user import User
 from extensions import db
 from datetime import datetime, timedelta
+from utils.permissions import requires_admin
+from utils.audit import record_audit
 
 adminR_bp = Blueprint('admin_bp', __name__)
 
 def require_admin(identity):
-    """ Helper validator parsing identity mappings against internal role flags """
-    user = User.query.filter(User.id == int(identity)).first()
-    if user and (user.role == "admin" or user.user_type == "admin"):
-        return user
-    return None
+    """ Delegates to canonical User.is_admin_user() — single source of truth """
+    try:
+        user = User.query.get(int(identity))
+    except (TypeError, ValueError):
+        return None
+    return user if (user and user.is_admin_user()) else None
 
 # ─── SECURE FIRST-IN, FIRST-OUT (FIFO) QUEUE CLAIM ENGINE ───
 @adminR_bp.route('/api/admin/next-review-task', methods=['GET'])
@@ -80,49 +83,66 @@ def format_task_payload(entry):
     }
 # ─── UPDATE ENTRY QUALITY STATUS & CALCULATE FAILURES ───
 @adminR_bp.route('/api/admin/verify-entry/<int:entry_id>', methods=['POST'])
+@jwt_required()
 def verify_entry(entry_id):
+    admin_id = get_jwt_identity()
+    if not require_admin(admin_id):
+        return jsonify({"error": "Unauthorized administrative clearance required."}), 403
+
     entry = Dataset.query.get_or_404(entry_id)
     data = request.get_json() or {}
-    
-    action = data.get('action') # 'VERIFY' or 'REJECT'
+
+    # Prevent editing a submission currently locked by a DIFFERENT admin
+    if entry.locked_by and entry.locked_by != int(admin_id):
+        if entry.locked_at and (datetime.utcnow() - entry.locked_at).total_seconds() < 600:
+            return jsonify({"error": "This submission is locked by another reviewer."}), 409
+
+    action = data.get('action')  # 'VERIFY' or 'REJECT'
     polished_text = data.get('polished_text', '').strip()
-    rejection_reason = data.get('rejection_reason') # e.g., 'HIGH_NULL_VALUES', 'POOR_AUDIO_QUALITY'
+    rejection_reason = data.get('rejection_reason')
     reviewer_notes = data.get('reviewer_notes', '')
 
     if not action:
         return jsonify({"error": "Administrative action code payload is missing."}), 400
 
     collector_id = entry.collector_id
+    before_status = entry.status
 
     if action == 'VERIFY':
-        # Catch explicit textual null inputs manually input during review
         if not polished_text or polished_text.lower() in ['none', 'null', 'nan', '']:
-            return jsonify({"error": "Verified entries cannot contain empty or system-null transcription values."}), 400
-        
+            return jsonify({"error": "Verified entries cannot contain empty or null transcription values."}), 400
         entry.combined_text = polished_text
         entry.status = 'Verified'
         entry.rejection_reason = None
-        
+
     elif action == 'REJECT':
         if not rejection_reason:
-            return jsonify({"error": "A structural rejection reason must be specified to evaluate collector performance fines."}), 400
-            
+            return jsonify({"error": "A rejection reason must be specified."}), 400
         entry.status = 'Rejected'
-        entry.rejection_reason = rejection_reason # Logs 'HIGH_NULL_VALUES'
-        
+        entry.rejection_reason = rejection_reason
+
     else:
-        return jsonify({"error": "Invalid administrative action specified."}), 400
+        return jsonify({"error": "Invalid action. Expected VERIFY or REJECT."}), 400
 
     entry.reviewer_notes = reviewer_notes
     entry.updated_at = datetime.utcnow()
-
-
     entry.locked_by = None
     entry.locked_at = None
+
     try:
         db.session.commit()
 
-        # ─── AUTO-CALCULATE QUALITY PENALTY ALERTS ───
+        # Emit audit trail
+        record_audit(
+            actor_id=int(admin_id),
+            action=f'submission_{action.lower()}',
+            target_table='datasets',
+            target_id=entry_id,
+            before={'status': before_status},
+            after={'status': entry.status, 'rejection_reason': entry.rejection_reason}
+        )
+
+        # Auto-calculate quality penalty alerts
         total_submissions = Dataset.query.filter_by(collector_id=collector_id).count()
         null_rejections = Dataset.query.filter_by(
             collector_id=collector_id,
@@ -142,12 +162,11 @@ def verify_entry(entry_id):
             }
         }
 
-        # Flag inside response if user has crossed the 20% spam threshold
         if failure_rate > 0.20 and total_submissions >= 5:
-            audit_response["audit"]["quality_alert"] = "⚠️ CRITICAL: Collector exceeding spam threshold. Financial deduction active on ledger."
+            audit_response["audit"]["quality_alert"] = "⚠️ CRITICAL: Collector exceeding spam threshold. Financial deduction active."
 
         return jsonify(audit_response), 200
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"Database write crash executing transaction: {str(e)}"}), 500
+        return jsonify({"error": f"Database write error: {str(e)}"}), 500
