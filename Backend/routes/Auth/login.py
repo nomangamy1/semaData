@@ -33,8 +33,7 @@ def login():
         if admin and admin.is_admin_user():
             if not check_password_hash(admin.password_hash, password):
                 return jsonify({"error": "Invalid admin credentials"}), 401
-            if req_role and req_role not in {'admin', 'super_admin'}:
-                return _reject_invalid_role("This account is registered as an admin")
+           
             token = create_access_token(
                 identity=str(admin.id),
                 additional_claims={"role": "admin", "is_admin": True}
