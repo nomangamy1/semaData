@@ -20,7 +20,7 @@ export default function CommunityPostForm() {
         
 
         try {
-            const response = await fetch('http://localhost:5000/api/community/post', {
+            const response = await fetch('http://localhost:8000/api/community/post', {
                 method: 'POST',
                 headers: {
                  'Authorization': `Bearer ${localStorage.getItem('token')}`,
