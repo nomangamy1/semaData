@@ -68,6 +68,7 @@ def initiate_payment():
         new_payment = Payment(
             domain_id=domain_id,
             amount=deposit_amount,
+            currency="KES",
             transaction_ref=transaction_ref,
             status="Success",
             phone_number=phone,
@@ -279,7 +280,7 @@ def request_withdrawal():
 
         # ✅ Notify collector with SLA commitment
         try:
-            from utils.mailer import send_approval_email as send_email
+            from utils.mailer import send_email
             collector = User.query.get(collector_id)
             if collector and collector.email:
                 send_email(
@@ -471,7 +472,7 @@ def finance_b2c_result_callback():
 
             # ✅ Notify collector their payout was successful
             try:
-                from utils.mailer import send_approval_email as send_email
+                from utils.mailer import send_email
                 from models.user import User
                 collector = User.query.get(intent.collector_id)
                 if collector and collector.email:
@@ -616,7 +617,7 @@ def approve_manual_payout(request_id):
 
         # ✅ Notify collector their payout was manually processed
         try:
-            from utils.mailer import send_approval_email as send_email
+            from utils.mailer import send_email
             from models.user import User
             collector = User.query.get(intent.collector_id)
             if collector and collector.email:

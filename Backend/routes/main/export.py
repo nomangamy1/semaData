@@ -98,7 +98,8 @@ def export_dataset(domain_id):
 
             # Add each feature value (handles missing keys gracefully)
             for feat in all_feature_names:
-                row[feat] = features.get(feat, "")
+                value = features.get(feat, "")
+                row[feat] = json.dumps(value, ensure_ascii=False) if isinstance(value, (list, dict)) else value
 
             writer.writerow(row)
 

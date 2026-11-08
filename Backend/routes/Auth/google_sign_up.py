@@ -1,7 +1,7 @@
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from flask_jwt_extended import create_access_token
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 from models import User, DomainOwner, Domain
 from models.JobApplication import JobApplication
 from extensions import db
@@ -13,13 +13,21 @@ auth_bp = Blueprint("auth", __name__)
 @auth_bp.route("/google_sign_up", methods=["POST"])
 def google_sign_up():
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         token = data.get("token")
         role_type = data.get("role")
+        if not token:
+            return jsonify({"error": "Google credential is missing"}), 400
+        if role_type not in {"community", "user", "domain_owner", "domainowner"}:
+            return jsonify({"error": "Invalid signup role"}), 400
 
-        idinfo = id_token.verify_oauth2_token(
-            token, google_requests.Request(), config["default"].GOOGLE_CLIENT_ID
-        )
+        try:
+            idinfo = id_token.verify_oauth2_token(
+                token, google_requests.Request(), config["default"].GOOGLE_CLIENT_ID
+            )
+        except ValueError:
+            return jsonify({"error": "Google credential is invalid or expired"}), 400
+
         email = idinfo["email"]
         full_name = idinfo.get("name", email.split("@")[0])
         name_parts = full_name.split(" ", 1)
@@ -176,8 +184,6 @@ def google_sign_up():
             }), 201
 
     except Exception as e:
-        print(f"DEBUG:Verification Failed: {e}")
-        return jsonify({"error": "Invalid token format"}), 400
-    except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.exception("Google signup failed")
+        return jsonify({"error": "Google signup could not be completed. Please try again."}), 500

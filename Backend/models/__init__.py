@@ -8,4 +8,6 @@ from models.domain import Domain
 from models.domainowner import DomainOwner
 from models.dataset import Dataset
 from models.Features import Feature
+from models.DomainDraft import DomainDraft
+from models.DomainOwnerNotification import DomainOwnerNotification
 from models.Transcription import Transcription

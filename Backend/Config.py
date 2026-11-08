@@ -1,4 +1,5 @@
-import os 
+import os
+from datetime import timedelta
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY')
@@ -11,6 +12,7 @@ class Config:
     MAIL_USE_SSL = False
     JWT_TOKEN_LOCATION = ['headers', 'query_string']
     JWT_QUERY_STRING_NAME = 'token'
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=8)
     FLASK_ENV = os.environ.get('FLASK_ENV', 'development')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173').rstrip('/')

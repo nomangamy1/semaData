@@ -3,7 +3,7 @@ from models.user import User
 from models.domainowner import DomainOwner
 from extensions import db
 from utils.tokens import generate_verification_token, confirm_token_verification
-from utils.mailer import send_approval_email as send_mail
+from utils.mailer import send_email as send_mail
 from werkzeug.security import generate_password_hash
 from itsdangerous import SignatureExpired, BadTimeSignature
 

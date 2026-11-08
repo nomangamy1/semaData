@@ -25,6 +25,7 @@ import GuestOnlyRoute from './components/GuestOnlyRoute';
 import AdminRoute from './components/AdminRoute';
 import CollectorProfile from './components/collectorProfile';
 import PayoutManagement from './components/PayoutManagement';
+import EmailVerificationCallback from './pages/EmailVerificationCallback';
 
 const STANDALONE_PATHS = [
   '/dashboard', '/userdashboard', '/collectorhome', '/admindashboard',
@@ -66,6 +67,7 @@ function AppShell() {
           <Route path="/community" element={<Community />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/auth/verified" element={<EmailVerificationCallback />} />
           <Route path="/careers" element={<CareersPage />} />
           <Route path="/careers/:id" element={<JobDescriptionView />} />
           <Route path="/profile" element={<CollectorProfile />} />

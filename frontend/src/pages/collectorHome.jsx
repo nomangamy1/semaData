@@ -17,10 +17,19 @@ const generateConversationGuide = (features) => {
     education: 'Ask: "What is your education level?" / "Elimu yako ni ngapi?"',
   };
 
-  return features.map((f) => ({
-    feature: f,
-    question: questionMap[f.toLowerCase()] || `Ask about: ${f}`,
-  }));
+  return features.map((item) => {
+    const feature = typeof item === 'string' ? item : item.name;
+    const key = feature.toLowerCase();
+    return {
+      feature,
+      question: questionMap[key] || `Ask about: ${feature}`,
+      group: typeof item === 'string' ? 'General' : item.group || 'General',
+      type: typeof item === 'string' ? 'text' : item.type || 'text',
+      choices: typeof item === 'string' ? [] : item.choices || [],
+      required: typeof item === 'string' ? true : item.required !== false,
+      repeatable: typeof item === 'string' ? false : Boolean(item.repeatable),
+    };
+  });
 };
 
 const detectFeaturesInText = (text, features) => {
@@ -153,6 +162,7 @@ const CollectorHome = () => {
   // State
   const [task, setTask] = useState(location.state?.task || null);
   const [domainFeatures, setDomainFeatures] = useState([]);
+  const [domainFeatureSchema, setDomainFeatureSchema] = useState([]);
   const [segments, setSegments] = useState({});
   const [taskLoading, setTaskLoading] = useState(!location.state?.task);
   const [taskError, setTaskError] = useState('');
@@ -211,6 +221,7 @@ const CollectorHome = () => {
         const data = await response.json();
         setTask(data.task_description || 'General Data Collection');
         setDomainFeatures(data.features || []);
+        setDomainFeatureSchema(data.feature_schema || data.features || []);
       } catch (err) {
         console.error('Task fetch error:', err);
         setTaskError('Could not load your assigned task. Please check your connection.');
@@ -421,8 +432,8 @@ const CollectorHome = () => {
               📋 Conversation Guide — Cover These Points
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {generateConversationGuide(domainFeatures).map(({ feature, question }) => (
-                <div key={feature} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              {generateConversationGuide(domainFeatureSchema).map(({ feature, question, group, type, choices, required, repeatable }) => (
+                <div key={`${group}-${feature}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                   <span
                     style={{
                       background: '#489c8c',
@@ -435,10 +446,10 @@ const CollectorHome = () => {
                       marginTop: 1,
                     }}
                   >
-                    {feature}
+                    {group}: {feature}
                   </span>
                   <span style={{ fontSize: '0.8rem', color: '#475569', lineHeight: 1.4 }}>
-                    {question}
+                    {question} ({type}{choices.length ? `: ${choices.join(', ')}` : ''}{required ? ', required' : ', optional'}{repeatable ? ', section repeats' : ''})
                   </span>
                 </div>
               ))}

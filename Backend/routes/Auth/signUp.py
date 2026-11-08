@@ -1,9 +1,9 @@
 from flask import Flask, Blueprint, request, jsonify
-from werkzeug.security import generate_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 from models import User, Domain, DomainOwner, Dataset
 from extensions import db
 from utils.tokens import generate_verification_token, confirm_token_verification
-from utils.mailer import send_approval_email as send_mail
+from utils.mailer import send_email as send_mail
 from flask import url_for, redirect, current_app
 from itsdangerous import SignatureExpired, BadTimeSignature
 from models.JobApplication import JobApplication
@@ -24,6 +24,33 @@ def signUp():
         existing_user  = User.query.filter_by(email=email).first()
         existing_owner = DomainOwner.query.filter_by(email=email).first()
         if existing_user or existing_owner:
+            existing_account = existing_owner or existing_user
+            password = data.get('password', '')
+            if (
+                not existing_account.is_verified
+                and existing_account.password_hash
+                and password
+                and check_password_hash(existing_account.password_hash, password)
+            ):
+                token = generate_verification_token(existing_account.email)
+                confirm_url = url_for('register.email_verification', token=token, _external=True)
+                verification_message = (
+                    f"<p>Please verify your semaData account:</p>"
+                    f"<p><a href=\"{confirm_url}\">{confirm_url}</a></p>"
+                )
+                if not send_mail(
+                    existing_account.email,
+                    "Verify your semaData account",
+                    verification_message,
+                ):
+                    return jsonify({
+                        "error": "Your account exists, but we couldn't send the verification email. Please try again."
+                    }), 503
+                return jsonify({
+                    "message": "A new verification link has been sent to your email.",
+                    "requires_verification": True,
+                }), 200
+
             return jsonify({"error": "An account with this email already exists"}), 400
 
         if role == 'domainowner':
@@ -233,7 +260,14 @@ def email_verification(token):
         db.session.commit()
 
     if owner:
-        return redirect(f"{frontend_base}/login?verified=true&next=/DomainDefinition")
+        access_token = create_access_token(
+            identity=str(owner.id),
+            additional_claims={"role": "domainowner"}
+        )
+        return redirect(
+            f"{frontend_base}/auth/verified#token={access_token}"
+            f"&role=domainowner&ownerId={owner.id}"
+        )
     elif user and getattr(user, 'user_type', '') == 'community':
         return redirect(f"{frontend_base}/login?verified=true&next=/community")
     else:

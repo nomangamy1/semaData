@@ -16,17 +16,26 @@ const ROLE_HINTS = {
   domainowner: 'For researchers, NGOs and organisations that need African language datasets. Requires payment after signup.',
 };
 
+const getSignupRole = (roleParam) => {
+  const normalizedRole = roleParam?.toLowerCase();
+  if (normalizedRole === 'collector' || normalizedRole === 'user') return 'User';
+  if (normalizedRole === 'domainowner' || normalizedRole === 'domain_owner') return 'domainowner';
+  return 'community';
+};
+
 const Signup = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const paramRole = searchParams.get('role');
-  const initialRole = paramRole === 'collector' ? 'User'
-    : paramRole === 'domainowner' ? 'domainowner'
-    : 'community';
+  const initialRole = getSignupRole(paramRole);
 
   const [role, setRole] = useState(initialRole);
   const [spotsLeft, setSpotsLeft] = useState(null);
+
+  useEffect(() => {
+    setRole(initialRole);
+  }, [initialRole]);
 
   useEffect(() => {
     fetch('http://localhost:8000/api/Auth/community-spots')
@@ -74,7 +83,14 @@ const Signup = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const data = await response.json();
+      const responseBody = await response.text();
+      let data;
+      try {
+        data = responseBody ? JSON.parse(responseBody) : {};
+      } catch {
+        setError(`Signup service returned an invalid response (HTTP ${response.status}).`);
+        return;
+      }
 
       if (response.ok) {
         localStorage.clear();
@@ -93,12 +109,14 @@ const Signup = () => {
       } else {
         if (data.error === 'founding_limit_reached') {
           setError('🎯 SemaData V1 founding community is full (500 members). You\'ve been added to the V2 waitlist.');
+        } else if (data.error === 'An account with this email already exists') {
+          setError('An account with this email already exists. Please log in instead.');
         } else {
-          setError(data.error || 'Signup failed. Please try again.');
+          setError(data.error || `Signup failed (HTTP ${response.status}). Please try again.`);
         }
       }
     } catch {
-      setError('Server is down. Please try again later.');
+      setError('Could not reach the signup service. Check that the backend is running at http://localhost:8000.');
     }
   };
 
@@ -172,7 +190,7 @@ const Signup = () => {
             <GoogleAuthButton
               mode="signup"
               role={role === 'domainowner' ? 'domain_owner' : 'community'}
-              onSuccess={(data) => setSubmitted(true)}
+              onSuccess={() => setSubmitted(true)}
               onError={(msg) => setError(msg)}
             />
             <div style={{

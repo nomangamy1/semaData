@@ -119,18 +119,32 @@ def is_audible_valid(file_path):
 
 def refine_with_llm(transcribed_text, segmented_text, features):
     feature_names = [f.name for f in features]
+    feature_schema = []
+    for feature in features:
+        definition = feature.definition or {}
+        feature_schema.append({
+            "name": feature.name,
+            "group": definition.get("group", "General"),
+            "type": definition.get("type", "text"),
+            "required": definition.get("required", True),
+            "choices": definition.get("choices", []),
+            "repeatable": definition.get("repeatable", False),
+        })
+
     prompt = f"""You are a data extraction assistant for African field interviews.
 
-Extract the following specific fields from the transcript below.
-Return ONLY a valid JSON object with exactly these keys: {feature_names}
-If a value is not mentioned in the transcript, use null for that key.
+Extract the fields from this schema: {json.dumps(feature_schema)}
+Return ONLY a valid JSON object with exactly these field-name keys: {feature_names}
+Respect each field's data type and select choices. If a value is not mentioned,
+return null. For fields in a repeating group, return an array; keep array items
+at matching indexes across fields in the same group.
 Do not add any explanation, markdown, or extra text — just the raw JSON object.
 
 Transcript:
 "{transcribed_text}"
 
 Example return format:
-{json.dumps({k: "extracted value or null" for k in feature_names})}
+{json.dumps({k: ([] if next((item["repeatable"] for item in feature_schema if item["name"] == k), False) else None) for k in feature_names})}
 """
     try:
         response = ollama.chat(

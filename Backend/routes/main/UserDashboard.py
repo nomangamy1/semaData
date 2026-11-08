@@ -104,6 +104,13 @@ def get_collector_task():
     if not domain.is_active:
         return jsonify({"error": "Domain is no longer active"}), 403
     features = [f.name for f in domain.domain_features] if hasattr(domain, "domain_features") else []
+    feature_schema = [
+        {
+            "name": feature.name,
+            **(feature.definition or {"group": "General", "type": "text", "required": True, "choices": [], "repeatable": False})
+        }
+        for feature in domain.domain_features
+    ] if hasattr(domain, "domain_features") else []
     progress = _get_progress(user.id, domain)
     return jsonify({
         "task_description": job.description or domain.domain_name,
@@ -111,6 +118,7 @@ def get_collector_task():
         "domain_name":      domain.domain_name,
         "domain_id":        domain.id,
         "features":         features,
+        "feature_schema":   feature_schema,
         "requirements":     domain.requirements,
         "compensation":     job.compensation,
         "my_quota":         progress["my_quota"],

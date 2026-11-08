@@ -18,9 +18,17 @@ const GoogleAuthButton = ({ mode, role, onSuccess, onError }) => {
         })
       });
 
-      const data = await res.json();
+      const responseBody = await res.text();
+      let data;
+      try {
+        data = responseBody ? JSON.parse(responseBody) : {};
+      } catch {
+        onError?.(`Google authentication returned an invalid response (HTTP ${res.status}).`);
+        return;
+      }
+
       if (!res.ok) {
-        onError?.(data.error || "Google authentication failed");
+        onError?.(data.error || `Google authentication failed (HTTP ${res.status}).`);
         return;
       }
 
@@ -30,8 +38,8 @@ const GoogleAuthButton = ({ mode, role, onSuccess, onError }) => {
       localStorage.setItem("userRole", data.role || role);
       
       onSuccess?.(data);
-    } catch (err) {
-      onError?.("Network error during Google authentication");
+    } catch {
+      onError?.("Could not reach the signup service. Check that the backend is running at http://localhost:8000.");
     }
   };
 

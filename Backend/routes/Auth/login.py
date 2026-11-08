@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, url_for
 from werkzeug.security import check_password_hash
 from utils.tokens import generate_verification_token
-from utils.mailer import send_approval_email as send_mail
+from utils.mailer import send_email as send_mail
 from models import User, Domain, DomainOwner
 from models.JobApplication import JobApplication
 from models.Job import Job

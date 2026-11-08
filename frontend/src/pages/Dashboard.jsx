@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import {
     LayoutDashboard, Database, Users, PlusCircle,
-    Copy, ExternalLink, Activity, Download, Printer, LogOut, X, FileText
+    Copy, ExternalLink, Activity, Download, Printer, LogOut, X, FileText,
+    ArrowRight, Clock3, Trash2, Sparkles, Target
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
 import EmptyState from '../components/EmptyState';
+import OwnerNotifications from '../components/OwnerNotifications';
 
 // --- SUB-COMPONENT: DETAIL MODAL ---
 const DetailModal = ({ isOpen, onClose, dataset, features }) => {
@@ -216,8 +218,11 @@ const InsightsTable = ({ datasets, features }) => {
 // --- MAIN COMPONENT: DASHBOARD ---
 const Dashboard = () => {
     const [domains, setDomains] = useState([]);
+    const [drafts, setDrafts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [draftError, setDraftError] = useState('');
+    const [deletingDraftId, setDeletingDraftId] = useState(null);
     const [selectedDomain, setSelectedDomain] = useState(null);
     const navigate = useNavigate();
 
@@ -261,6 +266,23 @@ const Dashboard = () => {
                 setDomains(data || []);
 
                 if (data && data.length > 0) setSelectedDomain(data[0]);
+
+                try {
+                    const draftsResponse = await fetch('http://localhost:8000/api/domain-drafts', {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    if (draftsResponse.status === 401 || draftsResponse.status === 403) {
+                        localStorage.clear();
+                        navigate('/login', { replace: true });
+                        return;
+                    }
+                    const draftsData = await draftsResponse.json();
+                    if (!draftsResponse.ok) throw new Error(draftsData.error || 'Could not load saved drafts.');
+                    setDrafts(draftsData || []);
+                } catch (draftLoadError) {
+                    console.error('Failed to fetch domain drafts:', draftLoadError);
+                    setDraftError('Saved drafts are temporarily unavailable.');
+                }
             } catch (err) {
                 console.error('Failed to fetch domains:', err);
                 setError('Failed to load domains. Please check your connection.');
@@ -274,6 +296,29 @@ const Dashboard = () => {
 
     const selectedFeatures = selectedDomain?.features?.map(f => f.name || f) || [];
     const selectedDatasets = selectedDomain?.datasets || [];
+    const totalSubmissions = domains.reduce((total, domain) => total + (domain.submission_count || 0), 0);
+    const totalTarget = domains.reduce((total, domain) => total + (domain.target_goal || 0), 0);
+    const totalProgress = totalTarget ? Math.min(Math.round((totalSubmissions / totalTarget) * 100), 100) : 0;
+    const activeDomains = domains.filter(domain => domain.is_active).length;
+
+    const handleDeleteDraft = async (draftId) => {
+        if (!window.confirm('Delete this saved domain draft? This cannot be undone.')) return;
+        setDeletingDraftId(draftId);
+        setDraftError('');
+        try {
+            const response = await fetch(`http://localhost:8000/api/domain-drafts/${draftId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Could not delete this draft.');
+            setDrafts(currentDrafts => currentDrafts.filter(draft => draft.id !== draftId));
+        } catch (deleteError) {
+            setDraftError(deleteError.message || 'Could not delete this draft.');
+        } finally {
+            setDeletingDraftId(null);
+        }
+    };
 
     if (loading) {
         return (
@@ -371,20 +416,92 @@ const Dashboard = () => {
                     </div>
                 </header>
 
+                <OwnerNotifications />
+
+                <section className="owner-hero">
+                    <div className="owner-hero-content">
+                        <span className="owner-hero-eyebrow"><Sparkles size={14} /> DOMAIN OWNER OVERVIEW</span>
+                        <h1>Welcome back, {localStorage.getItem('username') || 'Researcher'}.</h1>
+                        <p>Manage your research domains, keep an eye on collection progress, and pick up where you left off.</p>
+                        <div className="owner-hero-actions">
+                            {drafts.length > 0 && (
+                                <button onClick={() => navigate(`/DomainDefinition?draft=${drafts[0].id}`)}>
+                                    <Clock3 size={16} /> Resume latest draft
+                                </button>
+                            )}
+                            <button className="owner-hero-secondary" onClick={() => navigate('/DomainDefinition')}>
+                                <PlusCircle size={16} /> Create a domain
+                            </button>
+                        </div>
+                    </div>
+                    <div className="owner-hero-progress">
+                        <div className="owner-progress-heading">
+                            <span><Target size={16} /> Overall collection</span>
+                            <strong>{totalProgress}%</strong>
+                        </div>
+                        <div className="owner-progress-track">
+                            <span style={{ width: `${totalProgress}%` }} />
+                        </div>
+                        <p>{totalSubmissions.toLocaleString()} of {totalTarget.toLocaleString()} target responses</p>
+                    </div>
+                </section>
+
+                <section className="owner-drafts-section">
+                    <div className="owner-section-heading">
+                        <div>
+                            <span className="owner-section-kicker">PICK UP ANYTIME</span>
+                            <h3>Saved drafts <span>{drafts.length}</span></h3>
+                        </div>
+                        <button className="owner-text-link" onClick={() => navigate('/DomainDefinition')}>
+                            Start new <ArrowRight size={15} />
+                        </button>
+                    </div>
+                    {draftError && <p className="owner-draft-error" role="status">{draftError}</p>}
+                    {drafts.length ? (
+                        <div className="owner-draft-grid">
+                            {drafts.map(draft => (
+                                <article className="owner-draft-card" key={draft.id}>
+                                    <div className="owner-draft-icon"><FileText size={18} /></div>
+                                    <div className="owner-draft-info">
+                                        <h4>{draft.domain_name || 'Untitled domain'}</h4>
+                                        <p><Clock3 size={12} /> Saved {new Date(draft.updated_at).toLocaleString()}</p>
+                                    </div>
+                                    <div className="owner-draft-actions">
+                                        <button onClick={() => navigate(`/DomainDefinition?draft=${draft.id}`)}>
+                                            Resume <ArrowRight size={14} />
+                                        </button>
+                                        <button
+                                            className="owner-draft-delete"
+                                            aria-label={`Delete ${draft.domain_name || 'untitled'} draft`}
+                                            onClick={() => handleDeleteDraft(draft.id)}
+                                            disabled={deletingDraftId === draft.id}
+                                        >
+                                            <Trash2 size={15} />
+                                        </button>
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="owner-drafts-empty">
+                            <div><FileText size={19} /></div>
+                            <p>{draftError ? 'Draft list could not be loaded.' : 'No drafts yet. Save your domain setup at any time and continue later.'}</p>
+                        </div>
+                    )}
+                </section>
+
                 {/* STATS ROW */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
                     <div className="bg-white p-6 rounded-2xl border border-emerald-100/60 shadow-sm hover:border-emerald-200/80 transition-all">
-                        <p className="text-emerald-800/60 font-bold text-[11px] uppercase tracking-wider mb-1">Active Domains</p>
-                        <h4 className="text-2xl font-black text-slate-800">{domains.length}</h4>
+                        <p className="text-emerald-800/60 font-bold text-[11px] uppercase tracking-wider mb-1">Live domains</p>
+                        <h4 className="text-2xl font-black text-slate-800">{activeDomains}</h4>
                     </div>
                     <div className="bg-white p-6 rounded-2xl border border-emerald-100/60 shadow-sm hover:border-emerald-200/80 transition-all">
                         <p className="text-emerald-800/60 font-bold text-[11px] uppercase tracking-wider mb-1">Total Submissions</p>
-                        <h4 className="text-2xl font-black text-slate-800">
-                            {domains.reduce((total, d) => total + (d.submission_count || 0), 0)}
-                        </h4>
+                        <h4 className="text-2xl font-black text-slate-800">{totalSubmissions.toLocaleString()}</h4>
                     </div>
                     <div className="bg-white p-6 rounded-2xl border border-emerald-100/60 shadow-sm hover:border-emerald-200/80 transition-all sm:col-span-2 lg:col-span-1">
-                        <p className="text-emerald-800/60 font-bold text-[11px] uppercase tracking-wider mb-1">Team Collectors</p>
+                        <p className="text-emerald-800/60 font-bold text-[11px] uppercase tracking-wider mb-1">Team collectors</p>
                         <h4 className="text-2xl font-black text-slate-800">
                             {domains.reduce((total, d) => total + (d.collector_count || 0), 0)}
                         </h4>

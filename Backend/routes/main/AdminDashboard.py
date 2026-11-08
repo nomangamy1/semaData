@@ -4,6 +4,10 @@ from models.domain import Domain
 from models.user import User
 from models.Job import Job
 from models.domainowner import DomainOwner
+from models.dataset import Dataset
+from models.Transcription import Transcription
+from models.payments import Payment
+from models.DomainOwnerNotification import DomainOwnerNotification
 from models.JobApplication import JobApplication
 from extensions import db
 from utils.audit import audit_action, record_audit
@@ -239,12 +243,171 @@ def get_all_domains():
     return jsonify([{
         "id":                  d.id,
         "name":                d.domain_name,
+        "domain_name":         d.domain_name,
         "status":              d.payment_status,
+        "payment_status":      d.payment_status,
+        "review_status":       d.review_status,
+        "reviewed_at":         d.reviewed_at.isoformat() if d.reviewed_at else None,
         "is_active":           d.is_active,
         "owner_id":            d.owner_id,
         "target":              d.target_goal,
+        "total_budget":        d.total_budget or 0,
+        "amount_paid":         d.amount_paid or 0,
+        "deposit_amount":      d.deposit_amount or 0,
         "reference_number":    d.reference_number or "Pending payment",
     } for d in domains]), 200
+
+
+@admin_bp.route("/domains/<int:domain_id>/review", methods=["GET"])
+@jwt_required()
+def get_domain_review_details(domain_id):
+    if not require_admin(get_jwt_identity()):
+        return jsonify({"error": "Unauthorized"}), 403
+
+    domain = Domain.query.get_or_404(domain_id)
+    owner = DomainOwner.query.get(domain.owner_id)
+    reviewer = User.query.get(domain.reviewed_by_user_id) if domain.reviewed_by_user_id else None
+    datasets = Dataset.query.filter_by(domain_id=domain.id).order_by(
+        Dataset.created_at.desc()
+    ).all()
+    dataset_ids = [dataset.id for dataset in datasets]
+    transcriptions = Transcription.query.filter(
+        Transcription.dataset_id.in_(dataset_ids)
+    ).order_by(Transcription.created_at.asc()).all() if dataset_ids else []
+    transcriptions_by_dataset = {}
+    for transcription in transcriptions:
+        transcriptions_by_dataset.setdefault(transcription.dataset_id, []).append({
+            "id": transcription.id,
+            "contributor_name": transcription.contributor_name,
+            "text": transcription.transcription_text,
+            "features": transcription.domain_features,
+            "created_at": transcription.created_at.isoformat() if transcription.created_at else None,
+        })
+
+    payments = Payment.query.filter_by(domain_id=domain.id).order_by(
+        Payment.created_at.desc()
+    ).all()
+    return jsonify({
+        "domain": {
+            "id": domain.id,
+            "name": domain.domain_name,
+            "owner_id": domain.owner_id,
+            "owner_name": (
+                f"{owner.first_name} {owner.last_name or ''}".strip()
+                if owner else "Unknown"
+            ),
+            "owner_email": owner.email if owner else None,
+            "status": domain.payment_status,
+            "payment_status": domain.payment_status,
+            "review_status": domain.review_status,
+            "reviewed_at": domain.reviewed_at.isoformat() if domain.reviewed_at else None,
+            "reviewed_by": (
+                f"{reviewer.first_name or ''} {reviewer.second_name or ''}".strip()
+                if reviewer else None
+            ),
+            "is_active": domain.is_active,
+            "total_budget": domain.total_budget or 0,
+            "amount_paid": domain.amount_paid or 0,
+            "deposit_amount": domain.deposit_amount or 0,
+            "currency": "KES",
+            "target_goal": domain.target_goal,
+            "reference_number": domain.reference_number,
+            "features": [{
+                "name": feature.name,
+                "definition": feature.definition,
+            } for feature in domain.domain_features],
+        },
+        "payments": [{
+            "amount": payment.amount or 0,
+            "currency": payment.currency or "KES",
+            "payment_type": payment.payment_type,
+            "status": payment.status,
+            "transaction_ref": payment.transaction_ref,
+            "created_at": payment.created_at.isoformat() if payment.created_at else None,
+        } for payment in payments],
+        "datasets": [{
+            "id": dataset.id,
+            "name": dataset.name,
+            "reference_number": dataset.ref_number,
+            "status": dataset.status,
+            "created_at": dataset.created_at.isoformat() if dataset.created_at else None,
+            "record_count": dataset.record_count or 0,
+            "ai_confidence": dataset.Ai_confidence,
+            "description": dataset.description,
+            "combined_text": dataset.combined_text,
+            "segmented_text": dataset.segmented_text,
+            "audio_file_path": dataset.audio_file_path,
+            "collector_id": dataset.collector_id,
+            "submissions": transcriptions_by_dataset.get(dataset.id, []),
+        } for dataset in datasets],
+    }), 200
+
+
+@admin_bp.route("/domains/<int:domain_id>/decision", methods=["PATCH"])
+@jwt_required()
+def set_domain_review_decision(domain_id):
+    admin = require_admin(get_jwt_identity())
+    if not admin:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    domain = Domain.query.get_or_404(domain_id)
+    data = request.get_json(silent=True) or {}
+    decision = data.get("decision")
+    if not isinstance(decision, str) or decision not in {"accepted", "rejected"}:
+        return jsonify({"error": "Decision must be 'accepted' or 'rejected'"}), 400
+
+    domain.review_status = decision
+    domain.reviewed_by_user_id = admin.id
+    domain.reviewed_at = datetime.utcnow()
+    try:
+        db.session.commit()
+    except Exception as error:
+        db.session.rollback()
+        current_app.logger.exception("Failed to save domain review decision")
+        return jsonify({"error": "Could not save the domain review decision"}), 500
+
+    return jsonify({
+        "domain_id": domain.id,
+        "review_status": domain.review_status,
+        "reviewed_at": domain.reviewed_at.isoformat(),
+        "message": "Review decision saved. Payment and collection activation are unchanged.",
+    }), 200
+
+
+@admin_bp.route("/domains/<int:domain_id>/messages", methods=["POST"])
+@jwt_required()
+def send_domain_owner_message(domain_id):
+    admin = require_admin(get_jwt_identity())
+    if not admin:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    domain = Domain.query.get_or_404(domain_id)
+    data = request.get_json(silent=True) or {}
+    message = data.get("message")
+    if not isinstance(message, str) or not message.strip():
+        return jsonify({"error": "Message is required"}), 400
+    message = message.strip()
+    if len(message) > 2000:
+        return jsonify({"error": "Message must be 2000 characters or fewer"}), 400
+
+    owner = DomainOwner.query.get(domain.owner_id)
+    if not owner:
+        return jsonify({"error": "Domain owner not found"}), 404
+
+    sender_name = f"{admin.first_name or ''} {admin.second_name or ''}".strip() or "SemaData Admin"
+    notification = DomainOwnerNotification(
+        domain_id=domain.id,
+        owner_id=owner.id,
+        sender_admin_id=admin.id,
+        sender_name=sender_name[:100],
+        message=message,
+    )
+    db.session.add(notification)
+    db.session.commit()
+    return jsonify({
+        "id": notification.id,
+        "message": "Message sent to the domain owner",
+    }), 201
 
 @admin_bp.route("/manage-team/invite", methods=["POST"])
 @jwt_required()

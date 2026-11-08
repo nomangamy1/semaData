@@ -11,6 +11,10 @@ class Domain(db.Model):
     amount_paid = db.Column(db.Float, default=0.0)
     deposit_amount = db.Column(db.Float, nullable=True, default=0.0)
     payment_status = db.Column(db.String(20), default='Unpaid')
+    review_status = db.Column(db.String(20), nullable=False, default='pending')
+    reviewed_by_user_id = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=True)
+    reviewed_at = db.Column(db.DateTime, nullable=True)
+    reviewed_by_user = db.relationship('User', foreign_keys=[reviewed_by_user_id])
     target_goal = db.Column(db.Integer, nullable=False)
     is_automated = db.Column(db.Boolean, default=False)
     #agent_commission
@@ -58,5 +62,3 @@ class Domain(db.Model):
         db.session.add(self)
         db.session.commit()
         return self
-
-

@@ -48,10 +48,10 @@ def semaData_app():
     else:
         semaData.config.from_object(config[config_name])
     # Allow the configured FRONTEND_URL, but fall back to localhost during development
-    frontend_origin = os.getenv('FRONTEND_URL') or 'http://localhost:5173'
+    frontend_origin = (os.getenv('FRONTEND_URL') or 'http://localhost:5173').rstrip('/')
     CORS(semaData, resources={
     r"/api/*": {
-        "origins": ["http://localhost:5173"],  # add your production domain later
+        "origins": [frontend_origin, r"https?://(localhost|127\.0\.0\.1)(:\d+)?"],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
         "allow_headers": ["Content-Type", "Authorization", "Accept", "X-Requested-With"],
         "supports_credentials": True,

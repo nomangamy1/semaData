@@ -11,7 +11,7 @@
 
 .domain-def-card {
     background: #ffffff;
-    max-width: 600px;
+    max-width: 900px;
     width: 100%;
     border-radius: 24px;
     border: 1px solid #e2e8f0;
@@ -20,11 +20,43 @@
 }
 
 .domain-def-card h2 {
-    font-size: 1.75rem;
+    font-size: clamp(1.65rem, 3vw, 2rem);
     font-weight: 900;
     color: #0f172a;
     letter-spacing: -0.03em;
     margin-bottom: 0.5rem;
+}
+
+.domain-def-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.domain-def-step {
+    display: inline-block;
+    margin-bottom: 0.45rem;
+    color: #489c8c;
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+}
+
+.domain-def-back-btn {
+    padding: 0.65rem 0.9rem;
+    color: #475569;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.domain-def-back-btn:hover {
+    border-color: #489c8c;
+    color: #367a6d;
 }
 
 .domain-def-card p.subtitle {
@@ -38,7 +70,7 @@
     margin-bottom: 1.5rem;
 }
 
-.form-group label {
+.form-group > label {
     display: block;
     font-size: 0.8rem;
     font-weight: 800;
@@ -76,13 +108,29 @@
     background: #f8fafc;
 }
 
+.features-builder-box > label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+}
+
 .feature-input-row {
     display: flex;
     gap: 0.75rem;
     margin-bottom: 1rem;
 }
 
+.feature-input-row input {
+    flex: 1;
+    min-width: 0;
+}
+
 .add-feature-btn {
+    min-height: 42px;
     padding: 0 1.25rem;
     background: #0f172a;
     color: #ffffff;
@@ -91,6 +139,14 @@
     font-weight: 700;
     cursor: pointer;
     transition: background 0.2s;
+}
+
+.add-feature-btn,
+.submit-domain-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 }
 
 .add-feature-btn:hover {
@@ -181,4 +237,197 @@
 .submit-domain-btn:disabled {
     background: #cbd5e1;
     cursor: not-allowed;
+}
+
+.domain-def-actions {
+    display: flex;
+    align-items: stretch;
+    gap: 0.75rem;
+}
+
+.domain-def-actions .submit-domain-btn {
+    flex: 1;
+}
+
+.save-draft-btn {
+    min-width: 150px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 14px;
+    color: #334155;
+    background: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.save-draft-btn:hover:not(:disabled) {
+    color: #367a6d;
+    border-color: #489c8c;
+    background: #f0fdfa;
+}
+
+.save-draft-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.draft-status,
+.draft-error {
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.draft-status {
+    color: #166534;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+}
+
+.draft-error {
+    color: #b91c1c;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+}
+
+.form-group > p {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 0.5rem;
+}
+
+.form-group textarea {
+    min-height: 110px;
+    resize: vertical;
+}
+
+.feature-schema-help {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin: -0.2rem 0 1rem;
+}
+
+.feature-group {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 14px;
+    background: #f8fafc;
+}
+
+.feature-group-header,
+.feature-definition-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.feature-group-header > input {
+    flex: 1;
+    min-width: 180px;
+}
+
+.feature-definition-row > input:first-child {
+    flex: 2;
+    min-width: 180px;
+}
+
+.feature-definition-row > select {
+    flex: 1;
+    min-width: 120px;
+    padding: 0.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    background: white;
+    color: #0f172a;
+}
+
+.feature-definition-row > input,
+.feature-group-header > input {
+    padding: 0.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font: inherit;
+}
+
+.feature-definition-row > .feature-choices-input {
+    flex-basis: 100%;
+}
+
+.repeatable-toggle,
+.required-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #334155;
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.repeatable-toggle input,
+.required-toggle input {
+    accent-color: #489c8c;
+}
+
+.add-group-btn {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 1rem;
+    color: #0f172a;
+    background: white;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.add-group-btn:hover {
+    background: #f1f5f9;
+}
+
+@media (max-width: 640px) {
+    .domain-def-card {
+        padding: 1.5rem;
+    }
+
+    .feature-input-row {
+        align-items: center;
+    }
+
+    .feature-group-header,
+    .feature-definition-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .feature-group-header > input,
+    .feature-definition-row > input:first-child,
+    .feature-definition-row > select {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .domain-def-actions {
+        flex-direction: column-reverse;
+    }
+
+    .save-draft-btn {
+        min-height: 48px;
+    }
 }

@@ -1,6 +1,26 @@
-from flask_mailman import EmailMessage
+from flask_mailman import EmailMultiAlternatives
 from flask import current_app
 from extensions import mail
+
+
+def send_email(recipient, subject, body, html=None):
+    try:
+        message = EmailMultiAlternatives(
+            subject=subject,
+            to=[recipient],
+            body=body,
+        )
+        message.attach_alternative(html if html is not None else body, "text/html")
+
+        if 'flask-mail' not in current_app.extensions and 'mail' in current_app.extensions:
+            current_app.extensions['flask-mail'] = current_app.extensions['mail']
+
+        message.send()
+        return True
+    except Exception:
+        current_app.logger.exception("Email delivery failed for %s", recipient)
+        return False
+
 
 def send_approval_email(recipient_email, first_name, job_title,
                         ref_number, domain_name=None, signup_link=None):
@@ -12,9 +32,9 @@ def send_approval_email(recipient_email, first_name, job_title,
     domain_html = f"under <strong>{domain_name}</strong>" if domain_name else ""
 
     try:
-        msg = EmailMessage(
+        msg = EmailMultiAlternatives(
             subject="Your SemaData Application Has Been Approved!",
-            recipients=[recipient_email],
+            to=[recipient_email],
             body=f"""
 Dear {name},
 
@@ -38,7 +58,8 @@ Questions? Contact support@semadata.com
 Welcome aboard,
 SemaData Admin Team
             """,
-            html=f"""
+        )
+        msg.attach_alternative(f"""
 <div style="font-family: Inter, sans-serif; max-width: 560px; margin: 0 auto;">
   <div style="background:#0f172a; padding:32px; border-radius:16px 16px 0 0; text-align:center;">
     <h1 style="color:#10b981; margin:0;">SemaData</h1>
@@ -86,8 +107,7 @@ SemaData Admin Team
     </p>
   </div>
 </div>
-            """
-        )
+            """, "text/html")
         
         # Ensure 'flask-mail' extension key placeholder exists in app extensions maps
         if 'flask-mail' not in current_app.extensions and 'mail' in current_app.extensions:
