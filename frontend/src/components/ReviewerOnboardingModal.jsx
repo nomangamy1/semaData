@@ -17,7 +17,7 @@ const ReviewerOnboardingModal = ({ isOpen, onClose }) => {
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:8000/api/admin/manage-team/invite', {
+            const response = await fetch('/api/admin/manage-team/invite', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -46,7 +46,7 @@ const ReviewerOnboardingModal = ({ isOpen, onClose }) => {
 
     const copyToClipboard = () => {
         if (!credentials) return;
-        const secureText = `SemaData Reviewer Access Configuration:\nURL: http://localhost:3000/login\nEmail: ${credentials.email}\nTemporary Password: ${credentials.temporary_password}`;
+        const secureText = `SemaData Reviewer Access Configuration:\nURL: ${window.location.origin}/login\nEmail: ${credentials.email}\nTemporary Password: ${credentials.temporary_password}`;
         navigator.clipboard.writeText(secureText);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);

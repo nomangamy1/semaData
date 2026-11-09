@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import '../pages/AdminDashboard.css';
 import '../components/AdminShared.css';
 import ReviewerOnboardingModal from '../components/ReviewerOnboardingModal';
@@ -13,6 +13,22 @@ import JobPostModal from '../components/JobPostModal';
 import DomainsTable from '../components/DomainsTable';
 import SubmissionReview from '../components/SubmissionReview';
 import ChallengeManager from '../components/ChallengeManager';
+
+const isValidJWT = (jwt) => {
+    if (!jwt || typeof jwt !== 'string') return false;
+    try {
+        const parts = jwt.split('.');
+        if (parts.length !== 3) return false;
+        const payload = JSON.parse(atob(parts[1]));
+        if (payload.exp && typeof payload.exp === 'number') {
+            return Date.now() < payload.exp * 1000;
+        }
+        return true;
+    } catch (error) {
+        console.error('JWT validation error:', error);
+        return false;
+    }
+};
 
 /**
  * useAuthToken: Production-level custom hook for auth token management
@@ -41,22 +57,6 @@ const useAuthToken = () => {
         initializeToken();
     }, []);
 
-    const isValidJWT = (jwt) => {
-        if (!jwt || typeof jwt !== 'string') return false;
-        try {
-            const parts = jwt.split('.');
-            if (parts.length !== 3) return false;
-            const payload = JSON.parse(atob(parts[1]));
-            if (payload.exp && typeof payload.exp === 'number') {
-                return Date.now() < payload.exp * 1000;
-            }
-            return true;
-        } catch (error) {
-            console.error('JWT validation error:', error);
-            return false;
-        }
-    };
-
     return { token, isTokenValid };
 };
 
@@ -68,11 +68,36 @@ const AdminDashboard = () => {
     // Jobs state management for dashboard table
     const [jobs, setJobs] = useState([]);
     const [jobsLoading, setJobsLoading] = useState(false);
+    const [domains, setDomains] = useState([]);
+    const [domainsLoading, setDomainsLoading] = useState(false);
+    const [domainsError, setDomainsError] = useState('');
     
     const { token, isTokenValid } = useAuthToken();
 
+    useEffect(() => {
+        if (!isJobModalOpen || !token) return;
+
+        const fetchDomains = async () => {
+            setDomainsLoading(true);
+            setDomainsError('');
+            try {
+                const response = await fetch('/api/admin/all-domains', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Could not load registered domains.');
+                setDomains(data);
+            } catch (error) {
+                setDomainsError(error.message || 'Could not load registered domains.');
+            } finally {
+                setDomainsLoading(false);
+            }
+        };
+        fetchDomains();
+    }, [isJobModalOpen, token]);
+
     // Fetch active jobs from backend
-    const fetchJobs = async () => {
+    const fetchJobs = useCallback(async () => {
         if (!token) return;
         setJobsLoading(true);
         try {
@@ -90,7 +115,7 @@ const AdminDashboard = () => {
         } finally {
             setJobsLoading(false);
         }
-    };
+    }, [token]);
 
     // Trigger jobs fetch when tab switches to 'jobs' or token updates, and listen to post events
     useEffect(() => {
@@ -104,7 +129,7 @@ const AdminDashboard = () => {
 
         window.addEventListener('jobsUpdated', handleJobsUpdated);
         return () => window.removeEventListener('jobsUpdated', handleJobsUpdated);
-    }, [activeTab, isTokenValid, token]);
+    }, [activeTab, isTokenValid, token, fetchJobs]);
 
     // Handle job record deletion
     const handleDeleteJob = async (jobId) => {
@@ -250,6 +275,9 @@ const AdminDashboard = () => {
                 <JobPostModal 
                     isOpen={isJobModalOpen} 
                     onClose={() => setIsJobModalOpen(false)} 
+                    domains={domains}
+                    domainsLoading={domainsLoading}
+                    domainsError={domainsError}
                     onPublish={async (data) => {
                         try {
                             const response = await fetch('/api/admin/post-job', {
@@ -261,15 +289,20 @@ const AdminDashboard = () => {
                                 body: JSON.stringify(data)
                             });
                             
-                            if (!response.ok) {
-                                throw new Error(`HTTP error! status: ${response.status}`);
-                            }
-                            
+                            const result = await response.json();
+                            if (!response.ok) throw new Error(result.error || `HTTP error! status: ${response.status}`);
+
                             setIsJobModalOpen(false);
+                            if (result.failed_invite_links?.length) {
+                                const fallbackLinks = result.failed_invite_links
+                                    .map((invite) => `${invite.email}: ${invite.url}`)
+                                    .join('\n');
+                                alert(`Job created, but these invite emails failed. Share the private link manually:\n${fallbackLinks}`);
+                            }
                             window.dispatchEvent(new Event('jobsUpdated'));
                         } catch (error) {
                             console.error('Error posting job:', error);
-                            alert('Failed to post job. Please try again.');
+                            alert(error.message || 'Failed to post job. Please try again.');
                         }
                     }}
                 />

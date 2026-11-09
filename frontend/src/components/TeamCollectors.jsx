@@ -15,12 +15,12 @@ const TeamCollectors = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:8000/api/admin/applications', {
+            const response = await fetch('/api/admin/careers/applications', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
                 const data = await response.json();
-                setRawApplications(data);
+                setRawApplications(data.applications || []);
             }
         } catch (error) {
             console.error("Error retrieving collector applications:", error);
@@ -63,7 +63,7 @@ const TeamCollectors = () => {
     const handleApprove = async (id) => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`/api/admin/applications/${id}/approve`, {
+            const res = await fetch(`/api/admin/careers/applications/${id}/approve`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -79,7 +79,7 @@ const TeamCollectors = () => {
     const handleReject = async (id) => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`/api/admin/applications/${id}/reject`, {
+            const res = await fetch(`/api/admin/careers/applications/${id}/reject`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

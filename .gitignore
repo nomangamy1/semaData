@@ -5,6 +5,7 @@ venv/
 =======
 =======
 >>>>>>> e77aa04ab77754919ee1d7ece85990ded28c5d8c
+.copilot-azure/
 __pycache__/
 *.py[cod]
 *$py.class

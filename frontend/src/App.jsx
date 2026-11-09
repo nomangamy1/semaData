@@ -26,6 +26,7 @@ import AdminRoute from './components/AdminRoute';
 import CollectorProfile from './components/collectorProfile';
 import PayoutManagement from './components/PayoutManagement';
 import EmailVerificationCallback from './pages/EmailVerificationCallback';
+import PrivateJobInvite from './pages/PrivateJobInvite';
 
 const STANDALONE_PATHS = [
   '/dashboard', '/userdashboard', '/collectorhome', '/admindashboard',
@@ -70,6 +71,7 @@ function AppShell() {
           <Route path="/auth/verified" element={<EmailVerificationCallback />} />
           <Route path="/careers" element={<CareersPage />} />
           <Route path="/careers/:id" element={<JobDescriptionView />} />
+          <Route path="/private-job/:token" element={<PrivateJobInvite />} />
           <Route path="/profile" element={<CollectorProfile />} />
           
           <Route path="/signup" element={<GuestOnlyRoute><Signup /></GuestOnlyRoute>} />

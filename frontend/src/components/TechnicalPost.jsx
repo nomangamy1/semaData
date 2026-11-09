@@ -16,7 +16,7 @@ export default function TechnicalPost({ post, onLike }) {
                 {post.attachment && (
                     <div className="attachment-block">
                         <img 
-                            src={`http://localhost:5000${post.attachment}`} 
+                            src={post.attachment}
                             alt="Attachment" 
                             className="post-img" 
                             style={{ maxWidth: '100%', borderRadius: '4px', margin: '12px 0' }}

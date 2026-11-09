@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: semadata-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Backend/Dockerfile
+    dockerContext: ./Backend
+    healthCheckPath: /healthz
+    envVars:
+      - key: FLASK_ENV
+        value: Production
+      - key: DISABLE_ML_MODELS
+        value: "true"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URI
+        sync: false
+      - key: FRONTEND_URL
+        sync: false

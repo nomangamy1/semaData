@@ -7,3 +7,8 @@ logs/
 *.log
 temp_audio/
 .git/
+secure_storage/
+static/uploads/
+uploads/
+instance/
+*.db

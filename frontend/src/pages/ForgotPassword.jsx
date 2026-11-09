@@ -12,7 +12,7 @@ const ForgotPassword = () => {
     if (!email.trim()) { setError("Email is required"); return; }
     setLoading(true); setError("");
     try {
-      const res  = await fetch("http://localhost:8000/api/Auth/forgot-password", {
+      const res  = await fetch("/api/Auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email })

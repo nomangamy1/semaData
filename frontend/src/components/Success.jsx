@@ -20,7 +20,7 @@ const SuccessPage = () => {
     // 2. Poll the backend to see if the payment callback has arrived
     const checkPaymentStatus = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/main/status/${domainId}`);
+        const response = await fetch(`/api/main/status/${domainId}`);
         const data = await response.json();
 
         if (data.is_active) {

@@ -16,7 +16,7 @@ const CareersPage = () => {
     const fetchJobs = async () => {
       try {
         // Hitting the true public route with NO tokens required
-        const response = await fetch('http://localhost:8000/api/careers');
+        const response = await fetch('/api/careers');
         if (!response.ok) throw new Error('Network response failure');
         const data = await response.json();
         

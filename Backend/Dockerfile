@@ -23,5 +23,5 @@ RUN mkdir -p temp_audio
 # 7. Expose the port your Flask app runs on
 EXPOSE 8000
 
-# 8. Start the app using Gunicorn for production-level stability
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "run:semaData_app"]
+# 8. Use the Flask app instance exposed by run.py and Render's assigned port
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-8000} run:app"]

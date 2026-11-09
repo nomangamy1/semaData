@@ -38,7 +38,7 @@ const Signup = () => {
   }, [initialRole]);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/Auth/community-spots')
+    fetch('/api/Auth/community-spots')
       .then(r => r.json())
       .then(d => setSpotsLeft(d.spots_remaining))
       .catch(() => {});
@@ -78,7 +78,7 @@ const Signup = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/api/Auth/signup', {
+      const response = await fetch('/api/Auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -116,7 +116,7 @@ const Signup = () => {
         }
       }
     } catch {
-      setError('Could not reach the signup service. Check that the backend is running at http://localhost:8000.');
+      setError('Could not reach the signup service. Check your connection and try again.');
     }
   };
 

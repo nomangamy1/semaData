@@ -1,9 +1,16 @@
 // src/components/JobPostModal.jsx
 import React, { useState } from 'react';
-import { X, Briefcase, MapPin, DollarSign, Clock, FileText, PlusCircle, Layers, AlertCircle } from 'lucide-react';
+import { X, Briefcase, MapPin, DollarSign, Clock, FileText, PlusCircle, Layers } from 'lucide-react';
 import './JobPostModal.css'; // FIXED: Switched to the correct stylesheet
 
-const JobPostModal = ({ isOpen, onClose, domains = [], onPublish }) => {
+const JobPostModal = ({
+  isOpen,
+  onClose,
+  domains = [],
+  domainsLoading = false,
+  domainsError = '',
+  onPublish,
+}) => {
   const [jobData, setJobData] = useState({
     title: '',
     domain_id: '',
@@ -13,11 +20,14 @@ const JobPostModal = ({ isOpen, onClose, domains = [], onPublish }) => {
     duration: '',
     description: '',
     required_skills: '',
-    field: '' 
+    field: '',
+    visibility: 'public',
+    invite_emails: '',
   });
 
   const [useCustomDomain, setUseCustomDomain] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
@@ -32,12 +42,22 @@ const JobPostModal = ({ isOpen, onClose, domains = [], onPublish }) => {
     if (!jobData.duration.trim()) errors.duration = "Duration is required";
     if (!jobData.description.trim()) errors.description = "Description is required";
     if (!jobData.required_skills.trim()) errors.required_skills = "Required skills are required";
+    if (jobData.visibility === 'private') {
+      if (useCustomDomain || !jobData.domain_id) {
+        errors.domain = "Private jobs must use a registered domain";
+      }
+      const inviteEmails = jobData.invite_emails.split(',').map(email => email.trim()).filter(Boolean);
+      if (!inviteEmails.length) errors.invite_emails = "Add at least one invitee email";
+      else if (inviteEmails.some(email => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
+        errors.invite_emails = "Enter valid email addresses separated by commas";
+      }
+    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
@@ -45,10 +65,19 @@ const JobPostModal = ({ isOpen, onClose, domains = [], onPublish }) => {
       ...jobData,
       required_skills: jobData.required_skills.split(',').map(s => s.trim()).filter(s => s !== ""),
       domain_id: useCustomDomain ? null : jobData.domain_id,
-      domain_name: useCustomDomain ? jobData.custom_domain_name : undefined
+      domain_name: useCustomDomain ? jobData.custom_domain_name : undefined,
+      visibility: jobData.visibility,
+      invite_emails: jobData.visibility === 'private'
+        ? jobData.invite_emails.split(',').map(email => email.trim()).filter(Boolean)
+        : [],
     };
 
-    onPublish(formattedData);
+    setIsSubmitting(true);
+    try {
+      await onPublish(formattedData);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -94,14 +123,19 @@ const JobPostModal = ({ isOpen, onClose, domains = [], onPublish }) => {
               {domains.length > 0 ? (
                 domains.map(d => (
                   <option key={d.id} value={d.id}>
-                    {d.name} {d.reference_number ? `(${d.reference_number})` : ''}
+                    {d.domain_name || d.name} {d.reference_number ? `(${d.reference_number})` : ''}
+                    {d.review_status && d.review_status !== 'accepted' ? ` - ${d.review_status} review` : ''}
                   </option>
                 ))
               ) : (
-                <option disabled>No domains registered yet</option>
+                <option disabled>
+                  {domainsLoading ? 'Loading registered domains...' : 'No registered domains available'}
+                </option>
               )}
               <option value="custom">Other / Custom Domain...</option>
             </select>
+
+            {domainsError && <p role="alert" style={{ color: 'var(--error)', fontSize: '0.75rem', marginTop: '0.5rem' }}>{domainsError}</p>}
 
             {useCustomDomain && (
               <div style={{ marginTop: '1rem' }}>
@@ -117,6 +151,40 @@ const JobPostModal = ({ isOpen, onClose, domains = [], onPublish }) => {
                 )}
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem', fontStyle: 'italic' }}>
                   This job will be posted without linking to an existing domain owner.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginTop: '1.5rem' }}>
+            <label htmlFor="job-visibility">Job visibility</label>
+            <select
+              id="job-visibility"
+              className="admin-input-field"
+              value={jobData.visibility}
+              onChange={(e) => setJobData({ ...jobData, visibility: e.target.value })}
+            >
+              <option value="public">Public — visible on careers page</option>
+              <option value="private">Private — invitation required</option>
+            </select>
+            {jobData.visibility === 'private' && (
+              <div style={{ marginTop: '1rem' }}>
+                <label htmlFor="job-invite-emails">Invitee email addresses</label>
+                <textarea
+                  id="job-invite-emails"
+                  rows={3}
+                  className={`admin-input-field ${formErrors.invite_emails ? 'error' : ''}`}
+                  placeholder="person@example.com, another@example.com"
+                  value={jobData.invite_emails}
+                  onChange={(e) => setJobData({ ...jobData, invite_emails: e.target.value })}
+                />
+                {formErrors.invite_emails && (
+                  <p role="alert" style={{ color: 'var(--error)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                    {formErrors.invite_emails}
+                  </p>
+                )}
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  Each invitee receives a private link showing the domain reference and collection details. Applications go to the admin team for review.
                 </p>
               </div>
             )}
@@ -206,12 +274,12 @@ const JobPostModal = ({ isOpen, onClose, domains = [], onPublish }) => {
 
         {/* Modal Actions Footer styling wrapper */}
         <footer className="modal-footer">
-         <button type="button" onClick={onClose}>
+         <button type="button" onClick={onClose} disabled={isSubmitting}>
          Cancel
           </button>
            {/* Add the form="job-post-form" attribute and ensure the form has that ID */}
-            <button type="submit" form="job-post-form">
-            Deploy to Careers Page
+            <button type="submit" form="job-post-form" disabled={isSubmitting}>
+            {isSubmitting ? 'Publishing...' : jobData.visibility === 'private' ? 'Create & Invite' : 'Deploy to Careers Page'}
              </button>
              </footer>
               </div>

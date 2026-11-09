@@ -1,6 +1,6 @@
 // src/components/JobsTable.jsx
 import React from 'react';
-import { Trash2,Briefcase, ExternalLink } from 'lucide-react';
+import { Trash2, Briefcase, ExternalLink } from 'lucide-react';
 
 const JobsTable = ({ jobs, onDelete }) => {
   if (!jobs || jobs.length === 0) {
@@ -20,6 +20,7 @@ const JobsTable = ({ jobs, onDelete }) => {
           <tr>
             <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Job Title</th>
             <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Domain / Field</th>
+            <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Visibility</th>
             <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Location / Pay</th>
             <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider text-right">Actions</th>
           </tr>
@@ -34,6 +35,18 @@ const JobsTable = ({ jobs, onDelete }) => {
               <td className="px-6 py-5">
                 <span className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold uppercase">
                   {job.domain_name || 'N/A'}
+                </span>
+                {job.domain_reference_number && (
+                  <p className="mt-1 text-xs font-mono text-slate-500">{job.domain_reference_number}</p>
+                )}
+              </td>
+              <td className="px-6 py-5">
+                <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${
+                  job.visibility === 'private'
+                    ? 'bg-violet-50 text-violet-700'
+                    : 'bg-sky-50 text-sky-700'
+                }`}>
+                  {job.visibility || 'public'}
                 </span>
               </td>
               <td className="px-6 py-5">

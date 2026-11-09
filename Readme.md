@@ -135,7 +135,7 @@ docker-compose up -d
 
 ### Environment Variables
 ```
-FLASK_ENV=production
+FLASK_ENV=Production
 DATABASE_URI=postgresql://user:pass@host:5432/semadata
 SECRET_KEY=your-secret-key
 FRONTEND_URL=https://app.semadata.com
@@ -146,11 +146,37 @@ DARAJA_CONSUMER_SECRET=your_secret
 DARAJA_PASSKEY=your_passkey
 ```
 
-### Hosting
-- **API**: AWS EC2, DigitalOcean, Render
-- **Database**: AWS RDS, Heroku Postgres
-- **Frontend**: Vercel, Netlify
-- **Storage**: AWS S3
+### Free-tier test deployment
+
+The repository includes a Render Blueprint (`render.yaml`) for a test API and a
+Cloudflare Pages Function that proxies API and uploaded-file requests to it.
+Use Neon for PostgreSQL.
+
+1. Create a Neon database and set its connection string as `DATABASE_URI` in
+   Render. Keep the password in the provider's environment settings, not in Git.
+2. Deploy the root `render.yaml` Blueprint. Set `FRONTEND_URL` to the Cloudflare
+   Pages URL after creating the frontend project.
+3. In Cloudflare Pages, connect this repository with `frontend` as the root
+   directory, `npm run build` as the build command, and `dist` as the output
+   directory.
+4. Set the Pages environment variable `API_ORIGIN` to the Render API's HTTPS
+   origin only (for example, `https://your-service.onrender.com`, with no path),
+   then redeploy.
+5. Set `DATABASE_URI` in a local environment variable or an ignored `.env` file
+   using Neon's PostgreSQL connection string with SSL enabled, then apply the
+   database migrations:
+
+   ```bash
+   cd Backend
+   flask --app run:app db upgrade
+   ```
+
+This is for a limited test only: the Render free service sleeps when idle,
+`DISABLE_ML_MODELS=true` disables transcription/semantic models, and its local
+filesystem is not durable for uploaded audio or attachments. Configure Google
+OAuth, email, and payment-provider callback URLs for the deployed domains before
+testing those integrations. The backend's large ML dependency set may also exceed
+free build/runtime resources. Do not use this setup for production data.
 
 ## API Endpoints (Summary)
 

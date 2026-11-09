@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
-    LayoutDashboard, Database, Users, PlusCircle,
-    Copy, ExternalLink, Activity, Download, Printer, LogOut, X, FileText,
+    LayoutDashboard, Database, PlusCircle, Bell,
+    Copy, ExternalLink, Download, Printer, LogOut, X, FileText,
     ArrowRight, Clock3, Trash2, Sparkles, Target
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -107,9 +107,11 @@ const DetailModal = ({ isOpen, onClose, dataset, features }) => {
 };
 
 // --- SUB-COMPONENT: INSIGHTS TABLE ---
-const InsightsTable = ({ datasets, features }) => {
+const InsightsTable = ({ datasets, features, domainId }) => {
     const [selectedRow, setSelectedRow] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [exportError, setExportError] = useState('');
+    const [isExporting, setIsExporting] = useState(false);
 
     if (!datasets || datasets.length === 0) {
         return (
@@ -135,17 +137,32 @@ const InsightsTable = ({ datasets, features }) => {
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto">
                         <button
-                            onClick={() => {
-                                const token = localStorage.getItem('token');
-                                const domainId = selectedDomain?.domain_id;
-                                if (!domainId) { alert('Please select a domain first'); return; }
-                                window.open(
-                                    `http://localhost:8000/api/export/domain/${domainId}/export`,
-                                    '_blank'
-                                );
+                            onClick={async () => {
+                                setExportError('');
+                                setIsExporting(true);
+                                try {
+                                    const response = await fetch(`/api/export/domain/${domainId}/export`, {
+                                        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+                                    });
+                                    if (!response.ok) {
+                                        const data = await response.json();
+                                        throw new Error(data.error || 'Could not export this dataset.');
+                                    }
+                                    const file = URL.createObjectURL(await response.blob());
+                                    const link = document.createElement('a');
+                                    link.href = file;
+                                    link.download = `domain-${domainId}-submissions.csv`;
+                                    link.click();
+                                    URL.revokeObjectURL(file);
+                                } catch (exportError) {
+                                    setExportError(exportError.message || 'Could not export this dataset.');
+                                } finally {
+                                    setIsExporting(false);
+                                }
                             }}
+                            disabled={!domainId || isExporting}
                             className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-emerald-50/40 border border-slate-200 rounded-xl transition-all">
-                            <Download size={16} /> Export CSV
+                            <Download size={16} /> {isExporting ? 'Exporting…' : 'Export CSV'}
                         </button>
                         <button onClick={() => window.print()}
                             className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold bg-[#489c8c] text-white rounded-xl hover:bg-[#3d8577] transition-all shadow-sm">
@@ -153,6 +170,7 @@ const InsightsTable = ({ datasets, features }) => {
                         </button>
                     </div>
                 </div>
+                {exportError && <p className="px-6 pb-3 text-sm text-rose-700" role="alert">{exportError}</p>}
                 <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full text-left border-collapse min-w-[600px]">
                         <thead className="bg-emerald-50/40 border-b border-emerald-50">
@@ -241,7 +259,7 @@ const Dashboard = () => {
 
         const fetchDomains = async () => {
             try {
-                const response = await fetch('http://localhost:8000/api/my-domains', {
+                const response = await fetch('/api/my-domains', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
@@ -268,7 +286,7 @@ const Dashboard = () => {
                 if (data && data.length > 0) setSelectedDomain(data[0]);
 
                 try {
-                    const draftsResponse = await fetch('http://localhost:8000/api/domain-drafts', {
+                    const draftsResponse = await fetch('/api/domain-drafts', {
                         headers: { Authorization: `Bearer ${token}` },
                     });
                     if (draftsResponse.status === 401 || draftsResponse.status === 403) {
@@ -300,13 +318,14 @@ const Dashboard = () => {
     const totalTarget = domains.reduce((total, domain) => total + (domain.target_goal || 0), 0);
     const totalProgress = totalTarget ? Math.min(Math.round((totalSubmissions / totalTarget) * 100), 100) : 0;
     const activeDomains = domains.filter(domain => domain.is_active).length;
+    const pendingActivationDomains = domains.filter(domain => !domain.is_active).length;
 
     const handleDeleteDraft = async (draftId) => {
         if (!window.confirm('Delete this saved domain draft? This cannot be undone.')) return;
         setDeletingDraftId(draftId);
         setDraftError('');
         try {
-            const response = await fetch(`http://localhost:8000/api/domain-drafts/${draftId}`, {
+            const response = await fetch(`/api/domain-drafts/${draftId}`, {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -353,16 +372,19 @@ const Dashboard = () => {
                     <Database size={28} className="stroke-[2.5]" /> semaData
                 </div>
                 
-                <nav className="flex-1 space-y-1.5">
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-[#489c8c] text-white font-bold cursor-pointer transition shadow-md shadow-[#489c8c]/10">
-                        <LayoutDashboard size={18} /> Dashboard
-                    </div>
-                    <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800/60 text-slate-400 hover:text-white transition cursor-pointer font-medium text-sm">
-                        <Activity size={18} /> Data Analytics
-                    </div>
-                    <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800/60 text-slate-400 hover:text-white transition cursor-pointer font-medium text-sm">
-                        <Users size={18} /> Team Collectors
-                    </div>
+                <nav className="flex-1 space-y-1.5" aria-label="Domain owner dashboard">
+                    <a href="#owner-overview" className="flex items-center gap-3 p-3 rounded-xl bg-[#489c8c] text-white font-bold transition shadow-md shadow-[#489c8c]/10">
+                        <LayoutDashboard size={18} /> Overview
+                    </a>
+                    <a href="#owner-domains" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800/60 text-slate-400 hover:text-white transition font-medium text-sm">
+                        <Database size={18} /> Domains
+                    </a>
+                    <a href="#owner-drafts" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800/60 text-slate-400 hover:text-white transition font-medium text-sm">
+                        <FileText size={18} /> Saved drafts
+                    </a>
+                    <a href="#owner-messages" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800/60 text-slate-400 hover:text-white transition font-medium text-sm">
+                        <Bell size={18} /> Review messages
+                    </a>
                 </nav>
 
                 <div className="pt-4 border-t border-slate-800/60 space-y-2">
@@ -370,10 +392,6 @@ const Dashboard = () => {
                         className="w-full bg-[#489c8c] hover:bg-[#3d8577] text-white p-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition shadow-md shadow-[#489c8c]/5 text-sm">
                         <PlusCircle size={18} /> New Domain
                     </button>
-                        <div className="mt-4 mb-2 p-3 border border-slate-800 rounded-xl bg-slate-900/30 text-center">
-                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Support Center</p>
-                            <p className="text-xs text-[#489c8c] font-medium mt-1">support@semadata.app</p>
-                        </div>
                     <button onClick={handleLogout}
                         className="w-full bg-slate-800/40 hover:bg-rose-950/40 border border-slate-800 hover:border-rose-900/50 text-slate-400 hover:text-rose-400 p-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition text-sm">
                         <LogOut size={18} /> Logout
@@ -398,17 +416,14 @@ const Dashboard = () => {
             <main className="content-container">
                 <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
                     <div>
-                        <h2 className="text-3xl font-black text-slate-900 tracking-tight">Command Center</h2>
-                        <p className="text-slate-500 text-sm font-medium mt-0.5">
-                            System Status: <span className="text-[#489c8c] font-bold inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#489c8c] animate-pulse"></span>Operational</span>
-                        </p>
+                        <h2 className="text-3xl font-black text-slate-900 tracking-tight">Domain owner dashboard</h2>
                     </div>
                     <div className="flex items-center gap-3.5 bg-white p-2 pr-5 rounded-2xl border border-emerald-100/60 shadow-sm">
                         <div className="w-10 h-10 bg-[#489c8c]/10 text-[#489c8c] rounded-xl flex items-center justify-center font-black text-sm">
                             {localStorage.getItem('username')?.substring(0, 2).toUpperCase() || 'DO'}
                         </div>
                         <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Administrator</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Domain Owner</p>
                             <p className="text-xs font-bold text-slate-700 mt-1">
                                 {localStorage.getItem('username') || 'Domain Owner'}
                             </p>
@@ -416,9 +431,11 @@ const Dashboard = () => {
                     </div>
                 </header>
 
-                <OwnerNotifications />
+                <div id="owner-messages">
+                    <OwnerNotifications />
+                </div>
 
-                <section className="owner-hero">
+                <section className="owner-hero" id="owner-overview">
                     <div className="owner-hero-content">
                         <span className="owner-hero-eyebrow"><Sparkles size={14} /> DOMAIN OWNER OVERVIEW</span>
                         <h1>Welcome back, {localStorage.getItem('username') || 'Researcher'}.</h1>
@@ -446,7 +463,7 @@ const Dashboard = () => {
                     </div>
                 </section>
 
-                <section className="owner-drafts-section">
+                <section className="owner-drafts-section" id="owner-drafts">
                     <div className="owner-section-heading">
                         <div>
                             <span className="owner-section-kicker">PICK UP ANYTIME</span>
@@ -491,10 +508,14 @@ const Dashboard = () => {
                 </section>
 
                 {/* STATS ROW */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-10">
                     <div className="bg-white p-6 rounded-2xl border border-emerald-100/60 shadow-sm hover:border-emerald-200/80 transition-all">
-                        <p className="text-emerald-800/60 font-bold text-[11px] uppercase tracking-wider mb-1">Live domains</p>
+                        <p className="text-emerald-800/60 font-bold text-[11px] uppercase tracking-wider mb-1">Active domains</p>
                         <h4 className="text-2xl font-black text-slate-800">{activeDomains}</h4>
+                    </div>
+                    <div className="bg-white p-6 rounded-2xl border border-amber-100 shadow-sm hover:border-amber-200 transition-all">
+                        <p className="text-amber-800/70 font-bold text-[11px] uppercase tracking-wider mb-1">Awaiting activation</p>
+                        <h4 className="text-2xl font-black text-slate-800">{pendingActivationDomains}</h4>
                     </div>
                     <div className="bg-white p-6 rounded-2xl border border-emerald-100/60 shadow-sm hover:border-emerald-200/80 transition-all">
                         <p className="text-emerald-800/60 font-bold text-[11px] uppercase tracking-wider mb-1">Total Submissions</p>
@@ -509,11 +530,12 @@ const Dashboard = () => {
                 </div>
 
                 {/* DOMAIN BLOCK CONTENT */}
+                <section id="owner-domains">
                 {domains.length === 0 ? (
                     <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-emerald-200 shadow-sm max-w-2xl mx-auto">
                         <Database size={44} className="mx-auto text-emerald-300 mb-4" />
-                        <h3 className="text-lg font-bold text-slate-700 mb-1">No Active Streams</h3>
-                        <p className="text-slate-400 text-sm mb-6 max-w-xs mx-auto">Define your structural nodes to begin gathering text data fields.</p>
+                        <h3 className="text-lg font-bold text-slate-700 mb-1">No domains yet</h3>
+                        <p className="text-slate-400 text-sm mb-6 max-w-xs mx-auto">Create a domain to define your dataset and start collecting responses.</p>
                         <button onClick={() => navigate('/DomainDefinition')}
                             className="px-5 py-2.5 bg-[#489c8c] text-white rounded-xl font-bold hover:bg-[#3d8577] transition shadow-sm text-sm">
                             <PlusCircle size={16} className="inline mr-1.5 -mt-0.5" /> Create First Domain
@@ -521,7 +543,7 @@ const Dashboard = () => {
                     </div>
                 ) : (
                     <>
-                        <h3 className="text-lg font-black text-slate-800 mb-4 tracking-tight">Active Knowledge Domains</h3>
+                        <h3 className="text-lg font-black text-slate-800 mb-4 tracking-tight">Your domains</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                             {domains.map((domain) => (
                                 <div key={domain.reference_number}
@@ -538,16 +560,35 @@ const Dashboard = () => {
                                                 <Database size={20} />
                                             </div>
                                             <div className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider ${
-                                                domain.payment_status === 'Paid'
+                                                domain.is_active
                                                     ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
                                                     : 'bg-amber-50 text-amber-600 border border-amber-100'
                                             }`}>
-                                                {domain.payment_status === 'Paid' ? 'Live Sync' : 'Pending'}
+                                                {domain.is_active ? 'Active' : 'Activation pending'}
                                             </div>
                                         </div>
 
                                         <h3 className="text-base font-bold text-slate-900 truncate">{domain.domain_name}</h3>
                                         <p className="text-xs text-slate-400 mb-3 font-medium truncate">{domain.domain_field || 'General Research'}</p>
+                                        <div className="mb-4 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
+                                            <div className="flex justify-between gap-2">
+                                                <span>Activation deposit</span>
+                                                <strong>KES {Number(domain.deposit_amount || 0).toLocaleString()}</strong>
+                                            </div>
+                                            <div className="mt-1 flex justify-between gap-2">
+                                                <span>Paid so far</span>
+                                                <strong>KES {Number(domain.amount_paid || 0).toLocaleString()}</strong>
+                                            </div>
+                                            <div className="mt-1 flex justify-between gap-2">
+                                                <span>Project budget remaining</span>
+                                                <strong>KES {Math.max(Number(domain.total_budget || 0) - Number(domain.amount_paid || 0), 0).toLocaleString()}</strong>
+                                            </div>
+                                            {!domain.is_active && (
+                                                <p className="mt-2 text-amber-800">
+                                                    Collection is paused until the activation deposit is confirmed.
+                                                </p>
+                                            )}
+                                        </div>
 
                                         {domain.feature_count && domain.feature_count > 0 && (
                                             <div className="flex flex-wrap gap-1 mb-4">
@@ -559,6 +600,31 @@ const Dashboard = () => {
                                     </div>
 
                                     <div className="space-y-2.5 mt-2">
+                                        {Number(domain.amount_paid || 0) < Number(domain.total_budget || 0) && (
+                                            <button
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
+                                                    navigate('/payInitiate', {
+                                                        state: {
+                                                            domainId: domain.domain_id,
+                                                            domainName: domain.domain_name,
+                                                            target_goal: domain.target_goal,
+                                                            deposit_amount: domain.deposit_amount,
+                                                            amount_paid: domain.amount_paid,
+                                                            total_budget: domain.total_budget,
+                                                            refNum: domain.reference_number,
+                                                        },
+                                                    });
+                                                }}
+                                                className={`w-full rounded-xl px-3 py-2.5 text-xs font-bold text-white transition ${
+                                                    domain.is_active
+                                                        ? 'bg-[#489c8c] hover:bg-[#3d8577]'
+                                                        : 'bg-amber-500 hover:bg-amber-600'
+                                                }`}
+                                            >
+                                                {domain.is_active ? 'Make a project payment' : 'Pay toward activation'}
+                                            </button>
+                                        )}
                                         <div className="bg-emerald-50/30 p-2.5 rounded-xl flex justify-between items-center border border-emerald-100/40">
                                             <div className="overflow-hidden w-[82%]">
                                                 <p className="text-[8px] uppercase font-black text-emerald-800/50 tracking-wider leading-none">Security Token</p>
@@ -630,10 +696,12 @@ const Dashboard = () => {
                             <InsightsTable
                                 datasets={selectedDatasets}
                                 features={selectedFeatures}
+                                domainId={selectedDomain?.domain_id}
                             />
                         </div>
                     </>
                 )}
+                </section>
             </main>
         </div>
     );

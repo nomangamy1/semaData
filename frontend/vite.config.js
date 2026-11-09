@@ -6,14 +6,25 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
+    port: 5174,
+    strictPort: true,
     proxy: {
       // Any request starting with /api will be sent to your Flask backend
       '/api': {
         target: 'http://localhost:8000', // Change this to your actual Flask port
         changeOrigin: true,
         secure: false,
-      }
+      },
+      '/static': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/uploads': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+      },
     }
   }
 })  
-

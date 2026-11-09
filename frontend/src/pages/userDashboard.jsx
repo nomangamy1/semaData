@@ -9,7 +9,7 @@ const UserDashboard = () => {
 
   // ✅ Token and identity mapping checks
   const token = localStorage.getItem('token');
-  const userId = localStorage.getItem('ownerId'); 
+  const userId = localStorage.getItem('userId') || localStorage.getItem('ownerId');
   const domainId = localStorage.getItem('domainId');
 
   // Dashboard Data and UI Loading states
@@ -18,6 +18,7 @@ const UserDashboard = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [error, setError] = useState('');
+  const [errorStatus, setErrorStatus] = useState(null);
 
   // Financial State Management Context
   const [finance, setFinance] = useState({
@@ -63,7 +64,7 @@ const UserDashboard = () => {
         formData.append('referenceNumber', draft.refNum);   
         formData.append('domain_id', draft.domainId || domainId); 
 
-        const response = await fetch('http://localhost:8000/api/core/transcribe', {
+        const response = await fetch('/api/core/transcribe', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`  
@@ -99,7 +100,7 @@ const UserDashboard = () => {
   // ─── Fetch Financial Metrics ───
   const fetchFinancialSummary = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/main/finance-summary', {
+      const response = await fetch('/api/main/finance-summary', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -135,7 +136,7 @@ const UserDashboard = () => {
         setDrafts(localDrafts);
 
         const response = await fetch(
-          `http://localhost:8000/api/main/collector-stats/${userId}`,
+          `/api/main/collector-stats/${userId}`,
           {
             headers: {
               'Authorization': `Bearer ${token}`,  
@@ -144,7 +145,7 @@ const UserDashboard = () => {
           }
         );
 
-        if (response.status === 401 || response.status === 403) {
+        if (response.status === 401) {
           localStorage.removeItem('token');
           navigate('/login');
           return;
@@ -152,6 +153,7 @@ const UserDashboard = () => {
 
         if (!response.ok) {
           const errData = await response.json();
+          setErrorStatus(response.status);
           throw new Error(errData.error || 'Failed to fetch profile');
         }
 
@@ -203,13 +205,26 @@ const UserDashboard = () => {
   }
 
   if (error) {
+    const domainInactive = errorStatus === 403 && error.toLowerCase().includes('domain is inactive');
     return (
       <div className="dashboard-wrapper">
         <div className="loader-container" style={{ textAlign: 'center' }}>
-          <p style={{ color: '#ef4444', fontWeight: 'bold', marginBottom: '1rem' }}>{error}</p>
-          <button className="start-session-btn" onClick={() => navigate('/login')}>
-            Back to Login
-          </button>
+          <h1 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.75rem' }}>
+            {domainInactive ? 'You are signed in, but collection is paused' : 'Could not load your collector dashboard'}
+          </h1>
+          <p style={{ color: '#475569', maxWidth: 520, margin: '0 auto 1.25rem' }} role="alert">
+            {domainInactive
+              ? 'Your account and login are valid, but the assigned domain is not active yet. Ask the domain owner or an administrator to complete activation. You do not need to sign in again.'
+              : error}
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <button className="start-session-btn" onClick={() => window.location.reload()}>
+              Retry dashboard
+            </button>
+            <button className="start-session-btn" onClick={handleLogout}>
+              Log out
+            </button>
+          </div>
         </div>
       </div>
     );

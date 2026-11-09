@@ -6,8 +6,8 @@ const GoogleAuthButton = ({ mode, role, onSuccess, onError }) => {
     try {
       // credentialResponse.credential IS the ID Token (JWT)
       const endpoint = mode === "signup"
-        ? "http://localhost:8000/api/Auth/google_sign_up"
-        : "http://localhost:8000/api/Auth/google_login";
+        ? "/api/Auth/google_sign_up"
+        : "/api/Auth/google_login";
 
       const res = await fetch(endpoint, {
         method: "POST",
@@ -39,7 +39,7 @@ const GoogleAuthButton = ({ mode, role, onSuccess, onError }) => {
       
       onSuccess?.(data);
     } catch {
-      onError?.("Could not reach the signup service. Check that the backend is running at http://localhost:8000.");
+      onError?.("Could not reach the signup service. Check your connection and try again.");
     }
   };
 
@@ -52,7 +52,7 @@ const GoogleAuthButton = ({ mode, role, onSuccess, onError }) => {
       theme="outline"
       size="large"
       text={mode === "signup" ? "signup_with" : "signin_with"}
-      width="100%"
+      width="320"
     />
   );
 };

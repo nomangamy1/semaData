@@ -22,7 +22,7 @@ const WalletTab = ({ finance, token, onRefresh }) => {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:8000/api/main/request-withdrawal', {
+      const response = await fetch('/api/main/request-withdrawal', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
