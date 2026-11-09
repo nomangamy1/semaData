@@ -1,4 +1,4 @@
-const CACHE_NAME = 'semadata-v1';
+const CACHE_NAME = 'semadata-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -32,6 +32,23 @@ self.addEventListener('fetch', (event) => {
   // Never cache API calls
   if (url.pathname.startsWith('/api/') || url.hostname === 'localhost') {
     event.respondWith(fetch(event.request));
+    return;
+  }
+
+  if (event.request.method !== 'GET') return;
+
+  if (event.request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('/index.html')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(async () => (await caches.match('/index.html')) || caches.match(event.request))
+    );
     return;
   }
 
