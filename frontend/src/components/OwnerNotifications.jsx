@@ -8,7 +8,7 @@ const OwnerNotifications = () => {
     useEffect(() => {
         const fetchNotifications = async () => {
             try {
-                const response = await fetch('http://localhost:8000/api/domain-notifications', {
+                const response = await fetch('/api/domain-notifications', {
                     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
                 });
                 const data = await response.json();
@@ -24,7 +24,7 @@ const OwnerNotifications = () => {
     const markAsRead = async (notificationId) => {
         setError('');
         try {
-            const response = await fetch(`http://localhost:8000/api/domain-notifications/${notificationId}/read`, {
+            const response = await fetch(`/api/domain-notifications/${notificationId}/read`, {
                 method: 'PATCH',
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
             });

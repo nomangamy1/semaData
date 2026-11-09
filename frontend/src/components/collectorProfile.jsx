@@ -37,7 +37,7 @@ const CollectorProfile = () => {
 
     const initializeDashboard = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/collector/finance-summary', {
+        const response = await fetch('/api/collector/finance-summary', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -93,7 +93,7 @@ const CollectorProfile = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/collector/update-gateway', {
+      const response = await fetch('/api/collector/update-gateway', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -137,7 +137,7 @@ const CollectorProfile = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/collector/request-withdrawal', {
+      const response = await fetch('/api/collector/request-withdrawal', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

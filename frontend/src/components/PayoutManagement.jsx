@@ -18,7 +18,7 @@ const PayoutManagement = () => {
     const token = localStorage.getItem('token');
     
     try {
-      const response = await fetch('http://localhost:8000/api/admin/payouts/pending', {
+      const response = await fetch('/api/admin/payouts/pending', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -56,7 +56,7 @@ const PayoutManagement = () => {
     setProcessingId(requestId);
 
     try {
-      const response = await fetch('http://localhost:8000/admin/disburse/approve', {
+      const response = await fetch('/api/main/admin/disburse/approve', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -93,7 +93,7 @@ const PayoutManagement = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/admin/payouts/approve/${requestId}`, {
+      const response = await fetch(`/api/admin/payouts/approve/${requestId}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

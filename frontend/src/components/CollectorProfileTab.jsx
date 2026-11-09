@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./collectorProfile.css";
 
-const BASE = "http://localhost:8000/api/collector";
+const BASE = "/api/collector";
 
 const CollectorProfileTab = ({ sessionData, onLogout, walletOnly = false, profileOnly = false }) => {
   const token = localStorage.getItem("token");

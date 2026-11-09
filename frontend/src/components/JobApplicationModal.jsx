@@ -24,7 +24,7 @@ const JobApplicationModal = ({ job, onClose }) => {
     }
     setLoading(true); setError("");
     try {
-      const res = await fetch(`http://localhost:8000/api/apply/${job.id}`, {
+      const res = await fetch(`/api/apply/${job.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

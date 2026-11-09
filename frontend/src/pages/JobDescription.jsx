@@ -23,7 +23,7 @@ const JobDescriptionView = () => {
     const fetchJob = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:8000/api/careers/${id}`);
+        const response = await fetch(`/api/careers/${id}`);
         if (!response.ok) {
           throw new Error(`Failed to fetch job: ${response.status}`);
         }
@@ -80,7 +80,7 @@ const JobDescriptionView = () => {
       dataToSend.append('cv_file_path', resume);
       dataToSend.append('job_id', id);
 
-      const res = await fetch(`http://localhost:8000/api/apply/${id}`, {
+      const res = await fetch(`/api/apply/${id}`, {
         method: 'POST',
         body: dataToSend
       });

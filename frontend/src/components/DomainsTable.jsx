@@ -363,7 +363,7 @@ const DomainsTable = () => {
                                                 {dataset.audio_file_path && (
                                                     <div className="mt-3">
                                                         <p className="mb-1 text-xs font-bold uppercase text-slate-500">Source audio</p>
-                                                        <audio controls preload="none" className="w-full" src={`http://localhost:8000${dataset.audio_file_path}`}>
+                                                        <audio controls preload="none" className="w-full" src={`${dataset.audio_file_path}`}>
                                                             Your browser does not support audio playback.
                                                         </audio>
                                                     </div>

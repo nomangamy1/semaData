@@ -35,7 +35,7 @@ const DefineFeatures = () => {
             setIsLoadingDraft(true);
             setDraftError('');
             try {
-                const response = await fetch(`http://localhost:8000/api/domain-drafts/${requestedDraftId}`, {
+                const response = await fetch(`/api/domain-drafts/${requestedDraftId}`, {
                     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
                 });
                 const data = await response.json();
@@ -108,7 +108,7 @@ const DefineFeatures = () => {
         setDraftError('');
         setDraftMessage('');
         try {
-            const response = await fetch('http://localhost:8000/api/domain-drafts', {
+            const response = await fetch('/api/domain-drafts', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -170,7 +170,7 @@ const DefineFeatures = () => {
         if (draftId) payload.draft_id = draftId;
 
         try {
-            const response = await fetch('http://localhost:8000/api/domain', {
+            const response = await fetch('/api/domain', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

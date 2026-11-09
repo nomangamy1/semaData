@@ -47,6 +47,13 @@ def semaData_app():
         semaData.config.from_object(config['development'])
     else:
         semaData.config.from_object(config[config_name])
+    if not semaData.config.get('SQLALCHEMY_DATABASE_URI'):
+        raise RuntimeError('DATABASE_URI must be set for the selected environment.')
+
+    @semaData.get('/healthz')
+    def health_check():
+        return {'status': 'ok'}, 200
+
     # Allow the configured FRONTEND_URL, but fall back to localhost during development
     frontend_origin = (os.getenv('FRONTEND_URL') or 'http://localhost:5174').rstrip('/')
     CORS(semaData, resources={

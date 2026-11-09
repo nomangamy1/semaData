@@ -201,7 +201,7 @@ const CollectorHome = () => {
     const fetchTask = async () => {
       try {
         const response = await fetch(
-          `http://localhost:8000/api/collector/task?domain_id=${domainId}`,
+          `/api/collector/task?domain_id=${domainId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -330,7 +330,7 @@ const CollectorHome = () => {
       formData.append('referenceNumber', ref);
       formData.append('domain_id', domainId);
 
-      const response = await fetch('http://localhost:8000/api/core/transcribe', {
+      const response = await fetch('/api/core/transcribe', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,

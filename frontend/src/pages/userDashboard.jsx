@@ -63,7 +63,7 @@ const UserDashboard = () => {
         formData.append('referenceNumber', draft.refNum);   
         formData.append('domain_id', draft.domainId || domainId); 
 
-        const response = await fetch('http://localhost:8000/api/core/transcribe', {
+        const response = await fetch('/api/core/transcribe', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`  
@@ -99,7 +99,7 @@ const UserDashboard = () => {
   // ─── Fetch Financial Metrics ───
   const fetchFinancialSummary = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/main/finance-summary', {
+      const response = await fetch('/api/main/finance-summary', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -135,7 +135,7 @@ const UserDashboard = () => {
         setDrafts(localDrafts);
 
         const response = await fetch(
-          `http://localhost:8000/api/main/collector-stats/${userId}`,
+          `/api/main/collector-stats/${userId}`,
           {
             headers: {
               'Authorization': `Bearer ${token}`,  

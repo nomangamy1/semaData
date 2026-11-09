@@ -140,7 +140,7 @@ const InsightsTable = ({ datasets, features }) => {
                                 const domainId = selectedDomain?.domain_id;
                                 if (!domainId) { alert('Please select a domain first'); return; }
                                 window.open(
-                                    `http://localhost:8000/api/export/domain/${domainId}/export`,
+                                    `/api/export/domain/${domainId}/export`,
                                     '_blank'
                                 );
                             }}
@@ -241,7 +241,7 @@ const Dashboard = () => {
 
         const fetchDomains = async () => {
             try {
-                const response = await fetch('http://localhost:8000/api/my-domains', {
+                const response = await fetch('/api/my-domains', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
@@ -268,7 +268,7 @@ const Dashboard = () => {
                 if (data && data.length > 0) setSelectedDomain(data[0]);
 
                 try {
-                    const draftsResponse = await fetch('http://localhost:8000/api/domain-drafts', {
+                    const draftsResponse = await fetch('/api/domain-drafts', {
                         headers: { Authorization: `Bearer ${token}` },
                     });
                     if (draftsResponse.status === 401 || draftsResponse.status === 403) {
@@ -306,7 +306,7 @@ const Dashboard = () => {
         setDeletingDraftId(draftId);
         setDraftError('');
         try {
-            const response = await fetch(`http://localhost:8000/api/domain-drafts/${draftId}`, {
+            const response = await fetch(`/api/domain-drafts/${draftId}`, {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` },
             });

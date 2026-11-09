@@ -1,27 +1,22 @@
 # 1. Use a stable Python base
 FROM python:3.11-slim
 
-# 2. Install system-level audio dependencies (ffmpeg is required by Whisper)
-RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# 3. Set the working directory inside the container
+# 2. Set the working directory inside the container
 WORKDIR /app
 
-# 4. Copy requirements and install them
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# 3. Install only the web/API dependencies in this test image. ML dependencies
+# are deliberately excluded to fit a free instance and are disabled at runtime.
+COPY requirements-render.txt .
+RUN pip install --no-cache-dir -r requirements-render.txt
 
-# 5. Copy the rest of your backend code
+# 4. Copy the rest of your backend code
 COPY . .
 
-# 6. Create the temp folder inside the container
+# 5. Create the temp folder inside the container
 RUN mkdir -p temp_audio
 
-# 7. Expose the port your Flask app runs on
+# 6. Expose the port your Flask app runs on
 EXPOSE 8000
 
-# 8. Start the app using Gunicorn for production-level stability
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "run:semaData_app"]
+# 7. Use the Flask app instance exposed by run.py and Render's assigned port
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-8000} run:app"]

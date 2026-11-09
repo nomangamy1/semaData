@@ -61,7 +61,7 @@ const handleSubmit = async (e) => {
     console.log("SENDING PAYLOAD TO BACKEND:", payload);
 
     try {
-      const response = await fetch('http://localhost:8000/api/Auth/login', {
+      const response = await fetch('/api/Auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

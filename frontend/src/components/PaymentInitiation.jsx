@@ -35,7 +35,7 @@ const PayInitiate = () => {
         setIsProcessing(true);
 
         try {
-            const response = await fetch('http://localhost:8000/api/main/pay/initiate', {
+            const response = await fetch('/api/main/pay/initiate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

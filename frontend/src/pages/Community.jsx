@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/community.css";
 
-const BASE = "http://localhost:8000/api/community";
+const BASE = "/api/community";
 const getToken = () => localStorage.getItem("token");
 const getRole = () => (localStorage.getItem("userRole") || "").toLowerCase();
 const getUsername = () => localStorage.getItem("username") || "Member";
@@ -38,7 +38,7 @@ const ChallengeCard = ({ challenge, onClick }) => (
     <p className="challenge-body">{challenge.body.slice(0, 180)}{challenge.body.length > 180 ? "..." : ""}</p>
     {challenge.attachment && (
       <div style={{ margin: "10px 0", borderRadius: "6px", overflow: "hidden", maxHeight: "140px" }}>
-        <img src={`http://localhost:8000${challenge.attachment}`} alt="Challenge Attachment" style={{ width: "100%", objectFit: "cover" }} />
+        <img src={`${challenge.attachment}`} alt="Challenge Attachment" style={{ width: "100%", objectFit: "cover" }} />
       </div>
     )}
     <div className="challenge-footer">
@@ -120,7 +120,7 @@ const ChallengeDetail = ({ challenge, onBack }) => {
       <p className="detail-body">{challenge.body}</p>
       {challenge.attachment && (
         <div style={{ margin: "14px 0", borderRadius: "8px", overflow: "hidden", maxHeight: "280px" }}>
-          <img src={`http://localhost:8000${challenge.attachment}`} alt="Detail Attachment" style={{ width: "100%", objectFit: "cover" }} />
+          <img src={`${challenge.attachment}`} alt="Detail Attachment" style={{ width: "100%", objectFit: "cover" }} />
         </div>
       )}
 
@@ -197,7 +197,7 @@ const FeedCard = ({ post }) => {
 
       {post.attachment && (
         <div style={{ margin: "12px 0", borderRadius: "8px", overflow: "hidden", maxHeight: "250px" }}>
-          <img src={`http://localhost:8000${post.attachment}`} alt="Post Attachment" style={{ width: "100%", objectFit: "cover" }} />
+          <img src={`${post.attachment}`} alt="Post Attachment" style={{ width: "100%", objectFit: "cover" }} />
         </div>
       )}
 

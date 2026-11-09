@@ -13,7 +13,7 @@ const ChallengeManager = ({ token }) => {
     if (!title.trim() || !body.trim()) { setError("Title and body required"); return; }
     setLoading(true); setMsg(""); setError("");
     try {
-      const res = await fetch("http://localhost:8000/api/community/admin/challenge", {
+      const res = await fetch("/api/community/admin/challenge", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type" : "application/json" },
         body: JSON.stringify({ title, body, reward, is_pinned: pinned })

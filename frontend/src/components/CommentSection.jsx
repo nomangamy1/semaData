@@ -10,7 +10,7 @@ export default function CommentSection({ postId, authorId }) {
         // Using placeholder endpoint based on the backend routes
         const fetchComments = async () => {
             try {
-                const response = await fetch(`http://localhost:5000/api/community/post/${postId}/comments`);
+                const response = await fetch(`/api/community/post/${postId}/comments`);
                 if (response.ok) {
                     const data = await response.json();
                     setComments(data.comments || []);
@@ -28,7 +28,7 @@ export default function CommentSection({ postId, authorId }) {
         setIsSubmitting(true);
 
         try {
-            const response = await fetch(`http://localhost:5000/api/community/post/${postId}/comment`, {
+            const response = await fetch(`/api/community/post/${postId}/comment`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

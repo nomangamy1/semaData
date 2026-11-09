@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './SubmissionReview.css';
 import EmptyState from './EmptyState';
 
-const BASE = 'http://localhost:8000/api';
+const BASE = '/api';
 
 const statusColor = {
   pending_review: { bg: '#fef3c7', color: '#92400e', label: 'Pending Review' },

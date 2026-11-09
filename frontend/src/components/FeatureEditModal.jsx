@@ -35,7 +35,7 @@ const FeatureEditModal = ({ domain, onClose, onSave }) => {
       const addFeatures = features.filter(f => f.isNew).map(f => f.name);
 
       const res = await fetch(
-        `http://localhost:8000/api/domain/${domain.domain_id}/features`,
+        `/api/domain/${domain.domain_id}/features`,
         {
           method: "PATCH",
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
