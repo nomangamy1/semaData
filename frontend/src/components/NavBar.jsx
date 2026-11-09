@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Menu, X, LogOut, Sun, Moon } from 'lucide-react';
 import './NavBar.css';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDark, setIsDark] = useState(localStorage.getItem('theme') === 'dark');
-  const location = useLocation();
   const isAuthenticated = !!localStorage.getItem('token'); // Using 'token' as per our SaaS standard
 
   useEffect(() => {
@@ -33,19 +32,26 @@ const Navbar = () => {
 
         {/* RIGHT: ACTIONS */}
         <div className="nav-actions">
-          <button onClick={() => setIsDark(!isDark)} className="theme-toggle">
+          <button type="button" onClick={() => setIsDark(!isDark)} className="theme-toggle" aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}>
             {isDark ? <Sun size={20} /> : <Moon size={20} />}
           </button>
           
           {!isAuthenticated ? (
             <Link to="/signup" className="join-btn">Join Now</Link>
           ) : (
-            <button onClick={() => { localStorage.clear(); window.location.href='/login'; }} className="logout-icon">
+            <button type="button" onClick={() => { localStorage.clear(); window.location.href='/login'; }} className="logout-icon" aria-label="Log out">
               <LogOut size={22} className="text-gray-500 hover:text-red-500 transition-colors" />
             </button>
           )}
           
-          <button className="md:hidden ml-4" onClick={() => setIsOpen(!isOpen)}>
+          <button
+            type="button"
+            className="nav-menu-toggle"
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={isOpen}
+            aria-controls="mobile-nav-links"
+          >
             {isOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
         </div>
@@ -53,12 +59,13 @@ const Navbar = () => {
 
       {/* MOBILE MENU */}
       {isOpen && (
-        <div className="absolute top-full left-0 w-full bg-white border-b shadow-xl p-6 flex flex-col gap-4 md:hidden">
+        <div className="mobile-nav-links" id="mobile-nav-links">
           <Link to="/" onClick={() => setIsOpen(false)} className="nav-item">Home</Link>
           <Link to="/AboutUs" onClick={() => setIsOpen(false)} className="nav-item">About</Link>
           <Link to="/community" onClick={() => setIsOpen(false)} className="nav-item">Community</Link>
           <Link to="/careers" onClick={() => setIsOpen(false)} className="nav-item">Careers</Link>
           <Link to="/ContactUs" onClick={() => setIsOpen(false)} className="nav-item">Contact</Link>
+          {!isAuthenticated && <Link to="/signup" onClick={() => setIsOpen(false)} className="mobile-nav-join">Join Now</Link>}
         </div>
       )}
     </nav>
