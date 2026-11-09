@@ -10,4 +10,5 @@ from models.dataset import Dataset
 from models.Features import Feature
 from models.DomainDraft import DomainDraft
 from models.DomainOwnerNotification import DomainOwnerNotification
+from models.JobInvite import JobInvite
 from models.Transcription import Transcription

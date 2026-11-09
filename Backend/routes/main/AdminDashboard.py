@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.domain import Domain
 from models.user import User
 from models.Job import Job
+from models.JobInvite import JobInvite
 from models.domainowner import DomainOwner
 from models.dataset import Dataset
 from models.Transcription import Transcription
@@ -14,6 +15,8 @@ from utils.audit import audit_action, record_audit
 from utils.permissions import requires_admin
 import string
 import secrets
+import re
+import hashlib
 from datetime import datetime  # <-- Crucial Missing Import
 
 admin_bp = Blueprint("admin", __name__)
@@ -66,9 +69,11 @@ def get_pending_applications():
     return jsonify([
         {
             "id": a.id,
-            "first_name": a.user.first_name if a.user else "Anonymous",
-            "second_name": a.user.second_name if a.user else "Collector",
-            "email": a.user.email if a.user else "N/A",
+            "first_name": a.first_name or (a.applicant.first_name if a.applicant else "Anonymous"),
+            "second_name": a.second_name or (a.applicant.second_name if a.applicant else "Collector"),
+            "email": a.email,
+            "applicant_name": f"{a.first_name or ''} {a.second_name or ''}".strip() or a.email,
+            "applicant_email": a.email,
             "job_title": a.job.title if a.job else "Field Data Collector",
             "domain_name": a.job.domain.domain_name if (a.job and a.job.domain) else "General Operations"
         } for a in apps
@@ -475,28 +480,113 @@ def post_job():
     if not require_admin(admin_id):
         return jsonify({"error": "Unauthorized"}), 403
 
-    data = request.get_json()
-    
+    data = request.get_json(silent=True) or {}
+    title = data.get("title")
+    if not isinstance(title, str) or not title.strip():
+        return jsonify({"error": "Job title is required"}), 400
+
+    visibility = data.get("visibility", "public")
+    if visibility not in {"public", "private"}:
+        return jsonify({"error": "Visibility must be 'public' or 'private'"}), 400
+
+    domain_id = data.get("domain_id")
+    domain = None
+    if domain_id:
+        try:
+            domain_id = int(domain_id)
+        except (TypeError, ValueError):
+            return jsonify({"error": "Invalid domain id"}), 400
+        domain = Domain.query.get(domain_id)
+        if not domain:
+            return jsonify({"error": "Domain not found"}), 404
+    elif visibility == "private":
+        return jsonify({"error": "Private jobs must be linked to a registered domain"}), 400
+
+    invite_emails = data.get("invite_emails", [])
+    if not isinstance(invite_emails, list):
+        return jsonify({"error": "Invitee emails must be a list"}), 400
+    if visibility == "private":
+        normalized_emails = []
+        for email in invite_emails:
+            if not isinstance(email, str):
+                return jsonify({"error": "Invitee emails must be strings"}), 400
+            email = email.strip().lower()
+            if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
+                return jsonify({"error": f"Invalid invitee email: {email}"}), 400
+            if email not in normalized_emails:
+                normalized_emails.append(email)
+        if not normalized_emails:
+            return jsonify({"error": "Add at least one invitee for a private job"}), 400
+    else:
+        normalized_emails = []
+
     try:
         new_job = Job(
-            title=data.get('title'),
-            domain_id=data.get('domain_id'),
-            domain_name=data.get('domain_name'),
+            title=title.strip(),
+            domain_id=domain.id if domain else None,
+            domain_owner_id=domain.owner_id if domain else None,
+            domain_name=domain.domain_name if domain else data.get('domain_name'),
             location=data.get('location'),
             compensation=data.get('compensation'),
             duration=data.get('duration'),
             description=data.get('description'),
-            required_skills=str(data.get('required_skills')),
+            required_skills=data.get('required_skills', []),
             field=data.get('field'),
+            visibility=visibility,
             status='published',
             posted_at=datetime.utcnow()
         )
         db.session.add(new_job)
+        db.session.flush()
+        invites = []
+        invite_links = []
+        for email in normalized_emails:
+            raw_token = secrets.token_urlsafe(32)
+            invite = JobInvite(
+                job_id=new_job.id,
+                email=email,
+                token_hash=hashlib.sha256(raw_token.encode()).hexdigest(),
+            )
+            db.session.add(invite)
+            invites.append(invite)
+            invite_links.append((invite, raw_token))
         db.session.commit()
-        return jsonify({"status": "success", "message": "Job posted successfully"}), 201
+
+        invite_delivery_failures = []
+        failed_invite_links = []
+        if invites:
+            from utils.mailer import send_email
+            frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+            for invite, raw_token in invite_links:
+                invite_url = f"{frontend_url}/private-job/{raw_token}"
+                email_sent = send_email(
+                    invite.email,
+                    f"Invitation: {new_job.title}",
+                    (
+                        f"You are invited to apply for {new_job.title}.\n\n"
+                        f"Domain: {domain.domain_name}\n"
+                        f"Domain reference: {domain.reference_number}\n"
+                        f"View the domain details and submit your application here:\n{invite_url}\n"
+                    ),
+                )
+                if not email_sent:
+                    invite_delivery_failures.append(invite.email)
+                    failed_invite_links.append({
+                        "email": invite.email,
+                        "url": invite_url,
+                    })
+
+        return jsonify({
+            "status": "success",
+            "message": "Job posted successfully",
+            "job_id": new_job.id,
+            "invite_delivery_failures": invite_delivery_failures,
+            "failed_invite_links": failed_invite_links,
+        }), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.exception("Failed to post job")
+        return jsonify({"error": "Could not post job"}), 500
 
 @admin_bp.route("/jobs", methods=["GET"])
 @jwt_required()
@@ -514,9 +604,14 @@ def get_all_admin_jobs():
             job_list.append({
                 "id": job.id,
                 "title": job.title,
+                "domain_name": job.domain_name,
+                "domain_reference_number": job.domain.reference_number if job.domain else None,
                 "field": job.field,
                 "location": job.location,
+                "compensation": job.compensation,
+                "duration": job.duration,
                 "status": job.status,
+                "visibility": job.visibility,
                 "posted_at": job.posted_at.strftime('%Y-%m-%d') if job.posted_at else None,
                 "applicant_count": len(job.applications) if job.applications else 0,
                 "applications": [{

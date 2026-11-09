@@ -181,13 +181,17 @@ def signUp():
 
             token = generate_verification_token(new_user.email)
             confirm_url = url_for('register.email_verification', token=token, _external=True)
-            send_mail(
+            verification_sent = send_mail(
                 new_user.email,
                 "You've been added to the team",
                 f"""<h3>Welcome, {new_user.first_name}!</h3>
                     <p>You've been approved as a data collector for <strong>{domain.domain_name}</strong>.</p>
                     <p>Please verify your email: <a href="{confirm_url}">{confirm_url}</a></p>"""
             )
+            if not verification_sent:
+                return jsonify({
+                    "error": "Your collector account was created, but we couldn't send the verification email. Please try logging in later to request another link."
+                }), 503
 
             access_token = create_access_token(identity=str(new_user.id))
             return jsonify({

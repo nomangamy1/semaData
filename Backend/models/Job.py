@@ -18,6 +18,7 @@ class Job(db.Model):
     domain_id = db.Column(db.Integer, db.ForeignKey('domain.id'), nullable=True)  # Link to domain if pre-created
     domain_name = db.Column(db.String(255),nullable = True)
     domain_owner_id = db.Column(db.Integer, db.ForeignKey('DomainOwner.id'), nullable=True)
+    visibility = db.Column(db.String(20), nullable=False, default='public')
     
     # Requirements & Specialization
     specialization_required = db.Column(db.String(255), nullable=True)  # e.g., "Agrovet Seller", "Veterinarian"
@@ -37,6 +38,7 @@ class Job(db.Model):
     closes_at = db.Column(db.DateTime, nullable=True)
     
     # Relationships
+    domain = db.relationship('Domain', foreign_keys=[domain_id])
     applications = db.relationship('JobApplication', backref='job', lazy=True, cascade='all, delete-orphan')
     
     def to_dict(self):
@@ -55,8 +57,8 @@ class Job(db.Model):
             'compensation': self.compensation,
             'duration': self.duration,
             'status': self.status,
+            'visibility': self.visibility,
             'posted_at': self.posted_at.isoformat() if self.posted_at else None,
             'closes_at': self.closes_at.isoformat() if self.closes_at else None,
             'applications_count': len(self.applications)
         }
-

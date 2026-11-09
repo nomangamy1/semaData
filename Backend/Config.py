@@ -15,7 +15,7 @@ class Config:
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=8)
     FLASK_ENV = os.environ.get('FLASK_ENV', 'development')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173').rstrip('/')
+    FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5174').rstrip('/')
 
     TESTING = os.environ.get('TESTING', 'False').lower() == 'true'
     MAIL_SUPPRESS_SEND = os.environ.get('MAIL_SUPPRESS_SEND')

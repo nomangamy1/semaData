@@ -1,3 +1,5 @@
+import math
+
 from extensions import db
 
 class Domain(db.Model):
@@ -31,18 +33,28 @@ class Domain(db.Model):
      
 
     def update_payment(self,new_amount):
-        self.amount_paid += new_amount
+        try:
+            payment_amount = float(new_amount)
+        except (TypeError, ValueError):
+            raise ValueError("Payment amount must be a valid number.")
+        if not math.isfinite(payment_amount) or payment_amount <= 0:
+            raise ValueError("Payment amount must be greater than zero.")
 
-        activation_amount = self.total_budget*0.3
-        
-        if self.amount_paid >= activation_amount:
-            self.is_active = True 
-        
-        if self.amount_paid >= self.total_budget:
-            self.payment_status = "Completed"
+        total_budget = float(self.total_budget or 0)
+        amount_paid = float(self.amount_paid or 0)
+        if payment_amount > total_budget - amount_paid:
+            raise ValueError("Payment amount cannot exceed the remaining project budget.")
 
-        elif self.amount_paid > 0:
-            self.payment_status = "Partially paid" 
+        self.amount_paid = amount_paid + payment_amount
+        activation_amount = float(self.deposit_amount or total_budget * 0.3)
+        self.is_active = activation_amount > 0 and self.amount_paid >= activation_amount
+
+        if total_budget > 0 and self.amount_paid >= total_budget:
+            self.payment_status = "completed"
+        elif self.is_active:
+            self.payment_status = "deposit_paid"
+        else:
+            self.payment_status = "partially_paid" if self.amount_paid else "pending"
 
         return self.is_active
     def save(self, *args, **kwargs):

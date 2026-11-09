@@ -7,9 +7,52 @@ from models.JobApplication import JobApplication
 from models.Job import Job
 from flask_jwt_extended import create_access_token
 import logging
+from middleware.rate_limiter import rate_limit
 
 logger = logging.getLogger(__name__)
 login_bp = Blueprint("login", __name__)
+
+
+@login_bp.route('/resend-verification', methods=['POST'])
+@rate_limit(max_requests=3, window_seconds=900)
+def resend_collector_verification():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "A JSON request body is required."}), 400
+
+    email = str(data.get('email') or '').strip()
+    password = data.get('password')
+    ref_number = str(data.get('reference_number') or '').strip()
+
+    if not email or not isinstance(password, str) or not password or not ref_number:
+        return jsonify({"error": "Email, password, and application reference number are required."}), 400
+
+    collector = User.query.filter_by(email=email, reference_number=ref_number).first()
+    if (
+        not collector
+        or not collector.is_collector_user()
+        or not check_password_hash(collector.password_hash, password)
+    ):
+        return jsonify({"error": "Invalid collector credentials or reference number."}), 401
+
+    if collector.is_verified:
+        return jsonify({
+            "message": "If this account needs verification, a new link will be sent."
+        }), 200
+
+    verify_token = generate_verification_token(collector.email)
+    confirm_url = url_for('register.email_verification', token=verify_token, _external=True)
+    if not send_mail(
+        collector.email,
+        "Please verify your account",
+        f"<p>Please verify your account: <a href='{confirm_url}'>{confirm_url}</a></p>"
+    ):
+        return jsonify({"error": "We couldn't send a verification link. Please try again later."}), 503
+
+    return jsonify({
+        "message": "If this account needs verification, a new link will be sent."
+    }), 200
+
 
 @login_bp.route('/login', methods=['POST'])
 def login():
@@ -25,8 +68,6 @@ def login():
 
         def _reject_invalid_role(msg="Invalid account type or credentials provided"):
             return jsonify({"error": msg}), 401
-
-        print(f"DEBUG AUTH TRACE -> Email: {email} | Parsed Role: '{req_role}' | Ref: '{ref_number}'")
 
         # ── 1. GLOBAL PRODUCTION ADMIN INTERCEPT ─────────────────────
         admin = User.query.filter_by(email=email).first()
@@ -116,14 +157,9 @@ def login():
             if not check_password_hash(collector.password_hash, password):
                 return jsonify({"error": "Invalid credentials"}), 401
             if not collector.is_verified:
-                try:
-                    verify_token = generate_verification_token(collector.email)
-                    confirm_url = url_for('register.email_verification', token=verify_token, _external=True)
-                    send_mail(collector.email, "Please verify your account",
-                        f"<p>Please verify: <a href='{confirm_url}'>{confirm_url}</a></p>")
-                except Exception:
-                    pass
-                return jsonify({"error": "Email not verified. A new link has been sent."}), 403
+                return jsonify({
+                    "error": "Email not verified. Use the resend verification option to request a new link."
+                }), 403
 
             application = JobApplication.query.filter_by(
                 reference_number_assigned=ref_number,

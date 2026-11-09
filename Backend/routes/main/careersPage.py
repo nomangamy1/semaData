@@ -1,12 +1,14 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.Job import Job
+from models.JobInvite import JobInvite
 from models.JobApplication import JobApplication
 from models.user import User
 from models.domain import Domain
 from models.domainowner import DomainOwner
 from extensions import db
 from datetime import datetime, timedelta
+import hashlib
 import secrets
 import string
 
@@ -24,7 +26,7 @@ def get_available_jobs():
     field = request.args.get('field')
     location = request.args.get('location')
     
-    query = Job.query.filter_by(status='published')
+    query = Job.query.filter_by(status='published', visibility='public')
     
     if field:
         query = query.filter_by(field=field)
@@ -45,7 +47,7 @@ def get_job_detail(job_id):
     PUBLIC: Get detailed information about a specific job
     """
     job = Job.query.get(job_id)
-    if not job or job.status != 'published':
+    if not job or job.status != 'published' or job.visibility != 'public':
         return jsonify({"error": "Job not found"}), 404
     
     return jsonify(job.to_dict()), 200
@@ -56,12 +58,100 @@ def get_job_fields():
     """
     PUBLIC: Get all available job fields for filtering
     """
-    fields = db.session.query(Job.field).filter_by(status='published').distinct().all()
+    fields = db.session.query(Job.field).filter_by(
+        status='published',
+        visibility='public',
+    ).distinct().all()
     field_list = [f[0] for f in fields]
     
     return jsonify({
         "available_fields": field_list
     }), 200
+
+
+@careers_bp.route('/private-jobs/<token>', methods=['GET'])
+def get_invited_private_job(token):
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    invite = JobInvite.query.filter_by(token_hash=token_hash).first()
+    if not invite or invite.used_at:
+        return jsonify({"error": "This invitation is invalid or has already been used"}), 404
+
+    job = invite.job
+    if not job or job.status != 'published' or job.visibility != 'private':
+        return jsonify({"error": "This private job is no longer available"}), 404
+
+    domain = job.domain
+    job_data = job.to_dict()
+    job_data["domain"] = {
+        "name": domain.domain_name,
+        "reference_number": domain.reference_number,
+        "requirements": domain.requirements,
+        "features": [{
+            "name": feature.name,
+            "definition": feature.definition,
+        } for feature in domain.domain_features],
+    } if domain else None
+    job_data["invited_email"] = invite.email
+    return jsonify(job_data), 200
+
+
+@careers_bp.route('/private-jobs/<token>/apply', methods=['POST'])
+def apply_to_invited_private_job(token):
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    invite = JobInvite.query.filter_by(token_hash=token_hash).first()
+    if not invite or invite.used_at:
+        return jsonify({"error": "This invitation is invalid or has already been used"}), 404
+
+    job = invite.job
+    if not job or job.status != 'published' or job.visibility != 'private':
+        return jsonify({"error": "This private job is no longer available"}), 404
+
+    data = request.get_json(silent=True) or {}
+    first_name = data.get("first_name")
+    second_name = data.get("second_name")
+    email = data.get("email")
+    if not all(isinstance(value, str) for value in (first_name, second_name, email)):
+        return jsonify({"error": "First name, last name, and email are required"}), 400
+    first_name = first_name.strip()
+    second_name = second_name.strip()
+    email = email.strip().lower()
+    if not first_name or not second_name or not email:
+        return jsonify({"error": "First name, last name, and email are required"}), 400
+    if email != invite.email:
+        return jsonify({"error": "Use the email address that received this invitation"}), 403
+    if JobApplication.query.filter_by(job_id=job.id, email=email).first():
+        return jsonify({"error": "You have already applied for this job"}), 400
+
+    application = JobApplication(
+        job_id=job.id,
+        email=email,
+        first_name=first_name,
+        second_name=second_name,
+        cover_letter=data.get("cover_letter"),
+        relevant_experience=data.get("relevant_experience"),
+        self_assessment_skills=[],
+        status="submitted",
+        applied_at=datetime.utcnow(),
+    )
+    db.session.add(application)
+    try:
+        consumed_invite = JobInvite.query.filter_by(id=invite.id, used_at=None).update(
+            {JobInvite.used_at: datetime.utcnow()}
+        )
+        if consumed_invite != 1:
+            db.session.rollback()
+            return jsonify({"error": "This invitation has already been used"}), 409
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Failed to save private job application")
+        return jsonify({"error": "Could not submit your application"}), 500
+
+    return jsonify({
+        "message": "Application submitted to the admin team for review",
+        "application_id": application.id,
+        "status": "submitted",
+    }), 201
 
 
 # ============================================
@@ -70,7 +160,7 @@ def get_job_fields():
 @careers_bp.route('/apply/<int:job_id>', methods=['POST'])
 def apply_for_job(job_id):
     job = Job.query.get(job_id)
-    if not job or job.status != 'published':
+    if not job or job.status != 'published' or job.visibility != 'public':
         return jsonify({"error": "Job not found or no longer available"}), 404
 
     # Check if request is JSON or Multipart Form Data

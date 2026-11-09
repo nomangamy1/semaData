@@ -333,7 +333,7 @@ def get_my_domains():
         dataset_list = []
         for ds in datasets:
             dataset_list.append({
-                "ref_number":     ds.reference_number,
+                "ref_number":     ds.ref_number,
                 "segmented_text": json.loads(ds.segmented_text) if ds.segmented_text else None,
                 "status":         ds.status
             })

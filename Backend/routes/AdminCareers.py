@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from utils.mailer import send_approval_email
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.Job import Job
@@ -16,12 +16,12 @@ AdminCareers_bp = Blueprint('adminCareers', __name__)
 
 def is_admin(identity):
     """Returns (user_admin, domain_owner) — at least one must be truthy."""
+    user = User.query.filter_by(id=identity).first()
+    if user and user.is_admin_user():
+        return user, None
     domain_owner = DomainOwner.query.filter_by(id=identity).first()
     if domain_owner:
         return None, domain_owner
-    user = User.query.filter_by(id=identity).first()
-    if user and getattr(user, 'role', None) == 'admin':
-        return user, None
     return None, None
 
 
@@ -95,7 +95,7 @@ def list_admin_jobs():
 
 
 # ── LIST APPLICATIONS ────────────────────────────────────────────────────────
-@AdminCareers_bp.route('/applications', methods=['GET'])
+@AdminCareers_bp.route('/careers/applications', methods=['GET'])
 @jwt_required()
 def list_applications_for_review():
     admin_id = get_jwt_identity()
@@ -106,23 +106,23 @@ def list_applications_for_review():
     results = db.session.query(
         JobApplication,
         Job.title.label('job_title'),
-        Domain.domain_name.label('domain_name')
+        Domain.domain_name.label('registered_domain_name')
     ).join(Job, JobApplication.job_id == Job.id)\
-     .join(Domain, Job.domain_id == Domain.id)\
+     .outerjoin(Domain, Job.domain_id == Domain.id)\
      .filter(JobApplication.status == 'submitted').all()
 
     applications_data = []
     for app, job_title, domain_name in results:
         data = app.to_dict()
         data['job_title']    = job_title
-        data['domain_name']  = domain_name
+        data['domain_name']  = domain_name or app.job.domain_name or "General Operations"
         applications_data.append(data)
 
     return jsonify({"applications": applications_data}), 200
 
 
 # ── APPROVE APPLICATION ──────────────────────────────────────────────────────
-@AdminCareers_bp.route('/applications/<int:app_id>/approve', methods=['POST'])
+@AdminCareers_bp.route('/careers/applications/<int:app_id>/approve', methods=['POST'])
 @jwt_required()
 def approve_application(app_id):
     admin_id = get_jwt_identity()
@@ -169,7 +169,7 @@ def approve_application(app_id):
         collector_name = application.email
 
     # ✅ Send approval email with reference number + direct signup link
-    frontend_url = "http://localhost:5173"  # swap for production URL
+    frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:5173").rstrip("/")
     signup_link  = f"{frontend_url}/signup?role=collector&ref={reference_number}"
 
     email_was_sent = send_approval_email(
@@ -195,7 +195,7 @@ def approve_application(app_id):
 
 
 # ── REJECT APPLICATION ───────────────────────────────────────────────────────
-@AdminCareers_bp.route('/applications/<int:app_id>/reject', methods=['POST'])
+@AdminCareers_bp.route('/careers/applications/<int:app_id>/reject', methods=['POST'])
 @jwt_required()
 def reject_application(app_id):
     admin_id = get_jwt_identity()

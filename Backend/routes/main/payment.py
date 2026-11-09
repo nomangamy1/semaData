@@ -14,6 +14,7 @@ from sqlalchemy import func
 import os
 import requests
 import base64
+import math
 
 payment_bp = Blueprint("payment", __name__)
 
@@ -25,16 +26,21 @@ def generate_ref_number(domain_name):
 
 
 def _activate_domain(domain):
-    if domain.reference_number:
+    deposit_amount = float(domain.deposit_amount or 0)
+    if deposit_amount <= 0 or float(domain.amount_paid or 0) < deposit_amount:
+        domain.is_active = False
+        domain.payment_status = "partially_paid" if domain.amount_paid else "pending"
         return domain.reference_number
-    ref = generate_ref_number(domain.domain_name)
-    domain.reference_number = ref
-    domain.is_active        = True
-    domain.payment_status   = "deposit_paid"
+    if not domain.reference_number:
+        domain.reference_number = generate_ref_number(domain.domain_name)
+    domain.is_active = True
+    domain.payment_status = "deposit_paid"
     owner = DomainOwner.query.get(domain.owner_id)
     if owner:
-        owner.reference_number = ref
-    return ref
+        owner.reference_number = domain.reference_number
+    if float(domain.total_budget or 0) > 0 and float(domain.amount_paid or 0) >= float(domain.total_budget):
+        domain.payment_status = "completed"
+    return domain.reference_number
 
 
 @payment_bp.route("/pay/initiate", methods=["POST"])
@@ -55,19 +61,33 @@ def initiate_payment():
         return jsonify({"error": "Domain not found"}), 404
     if domain.owner_id != current_owner_id:
         return jsonify({"error": "Unauthorized: This domain does not belong to you"}), 403
-    if domain.payment_status == "deposit_paid" and domain.reference_number:
+    total_budget = float(domain.total_budget or 0)
+    amount_paid = float(domain.amount_paid or 0)
+    remaining_budget = max(total_budget - amount_paid, 0)
+    if remaining_budget <= 0:
         return jsonify({
             "status":           "already_paid",
-            "message":          "Domain already activated",
+            "message":          "The full project budget has been paid.",
             "reference_number": domain.reference_number,
             "redirect_path":    "/Dashboard"
         }), 200
     try:
-        deposit_amount  = float(domain.deposit_amount or 0)
-        transaction_ref = f"MOCK-SEMA-{domain_id}-{int(time.time())}"
+        payment_amount = float(data.get("amount"))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Enter a valid payment amount."}), 400
+    if not math.isfinite(payment_amount) or payment_amount <= 0:
+        return jsonify({"error": "Payment amount must be greater than zero."}), 400
+    if payment_amount > remaining_budget:
+        return jsonify({"error": "Payment amount cannot exceed the remaining project budget."}), 400
+    if not current_app.config.get("DEBUG") and not current_app.config.get("TESTING"):
+        return jsonify({
+            "error": "Online payment is not configured. No payment was taken; contact support for activation."
+        }), 503
+    try:
+        transaction_ref = f"MOCK-SEMA-{domain_id}-{secrets.token_hex(6).upper()}"
         new_payment = Payment(
             domain_id=domain_id,
-            amount=deposit_amount,
+            amount=payment_amount,
             currency="KES",
             transaction_ref=transaction_ref,
             status="Success",
@@ -75,13 +95,23 @@ def initiate_payment():
             processed_at=datetime.utcnow()
         )
         db.session.add(new_payment)
-        domain.amount_paid = (domain.amount_paid or 0) + deposit_amount
+        domain.amount_paid = amount_paid + payment_amount
         ref_number = _activate_domain(domain)
         db.session.commit()
         return jsonify({
             "status":           "success",
-            "message":          "Payment successful. Your domain is now active!",
-            "deposit":          deposit_amount,
+            "message":          (
+                "Payment simulated. The full project budget is now paid."
+                if domain.payment_status == "completed"
+                else "Payment simulated. Your domain is active; you can continue paying the remaining project budget."
+                if domain.is_active
+                else "Payment simulated. The domain will activate once the activation deposit is paid."
+            ),
+            "amount":           payment_amount,
+            "amount_paid":      domain.amount_paid,
+            "remaining_budget": max(total_budget - float(domain.amount_paid or 0), 0),
+            "is_active":        domain.is_active,
+            "payment_status":   domain.payment_status,
             "transaction_ref":  transaction_ref,
             "reference_number": ref_number,
             "redirect_path":    "/Dashboard"
@@ -147,6 +177,8 @@ def get_status(domain_id):
         "domain_name":      domain.domain_name,
         "deposit_amount":   domain.deposit_amount,
         "amount_paid":      domain.amount_paid or 0,
+        "total_budget":     domain.total_budget or 0,
+        "remaining_budget": max(float(domain.total_budget or 0) - float(domain.amount_paid or 0), 0),
     }), 200
 # ==============================================================================
 # COLLECTOR DISBURSEMENT & FINANCIAL MANAGEMENT SYSTEM
