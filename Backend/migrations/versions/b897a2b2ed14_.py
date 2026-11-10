@@ -29,11 +29,14 @@ def upgrade():
     sa.ForeignKeyConstraint(['user_id'], ['Users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    with op.batch_alter_table('collector_earnings', schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f('ix_collector_earnings_collector'))
-        batch_op.drop_index(batch_op.f('ix_collector_earnings_dataset'))
-
-    op.drop_table('collector_earnings')
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    if inspector.has_table('collector_earnings'):
+        existing_indexes = {index['name'] for index in inspector.get_indexes('collector_earnings')}
+        for index_name in ('ix_collector_earnings_collector', 'ix_collector_earnings_dataset'):
+            if index_name in existing_indexes:
+                op.drop_index(index_name, table_name='collector_earnings')
+        op.drop_table('collector_earnings')
     # ### end Alembic commands ###
 
 

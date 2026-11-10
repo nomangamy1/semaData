@@ -1,37 +1,72 @@
-from semaData import semaData_app
-from extensions import db
-from models.user import User
-from werkzeug.security import generate_password_hash
+import os
+from getpass import getpass
+from urllib.parse import urlparse
 
-app = semaData_app()
+from sqlalchemy import inspect
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-def seed_admin():
+
+def main():
+    if os.environ.get("FLASK_ENV") != "testing":
+        raise SystemExit("Set FLASK_ENV=testing to target the test database.")
+
+    database_uri = os.environ.get("TEST_DATABASE_URI", "")
+    hostname = urlparse(database_uri).hostname or ""
+    if not database_uri or not hostname.endswith(".neon.tech"):
+        raise SystemExit("Set TEST_DATABASE_URI to the Neon test-branch connection string.")
+
+    if input("Confirm this connection points to the Neon TEST branch (type TEST): ").strip() != "TEST":
+        raise SystemExit("Aborted; no admin account was created.")
+
+    email = input("New admin email: ").strip().lower()
+    if not email or "@" not in email:
+        raise SystemExit("Enter a valid email address.")
+
+    password = getpass("New admin password (minimum 14 characters): ")
+    if len(password) < 14:
+        raise SystemExit("Use a password of at least 14 characters.")
+    if password != getpass("Confirm new admin password: "):
+        raise SystemExit("Passwords do not match.")
+
+    from extensions import db
+    from models.user import User
+    from semaData import semaData_app
+
+    app = semaData_app()
     with app.app_context():
-        print("Checking for existing Admin...")
-        admin_exists = User.query.filter_by(role='admin').first()
+        inspector = inspect(db.engine)
+        if "Users" not in inspector.get_table_names():
+            raise SystemExit('The "Users" table is missing. Run the migrations first.')
+        columns = {column["name"] for column in inspector.get_columns("Users")}
+        if "is_super_admin" not in columns:
+            raise SystemExit('The "Users" table is outdated. Run the migrations first.')
 
-        if not admin_exists:
-            print("No Admin found. Creating production admin account...")
-            
-            new_admin = User(
-                id=1010, 
-                user_type='admin',
-                first_name='Norman',
-                second_name='Gamy',
-                email='admin@semadata.com',
-                is_verified=True,
-                role='admin',
-                # Mapping directly to your column name:
-                password_hash=generate_password_hash("4upm6Z?!"),
-                # reference_number is left as None because admins don't belong to a domain
-                domain_name='SemaData Central' 
-            )
-            
-            db.session.add(new_admin)
+        if User.query.filter_by(email=email).first():
+            raise SystemExit("That email already exists. No account was changed.")
+
+        admin = User(
+            user_type="admin",
+            role="admin",
+            email=email,
+            is_verified=True,
+            is_super_admin=True,
+        )
+        admin.set_password(password)
+        db.session.add(admin)
+
+        try:
             db.session.commit()
-            print("✨ Successfully created Admin with ID 1010!")
-        else:
-            print(f"Admin already exists: {admin_exists.email}")
+        except IntegrityError:
+            db.session.rollback()
+            raise SystemExit("The account could not be created; check for an existing email.")
+        except SQLAlchemyError as exc:
+            db.session.rollback()
+            raise SystemExit(
+                f"Database error ({type(exc).__name__}); no admin account was created."
+            ) from None
+
+    print(f"Admin account created for {email}.")
+
 
 if __name__ == "__main__":
-    seed_admin()
+    main()

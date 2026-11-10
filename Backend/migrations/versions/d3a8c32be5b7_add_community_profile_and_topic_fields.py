@@ -19,6 +19,8 @@ depends_on = None
 def _column_exists(table_name, column_name):
     bind = op.get_bind()
     inspector = sa.inspect(bind)
+    if not inspector.has_table(table_name):
+        return False
     columns = [col['name'] for col in inspector.get_columns(table_name)]
     return column_name in columns
 
@@ -55,32 +57,34 @@ def upgrade():
             batch_op.add_column(sa.Column('reply_count', sa.Integer(), nullable=False, server_default='0'))
 
     # Community responses vote support
-    with op.batch_alter_table('community_responses', schema=None) as batch_op:
-        if not _column_exists('community_responses', 'upvotes'):
-            batch_op.add_column(sa.Column('upvotes', sa.Integer(), nullable=False, server_default='0'))
-        if not _column_exists('community_responses', 'author_id'):
-            batch_op.add_column(sa.Column('author_id', sa.Integer(), nullable=True))
-            try:
-                batch_op.create_foreign_key(
-                    'fk_community_responses_author_id_users',
-                    'Users',
-                    ['author_id'],
-                    ['id']
-                )
-            except Exception:
-                pass
+    if sa.inspect(op.get_bind()).has_table('community_responses'):
+        with op.batch_alter_table('community_responses', schema=None) as batch_op:
+            if not _column_exists('community_responses', 'upvotes'):
+                batch_op.add_column(sa.Column('upvotes', sa.Integer(), nullable=False, server_default='0'))
+            if not _column_exists('community_responses', 'author_id'):
+                batch_op.add_column(sa.Column('author_id', sa.Integer(), nullable=True))
+                try:
+                    batch_op.create_foreign_key(
+                        'fk_community_responses_author_id_users',
+                        'Users',
+                        ['author_id'],
+                        ['id']
+                    )
+                except Exception:
+                    pass
 
 
 def downgrade():
-    with op.batch_alter_table('community_responses', schema=None) as batch_op:
-        if _column_exists('community_responses', 'upvotes'):
-            batch_op.drop_column('upvotes')
-        if _column_exists('community_responses', 'author_id'):
-            try:
-                batch_op.drop_constraint('fk_community_responses_author_id_users', type_='foreignkey')
-            except Exception:
-                pass
-            batch_op.drop_column('author_id')
+    if sa.inspect(op.get_bind()).has_table('community_responses'):
+        with op.batch_alter_table('community_responses', schema=None) as batch_op:
+            if _column_exists('community_responses', 'upvotes'):
+                batch_op.drop_column('upvotes')
+            if _column_exists('community_responses', 'author_id'):
+                try:
+                    batch_op.drop_constraint('fk_community_responses_author_id_users', type_='foreignkey')
+                except Exception:
+                    pass
+                batch_op.drop_column('author_id')
 
     with op.batch_alter_table('community_posts', schema=None) as batch_op:
         if _column_exists('community_posts', 'topic_category'):
